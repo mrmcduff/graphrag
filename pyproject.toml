@@ -3,5 +3,14 @@ name = "graphrag"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.13"
-dependencies = []
+requires-python = ">=3.11,<3.12"
+dependencies = [
+    "matplotlib>=3.10.1",
+    "networkx>=3.4.2",
+    "pandas>=2.2.3",
+    "python-docx>=1.1.2",
+    "python-dotenv>=1.0.1",
+    "requests>=2.32.3",
+    "spacy>=3.8.4",
+    "tqdm>=4.67.1",
+]
