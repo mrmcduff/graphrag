@@ -1,0 +1,303 @@
+<?xml version='1.0' encoding='utf-8'?>
+<gexf xmlns="http://www.gexf.net/1.2draft" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.gexf.net/1.2draft http://www.gexf.net/1.2draft/gexf.xsd" version="1.2">
+  <meta lastmodifieddate="2025-03-03">
+    <creator>NetworkX 3.4.2</creator>
+  </meta>
+  <graph defaultedgetype="undirected" mode="static" name="">
+    <attributes mode="static" class="edge">
+      <attribute id="1" title="relation" type="string" />
+    </attributes>
+    <attributes mode="static" class="node">
+      <attribute id="0" title="type" type="string" />
+    </attributes>
+    <nodes>
+      <node id="eryndor_leafshade" label="Eryndor Leafshade">
+        <attvalues>
+          <attvalue for="0" value="PERSON" />
+        </attvalues>
+      </node>
+      <node id="treefolk" label="Treefolk">
+        <attvalues>
+          <attvalue for="0" value="WORK_OF_ART" />
+        </attvalues>
+      </node>
+      <node id="goblins" label="Goblins">
+        <attvalues>
+          <attvalue for="0" value="ORG" />
+        </attvalues>
+      </node>
+      <node id="gorath" label="Gorath">
+        <attvalues>
+          <attvalue for="0" value="PERSON" />
+        </attvalues>
+      </node>
+      <node id="mt._dorn" label="Mt. Dorn">
+        <attvalues>
+          <attvalue for="0" value="LOC" />
+        </attvalues>
+      </node>
+      <node id="mt._dorn’s" label="Mt. Dorn’s">
+        <attvalues>
+          <attvalue for="0" value="LOC" />
+        </attvalues>
+      </node>
+      <node id="deepkin" label="Deepkin">
+        <attvalues>
+          <attvalue for="0" value="PERSON" />
+        </attvalues>
+      </node>
+      <node id="thalric_ironbeard" label="Thalric Ironbeard">
+        <attvalues>
+          <attvalue for="0" value="PERSON" />
+        </attvalues>
+      </node>
+      <node id="decades" label="decades">
+        <attvalues>
+          <attvalue for="0" value="DATE" />
+        </attvalues>
+      </node>
+      <node id="thalric" label="Thalric">
+        <attvalues>
+          <attvalue for="0" value="ORG" />
+        </attvalues>
+      </node>
+      <node id="talyss_wavecaller" label="Talyss Wavecaller">
+        <attvalues>
+          <attvalue for="0" value="PERSON" />
+        </attvalues>
+      </node>
+      <node id="korran_tidebreaker" label="Korran Tidebreaker">
+        <attvalues>
+          <attvalue for="0" value="PERSON" />
+        </attvalues>
+      </node>
+      <node id="korrik_deepdelve&#10;korrik" label="Korrik Deepdelve&#10;Korrik">
+        <attvalues>
+          <attvalue for="0" value="PERSON" />
+        </attvalues>
+      </node>
+      <node id="the_ironroot_range" label="the Ironroot Range">
+        <attvalues>
+          <attvalue for="0" value="LOC" />
+        </attvalues>
+      </node>
+      <node id="lyssara_abyssglow" label="Lyssara Abyssglow">
+        <attvalues>
+          <attvalue for="0" value="PERSON" />
+        </attvalues>
+      </node>
+      <node id="talyss" label="Talyss">
+        <attvalues>
+          <attvalue for="0" value="PERSON" />
+        </attvalues>
+      </node>
+      <node id="korran" label="Korran">
+        <attvalues>
+          <attvalue for="0" value="GPE" />
+        </attvalues>
+      </node>
+      <node id="the_brief_summer_months" label="the brief summer months">
+        <attvalues>
+          <attvalue for="0" value="DATE" />
+        </attvalues>
+      </node>
+      <node id="mist" label="Mist">
+        <attvalues>
+          <attvalue for="0" value="PERSON" />
+        </attvalues>
+      </node>
+      <node id="fed" label="fed">
+        <attvalues>
+          <attvalue for="0" value="ORG" />
+        </attvalues>
+      </node>
+      <node id="winter" label="winter">
+        <attvalues>
+          <attvalue for="0" value="DATE" />
+        </attvalues>
+      </node>
+      <node id="summer" label="summer">
+        <attvalues>
+          <attvalue for="0" value="DATE" />
+        </attvalues>
+      </node>
+      <node id="the_abyssal_realm" label="the Abyssal Realm">
+        <attvalues>
+          <attvalue for="0" value="WORK_OF_ART" />
+        </attvalues>
+      </node>
+      <node id="barely_three_feet" label="barely three feet">
+        <attvalues>
+          <attvalue for="0" value="QUANTITY" />
+        </attvalues>
+      </node>
+      <node id="gnomish" label="Gnomish">
+        <attvalues>
+          <attvalue for="0" value="NORP" />
+        </attvalues>
+      </node>
+      <node id="krug_ironfang" label="Krug Ironfang">
+        <attvalues>
+          <attvalue for="0" value="ORG" />
+        </attvalues>
+      </node>
+      <node id="krug" label="Krug">
+        <attvalues>
+          <attvalue for="0" value="PERSON" />
+        </attvalues>
+      </node>
+      <node id="zrakka" label="Zrakka">
+        <attvalues>
+          <attvalue for="0" value="ORG" />
+        </attvalues>
+      </node>
+      <node id="brynna_gearwhistle" label="Brynna Gearwhistle">
+        <attvalues>
+          <attvalue for="0" value="NORP" />
+        </attvalues>
+      </node>
+      <node id="brynna" label="Brynna">
+        <attvalues>
+          <attvalue for="0" value="NORP" />
+        </attvalues>
+      </node>
+      <node id="kael_thornstride&#10;kael" label="Kael Thornstride&#10;Kael">
+        <attvalues>
+          <attvalue for="0" value="PERSON" />
+        </attvalues>
+      </node>
+      <node id="sylvara" label="Sylvara">
+        <attvalues>
+          <attvalue for="0" value="PERSON" />
+        </attvalues>
+      </node>
+      <node id="kael" label="Kael">
+        <attvalues>
+          <attvalue for="0" value="PERSON" />
+        </attvalues>
+      </node>
+      <node id="gnomes" label="Gnomes">
+        <attvalues>
+          <attvalue for="0" value="ORG" />
+        </attvalues>
+      </node>
+      <node id="less_than_half" label="less than half">
+        <attvalues>
+          <attvalue for="0" value="CARDINAL" />
+        </attvalues>
+      </node>
+      <node id="veyron" label="Veyron">
+        <attvalues>
+          <attvalue for="0" value="ORG" />
+        </attvalues>
+      </node>
+      <node id="skyway" label="Skyway">
+        <attvalues>
+          <attvalue for="0" value="ORG" />
+        </attvalues>
+      </node>
+      <node id="aeryn" label="Aeryn">
+        <attvalues>
+          <attvalue for="0" value="PERSON" />
+        </attvalues>
+      </node>
+      <node id="stormriders" label="Stormriders">
+        <attvalues>
+          <attvalue for="0" value="ORG" />
+        </attvalues>
+      </node>
+      <node id="aeryn_cloudpiercer" label="Aeryn Cloudpiercer">
+        <attvalues>
+          <attvalue for="0" value="PERSON" />
+        </attvalues>
+      </node>
+      <node id="skyways" label="Skyways">
+        <attvalues>
+          <attvalue for="0" value="FAC" />
+        </attvalues>
+      </node>
+      <node id="moonlight" label="moonlight">
+        <attvalues>
+          <attvalue for="0" value="TIME" />
+        </attvalues>
+      </node>
+      <node id="thunderhand" label="Thunderhand">
+        <attvalues>
+          <attvalue for="0" value="PERSON" />
+        </attvalues>
+      </node>
+      <node id="one" label="one">
+        <attvalues>
+          <attvalue for="0" value="CARDINAL" />
+        </attvalues>
+      </node>
+      <node id="gorath_the_goblin_king" label="Gorath the Goblin King">
+        <attvalues>
+          <attvalue for="0" value="PERSON" />
+        </attvalues>
+      </node>
+      <node id="some_over_a_thousand_years_old" label="some over a thousand years old">
+        <attvalues>
+          <attvalue for="0" value="CARDINAL" />
+        </attvalues>
+      </node>
+      <node id="hundreds_of_feet" label="hundreds of feet">
+        <attvalues>
+          <attvalue for="0" value="QUANTITY" />
+        </attvalues>
+      </node>
+      <node id="night" label="night">
+        <attvalues>
+          <attvalue for="0" value="TIME" />
+        </attvalues>
+      </node>
+      <node id="sky_harbors" label="Sky Harbors">
+        <attvalues>
+          <attvalue for="0" value="ORG" />
+        </attvalues>
+      </node>
+      <node id="kaelis_windweaver" label="Kaelis Windweaver">
+        <attvalues>
+          <attvalue for="0" value="PERSON" />
+        </attvalues>
+      </node>
+      <node id="kaelis" label="Kaelis">
+        <attvalues>
+          <attvalue for="0" value="PERSON" />
+        </attvalues>
+      </node>
+      <node id="the_breath_of_the_sky" label="the Breath of the Sky">
+        <attvalues>
+          <attvalue for="0" value="WORK_OF_ART" />
+        </attvalues>
+      </node>
+      <node id="sylvara_willowbark" label="Sylvara Willowbark">
+        <attvalues>
+          <attvalue for="0" value="PERSON" />
+        </attvalues>
+      </node>
+      <node id="centuries" label="centuries">
+        <attvalues>
+          <attvalue for="0" value="DATE" />
+        </attvalues>
+      </node>
+      <node id="zrakka_of_mt._dorn" label="Zrakka of Mt. Dorn">
+        <attvalues>
+          <attvalue for="0" value="ORG" />
+        </attvalues>
+      </node>
+    </nodes>
+    <edges>
+      <edge source="gorath" target="brynna" id="0">
+        <attvalues>
+          <attvalue for="1" value="views" />
+        </attvalues>
+      </edge>
+      <edge source="zrakka" target="gnomes" id="1">
+        <attvalues>
+          <attvalue for="1" value="despises" />
+        </attvalues>
+      </edge>
+    </edges>
+  </graph>
+</gexf>
