@@ -1,6 +1,6 @@
 # Add these imports to the top of your enhanced-llm-game-engine.py file
 from map_generator import MapGenerator
-from combat_system import CombatSystem, CombatStatus
+from combat.combat_system import CombatSystem, CombatStatus
 
 # Modify the TextAdventureGame class to include the new systems
 class TextAdventureGame:
