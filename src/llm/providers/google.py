@@ -2,6 +2,7 @@ import requests
 from typing import Dict, Any
 from .base import LLMProvider
 
+
 class GoogleProvider(LLMProvider):
     """Provider for Google Gemini API."""
 
@@ -19,7 +20,9 @@ class GoogleProvider(LLMProvider):
         self.model = model
         self.api_url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 
-    def generate_text(self, prompt: str, max_tokens: int = 500, temperature: float = 0.7) -> str:
+    def generate_text(
+        self, prompt: str, max_tokens: int = 500, temperature: float = 0.7
+    ) -> str:
         """
         Generate text using Google Gemini API.
 
@@ -35,18 +38,13 @@ class GoogleProvider(LLMProvider):
             response = requests.post(
                 f"{self.api_url}?key={self.api_key}",
                 json={
-                    "contents": [
-                        {
-                            "role": "user",
-                            "parts": [{"text": prompt}]
-                        }
-                    ],
+                    "contents": [{"role": "user", "parts": [{"text": prompt}]}],
                     "generationConfig": {
                         "maxOutputTokens": max_tokens,
-                        "temperature": temperature
-                    }
+                        "temperature": temperature,
+                    },
                 },
-                timeout=30
+                timeout=30,
             )
 
             if response.status_code == 200:

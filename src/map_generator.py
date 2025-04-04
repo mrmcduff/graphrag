@@ -8,6 +8,7 @@ import math
 import random
 import tempfile
 
+
 class MapStyle:
     """Class to define the visual style of the map."""
 
@@ -30,7 +31,7 @@ class MapStyle:
             "cave": (105, 105, 105),  # Cave dark gray
             "temple": (218, 165, 32),  # Temple gold
             "ruins": (169, 169, 169),  # Ruins gray
-            "special": (148, 0, 211)  # Special location purple
+            "special": (148, 0, 211),  # Special location purple
         }
 
         # Path colors
@@ -54,6 +55,7 @@ class MapStyle:
         self.add_parchment_texture = True
         self.add_map_border = True
         self.show_legend = True
+
 
 class MapGenerator:
     """Class to generate maps for the text adventure game."""
@@ -95,7 +97,7 @@ class MapGenerator:
                 "/System/Library/Fonts/Times.ttc",
                 # Windows fonts
                 "C:\\Windows\\Fonts\\times.ttf",
-                "C:\\Windows\\Fonts\\arial.ttf"
+                "C:\\Windows\\Fonts\\arial.ttf",
             ]
 
             for font_path in system_fonts:
@@ -123,35 +125,57 @@ class MapGenerator:
             location_lower = location.lower()
 
             # Check for type keywords in name
-            if any(word in location_lower for word in ["town", "village", "city", "settlement", "outpost"]):
+            if any(
+                word in location_lower
+                for word in ["town", "village", "city", "settlement", "outpost"]
+            ):
                 location_types[location] = "town"
-            elif any(word in location_lower for word in ["forest", "woods", "grove", "jungle"]):
+            elif any(
+                word in location_lower
+                for word in ["forest", "woods", "grove", "jungle"]
+            ):
                 location_types[location] = "forest"
-            elif any(word in location_lower for word in ["mountain", "peak", "hill", "cliff"]):
+            elif any(
+                word in location_lower for word in ["mountain", "peak", "hill", "cliff"]
+            ):
                 location_types[location] = "mountain"
-            elif any(word in location_lower for word in ["lake", "river", "ocean", "sea", "pond", "stream"]):
+            elif any(
+                word in location_lower
+                for word in ["lake", "river", "ocean", "sea", "pond", "stream"]
+            ):
                 location_types[location] = "water"
             elif any(word in location_lower for word in ["dungeon", "prison", "jail"]):
                 location_types[location] = "dungeon"
-            elif any(word in location_lower for word in ["castle", "fort", "fortress", "citadel", "palace"]):
+            elif any(
+                word in location_lower
+                for word in ["castle", "fort", "fortress", "citadel", "palace"]
+            ):
                 location_types[location] = "castle"
             elif any(word in location_lower for word in ["cave", "cavern", "grotto"]):
                 location_types[location] = "cave"
-            elif any(word in location_lower for word in ["temple", "shrine", "sanctuary", "altar"]):
+            elif any(
+                word in location_lower
+                for word in ["temple", "shrine", "sanctuary", "altar"]
+            ):
                 location_types[location] = "temple"
-            elif any(word in location_lower for word in ["ruin", "ruins", "ancient", "abandoned"]):
+            elif any(
+                word in location_lower
+                for word in ["ruin", "ruins", "ancient", "abandoned"]
+            ):
                 location_types[location] = "ruins"
             else:
                 location_types[location] = "default"
 
         # Enhance with data from relations
         location_relations = self.game_state.relations_df.loc[
-            self.game_state.relations_df['predicate'].isin(['is_a', 'type_of', 'contains'])
+            self.game_state.relations_df["predicate"].isin(
+                ["is_a", "type_of", "contains"]
+            )
         ]
 
         for _, relation in location_relations.iterrows():
-            subject = relation['subject']
-            object_ = relation['object']
+            subject = relation["subject"]
+            object_ = relation["object"]
 
             # If subject is a location we know
             if subject in location_types:
@@ -165,7 +189,7 @@ class MapGenerator:
                     ("castle", ["castle", "fort", "fortress"]),
                     ("cave", ["cave", "cavern"]),
                     ("temple", ["temple", "shrine", "sanctuary"]),
-                    ("ruins", ["ruin", "ruins", "ancient"])
+                    ("ruins", ["ruin", "ruins", "ancient"]),
                 ]:
                     if any(keyword in object_.lower() for keyword in keywords):
                         location_types[subject] = type_name
@@ -173,13 +197,17 @@ class MapGenerator:
 
         return location_types
 
-    def _get_location_color(self, location: str, is_current: bool = False, is_visited: bool = False) -> Tuple[int, int, int]:
+    def _get_location_color(
+        self, location: str, is_current: bool = False, is_visited: bool = False
+    ) -> Tuple[int, int, int]:
         """Get the appropriate color for a location based on its type and status."""
         # Current location is highlighted differently
         if is_current:
             # Return a slightly brighter version of the location type color
             location_type = self.location_types.get(location, "default")
-            base_color = self.map_style.location_colors.get(location_type, self.map_style.location_colors["default"])
+            base_color = self.map_style.location_colors.get(
+                location_type, self.map_style.location_colors["default"]
+            )
             # Make it 20% brighter (but cap at 255 for each channel)
             return tuple(min(255, int(c * 1.2)) for c in base_color)
 
@@ -189,9 +217,13 @@ class MapGenerator:
 
         # Regular location with a known type
         location_type = self.location_types.get(location, "default")
-        return self.map_style.location_colors.get(location_type, self.map_style.location_colors["default"])
+        return self.map_style.location_colors.get(
+            location_type, self.map_style.location_colors["default"]
+        )
 
-    def get_node_positions(self, graph: nx.Graph, focus_node: str, available_nodes: Set[str]) -> Dict[str, Tuple[float, float]]:
+    def get_node_positions(
+        self, graph: nx.Graph, focus_node: str, available_nodes: Set[str]
+    ) -> Dict[str, Tuple[float, float]]:
         """
         Get the positions for nodes in the map, focusing on a central node.
 
@@ -216,7 +248,7 @@ class MapGenerator:
             subgraph,
             k=0.3,  # Optimal distance between nodes
             iterations=100,  # More iterations for better layout
-            seed=42  # Consistent layout between runs
+            seed=42,  # Consistent layout between runs
         )
 
         # If focus node exists, center the layout on it
@@ -230,7 +262,13 @@ class MapGenerator:
         self.cached_layouts[cache_key] = pos
         return pos
 
-    def generate_map(self, current_location: str, output_path: str = None, width: int = 800, height: int = 600) -> str:
+    def generate_map(
+        self,
+        current_location: str,
+        output_path: str = None,
+        width: int = 800,
+        height: int = 600,
+    ) -> str:
         """
         Generate a map visualization centered on the current location.
 
@@ -244,7 +282,7 @@ class MapGenerator:
             Path to the generated map file
         """
         # Create a new image
-        img = Image.new('RGB', (width, height), self.map_style.background_color)
+        img = Image.new("RGB", (width, height), self.map_style.background_color)
         draw = ImageDraw.Draw(img)
 
         # Add parchment texture effect if enabled
@@ -258,7 +296,7 @@ class MapGenerator:
             ((width - title_width) // 2, 20),
             title,
             fill=self.map_style.text_color,
-            font=self.title_font
+            font=self.title_font,
         )
 
         # Determine which locations to show on the map
@@ -308,17 +346,19 @@ class MapGenerator:
 
         # Draw edges between locations
         for source in map_locations:
-            source_id = source.lower().replace(' ', '_')
+            source_id = source.lower().replace(" ", "_")
             if source_id in graph.nodes:
                 for target in graph.neighbors(source_id):
-                    target_name = graph.nodes[target].get('label', target)
+                    target_name = graph.nodes[target].get("label", target)
                     if target_name in map_locations:
                         # Only draw if both nodes are in our map view
                         if source in scaled_pos and target_name in scaled_pos:
                             start = scaled_pos[source]
                             end = scaled_pos[target_name]
                             # Draw the edge
-                            draw.line([start, end], fill=self.map_style.path_color, width=2)
+                            draw.line(
+                                [start, end], fill=self.map_style.path_color, width=2
+                            )
 
         # Draw nodes for each location
         for location in map_locations:
@@ -350,13 +390,29 @@ class MapGenerator:
                 # Add a special marker for current location
                 if is_current:
                     inner_radius = radius * 0.6
-                    inner_bbox = (x - inner_radius, y - inner_radius, x + inner_radius, y + inner_radius)
-                    draw.ellipse(inner_bbox, fill=(255, 255, 255), outline=self.map_style.border_color)
+                    inner_bbox = (
+                        x - inner_radius,
+                        y - inner_radius,
+                        x + inner_radius,
+                        y + inner_radius,
+                    )
+                    draw.ellipse(
+                        inner_bbox,
+                        fill=(255, 255, 255),
+                        outline=self.map_style.border_color,
+                    )
 
                 # Add location label
-                label_width, label_height = draw.textsize(location, font=self.location_font)
+                label_width, label_height = draw.textsize(
+                    location, font=self.location_font
+                )
                 label_position = (x - label_width / 2, y + radius + 5)
-                draw.text(label_position, location, fill=self.map_style.text_color, font=self.location_font)
+                draw.text(
+                    label_position,
+                    location,
+                    fill=self.map_style.text_color,
+                    font=self.location_font,
+                )
 
         # Add a compass rose
         if self.map_style.show_compass:
@@ -380,24 +436,21 @@ class MapGenerator:
 
     def _get_location_info(self, location: str) -> Dict[str, Any]:
         """Get information about a location."""
-        if hasattr(self.game_state, '_get_location_info'):
+        if hasattr(self.game_state, "_get_location_info"):
             return self.game_state._get_location_info(location)
 
         # Fallback implementation if game_state doesn't have the method
-        location_id = location.lower().replace(' ', '_')
+        location_id = location.lower().replace(" ", "_")
 
         # Get connected locations
         connected_locations = []
         if location_id in self.game_state.graph.nodes:
             for neighbor in self.game_state.graph.neighbors(location_id):
                 node_data = self.game_state.graph.nodes[neighbor]
-                if 'label' in node_data:
-                    connected_locations.append(node_data['label'])
+                if "label" in node_data:
+                    connected_locations.append(node_data["label"])
 
-        return {
-            "name": location,
-            "connected_locations": connected_locations
-        }
+        return {"name": location, "connected_locations": connected_locations}
 
     def _add_parchment_texture(self, img, width, height):
         """Add a parchment-like texture to the background."""
@@ -427,7 +480,7 @@ class MapGenerator:
             spot_color = (
                 random.randint(180, 220),
                 random.randint(160, 200),
-                random.randint(120, 170)
+                random.randint(120, 170),
             )
 
             draw = ImageDraw.Draw(img)
@@ -435,33 +488,63 @@ class MapGenerator:
                 spot_x - spot_size // 2,
                 spot_y - spot_size // 2,
                 spot_x + spot_size // 2,
-                spot_y + spot_size // 2
+                spot_y + spot_size // 2,
             )
             draw.ellipse(bbox, fill=spot_color)
 
     def _add_compass_rose(self, draw, x, y, size):
         """Add a compass rose to the map."""
         # Draw circle
-        draw.ellipse((x - size, y - size, x + size, y + size),
-                     outline=self.map_style.border_color,
-                     fill=(255, 255, 255, 128))
+        draw.ellipse(
+            (x - size, y - size, x + size, y + size),
+            outline=self.map_style.border_color,
+            fill=(255, 255, 255, 128),
+        )
 
         # Draw cardinal directions
         # North
-        draw.line((x, y - size // 2, x, y - size), fill=self.map_style.border_color, width=2)
-        draw.text((x - 5, y - size - 15), "N", fill=self.map_style.text_color, font=self.location_font)
+        draw.line(
+            (x, y - size // 2, x, y - size), fill=self.map_style.border_color, width=2
+        )
+        draw.text(
+            (x - 5, y - size - 15),
+            "N",
+            fill=self.map_style.text_color,
+            font=self.location_font,
+        )
 
         # South
-        draw.line((x, y + size // 2, x, y + size), fill=self.map_style.border_color, width=2)
-        draw.text((x - 5, y + size + 5), "S", fill=self.map_style.text_color, font=self.location_font)
+        draw.line(
+            (x, y + size // 2, x, y + size), fill=self.map_style.border_color, width=2
+        )
+        draw.text(
+            (x - 5, y + size + 5),
+            "S",
+            fill=self.map_style.text_color,
+            font=self.location_font,
+        )
 
         # East
-        draw.line((x + size // 2, y, x + size, y), fill=self.map_style.border_color, width=2)
-        draw.text((x + size + 5, y - 5), "E", fill=self.map_style.text_color, font=self.location_font)
+        draw.line(
+            (x + size // 2, y, x + size, y), fill=self.map_style.border_color, width=2
+        )
+        draw.text(
+            (x + size + 5, y - 5),
+            "E",
+            fill=self.map_style.text_color,
+            font=self.location_font,
+        )
 
         # West
-        draw.line((x - size // 2, y, x - size, y), fill=self.map_style.border_color, width=2)
-        draw.text((x - size - 15, y - 5), "W", fill=self.map_style.text_color, font=self.location_font)
+        draw.line(
+            (x - size // 2, y, x - size, y), fill=self.map_style.border_color, width=2
+        )
+        draw.text(
+            (x - size - 15, y - 5),
+            "W",
+            fill=self.map_style.text_color,
+            font=self.location_font,
+        )
 
     def _add_legend(self, draw, x, y):
         """Add a legend to the map."""
@@ -475,21 +558,32 @@ class MapGenerator:
             ("Water", self.map_style.location_colors["water"]),
             ("Castle", self.map_style.location_colors["castle"]),
             ("Temple", self.map_style.location_colors["temple"]),
-            ("Dungeon", self.map_style.location_colors["dungeon"])
+            ("Dungeon", self.map_style.location_colors["dungeon"]),
         ]
 
         # Draw legend title
-        draw.text((x, y), "Legend", fill=self.map_style.text_color, font=self.legend_font)
+        draw.text(
+            (x, y), "Legend", fill=self.map_style.text_color, font=self.legend_font
+        )
 
         # Draw legend items
         for i, (label, color) in enumerate(legend_items):
             y_pos = y + 25 + i * 20
 
             # Draw color sample
-            draw.rectangle((x, y_pos, x + 15, y_pos + 15), fill=color, outline=self.map_style.border_color)
+            draw.rectangle(
+                (x, y_pos, x + 15, y_pos + 15),
+                fill=color,
+                outline=self.map_style.border_color,
+            )
 
             # Draw label
-            draw.text((x + 25, y_pos), label, fill=self.map_style.text_color, font=self.legend_font)
+            draw.text(
+                (x + 25, y_pos),
+                label,
+                fill=self.map_style.text_color,
+                font=self.legend_font,
+            )
 
     def _add_map_border(self, draw, width, height):
         """Add a decorative border to the map."""
@@ -497,54 +591,121 @@ class MapGenerator:
 
         # Draw outer rectangle
         draw.rectangle(
-            [border_width/2, border_width/2, width - border_width/2, height - border_width/2],
+            [
+                border_width / 2,
+                border_width / 2,
+                width - border_width / 2,
+                height - border_width / 2,
+            ],
             outline=self.map_style.border_color,
-            width=border_width
+            width=border_width,
         )
 
         # Add corner decorations
         corner_size = 20
 
         # Top-left corner
-        draw.line((border_width, border_width + corner_size, border_width + corner_size, border_width),
-                  fill=self.map_style.border_color, width=2)
+        draw.line(
+            (
+                border_width,
+                border_width + corner_size,
+                border_width + corner_size,
+                border_width,
+            ),
+            fill=self.map_style.border_color,
+            width=2,
+        )
 
         # Top-right corner
-        draw.line((width - border_width - corner_size, border_width, width - border_width, border_width + corner_size),
-                  fill=self.map_style.border_color, width=2)
+        draw.line(
+            (
+                width - border_width - corner_size,
+                border_width,
+                width - border_width,
+                border_width + corner_size,
+            ),
+            fill=self.map_style.border_color,
+            width=2,
+        )
 
         # Bottom-left corner
-        draw.line((border_width, height - border_width - corner_size, border_width + corner_size, height - border_width),
-                  fill=self.map_style.border_color, width=2)
+        draw.line(
+            (
+                border_width,
+                height - border_width - corner_size,
+                border_width + corner_size,
+                height - border_width,
+            ),
+            fill=self.map_style.border_color,
+            width=2,
+        )
 
         # Bottom-right corner
-        draw.line((width - border_width - corner_size, height - border_width, width - border_width, height - border_width - corner_size),
-                  fill=self.map_style.border_color, width=2)
+        draw.line(
+            (
+                width - border_width - corner_size,
+                height - border_width,
+                width - border_width,
+                height - border_width - corner_size,
+            ),
+            fill=self.map_style.border_color,
+            width=2,
+        )
 
         # Draw midpoint markers on the border
         marker_size = 5
 
         # Top middle
-        draw.rectangle((width/2 - marker_size, border_width - marker_size,
-                         width/2 + marker_size, border_width + marker_size),
-                        fill=self.map_style.border_color)
+        draw.rectangle(
+            (
+                width / 2 - marker_size,
+                border_width - marker_size,
+                width / 2 + marker_size,
+                border_width + marker_size,
+            ),
+            fill=self.map_style.border_color,
+        )
 
         # Bottom middle
-        draw.rectangle((width/2 - marker_size, height - border_width - marker_size,
-                         width/2 + marker_size, height - border_width + marker_size),
-                        fill=self.map_style.border_color)
+        draw.rectangle(
+            (
+                width / 2 - marker_size,
+                height - border_width - marker_size,
+                width / 2 + marker_size,
+                height - border_width + marker_size,
+            ),
+            fill=self.map_style.border_color,
+        )
 
         # Left middle
-        draw.rectangle((border_width - marker_size, height/2 - marker_size,
-                         border_width + marker_size, height/2 + marker_size),
-                        fill=self.map_style.border_color)
+        draw.rectangle(
+            (
+                border_width - marker_size,
+                height / 2 - marker_size,
+                border_width + marker_size,
+                height / 2 + marker_size,
+            ),
+            fill=self.map_style.border_color,
+        )
 
         # Right middle
-        draw.rectangle((width - border_width - marker_size, height/2 - marker_size,
-                         width - border_width + marker_size, height/2 + marker_size),
-                        fill=self.map_style.border_color)
+        draw.rectangle(
+            (
+                width - border_width - marker_size,
+                height / 2 - marker_size,
+                width - border_width + marker_size,
+                height / 2 + marker_size,
+            ),
+            fill=self.map_style.border_color,
+        )
 
-    def generate_zoomed_map(self, current_location: str, output_path: str = None, width: int = 800, height: int = 600) -> str:
+    def generate_zoomed_map(
+        self,
+        current_location: str,
+        output_path: str = None,
+        width: int = 800,
+        height: int = 600,
+    ) -> str:
         """
         Generate a detailed map of the current location and its immediate surroundings.
 
@@ -558,7 +719,7 @@ class MapGenerator:
             Path to the generated map file
         """
         # Create a new image
-        img = Image.new('RGB', (width, height), self.map_style.background_color)
+        img = Image.new("RGB", (width, height), self.map_style.background_color)
         draw = ImageDraw.Draw(img)
 
         # Add parchment texture effect if enabled
@@ -572,7 +733,7 @@ class MapGenerator:
             ((width - title_width) // 2, 20),
             title,
             fill=self.map_style.text_color,
-            font=self.title_font
+            font=self.title_font,
         )
 
         # Get information about the current location
@@ -587,7 +748,9 @@ class MapGenerator:
         elif location_type == "forest":
             self._draw_forest_map(draw, width, height, current_location, location_info)
         elif location_type == "mountain":
-            self._draw_mountain_map(draw, width, height, current_location, location_info)
+            self._draw_mountain_map(
+                draw, width, height, current_location, location_info
+            )
         elif location_type == "water":
             self._draw_water_map(draw, width, height, current_location, location_info)
         elif location_type == "dungeon":
@@ -626,10 +789,14 @@ class MapGenerator:
         # Draw town boundary
         town_radius = min(width, height) // 3
         draw.ellipse(
-            (center_x - town_radius, center_y - town_radius,
-             center_x + town_radius, center_y + town_radius),
+            (
+                center_x - town_radius,
+                center_y - town_radius,
+                center_x + town_radius,
+                center_y + town_radius,
+            ),
             outline=self.map_style.border_color,
-            width=2
+            width=2,
         )
 
         # Draw main roads
@@ -640,14 +807,14 @@ class MapGenerator:
         draw.line(
             (center_x - town_radius, center_y, center_x + town_radius, center_y),
             fill=road_color,
-            width=road_width
+            width=road_width,
         )
 
         # Vertical main road
         draw.line(
             (center_x, center_y - town_radius, center_x, center_y + town_radius),
             fill=road_color,
-            width=road_width
+            width=road_width,
         )
 
         # Draw buildings
@@ -666,10 +833,14 @@ class MapGenerator:
 
             # Draw building
             draw.rectangle(
-                (bx - building_size // 2, by - building_size // 2,
-                 bx + building_size // 2, by + building_size // 2),
+                (
+                    bx - building_size // 2,
+                    by - building_size // 2,
+                    bx + building_size // 2,
+                    by + building_size // 2,
+                ),
                 fill=building_color,
-                outline=(0, 0, 0)
+                outline=(0, 0, 0),
             )
 
         # Draw special building at center (town hall, etc.)
@@ -677,11 +848,15 @@ class MapGenerator:
         special_size = 35
 
         draw.rectangle(
-            (center_x - special_size // 2, center_y - special_size // 2,
-             center_x + special_size // 2, center_y + special_size // 2),
+            (
+                center_x - special_size // 2,
+                center_y - special_size // 2,
+                center_x + special_size // 2,
+                center_y + special_size // 2,
+            ),
             fill=special_building_color,
             outline=(0, 0, 0),
-            width=2
+            width=2,
         )
 
         # Add a label for the town center
@@ -691,7 +866,7 @@ class MapGenerator:
             (center_x - label_width // 2, center_y + special_size // 2 + 5),
             center_label,
             fill=self.map_style.text_color,
-            font=self.location_font
+            font=self.location_font,
         )
 
         # Draw paths to connected locations
@@ -714,7 +889,7 @@ class MapGenerator:
             draw.line(
                 (edge_x, edge_y, border_x, border_y),
                 fill=self.map_style.path_color,
-                width=3
+                width=3,
             )
 
             # Add a label for the connected location
@@ -723,24 +898,30 @@ class MapGenerator:
             label_y = center_y + label_dist * math.sin(angle)
 
             # Adjust label position for readability
-            label_width, label_height = draw.textsize(connected, font=self.location_font)
+            label_width, label_height = draw.textsize(
+                connected, font=self.location_font
+            )
             label_x -= label_width // 2
             label_y -= label_height // 2
 
             # Draw a small background for the text
             text_bg_padding = 3
             draw.rectangle(
-                (label_x - text_bg_padding, label_y - text_bg_padding,
-                 label_x + label_width + text_bg_padding, label_y + label_height + text_bg_padding),
+                (
+                    label_x - text_bg_padding,
+                    label_y - text_bg_padding,
+                    label_x + label_width + text_bg_padding,
+                    label_y + label_height + text_bg_padding,
+                ),
                 fill=(255, 255, 255, 180),
-                outline=self.map_style.border_color
+                outline=self.map_style.border_color,
             )
 
             draw.text(
                 (label_x, label_y),
                 connected,
                 fill=self.map_style.text_color,
-                font=self.location_font
+                font=self.location_font,
             )
 
             # Add a small arrow indicating direction
@@ -752,10 +933,14 @@ class MapGenerator:
             # Draw arrow
             arrow_points = [
                 (arrow_x, arrow_y),
-                (arrow_x - arrow_size * math.cos(angle + math.pi/4),
-                 arrow_y - arrow_size * math.sin(angle + math.pi/4)),
-                (arrow_x - arrow_size * math.cos(angle - math.pi/4),
-                 arrow_y - arrow_size * math.sin(angle - math.pi/4))
+                (
+                    arrow_x - arrow_size * math.cos(angle + math.pi / 4),
+                    arrow_y - arrow_size * math.sin(angle + math.pi / 4),
+                ),
+                (
+                    arrow_x - arrow_size * math.cos(angle - math.pi / 4),
+                    arrow_y - arrow_size * math.sin(angle - math.pi / 4),
+                ),
             ]
             draw.polygon(arrow_points, fill=self.map_style.path_color)
 
@@ -768,11 +953,15 @@ class MapGenerator:
         background_color = (220, 240, 220)  # Light green
 
         draw.ellipse(
-            (center_x - forest_radius, center_y - forest_radius,
-             center_x + forest_radius, center_y + forest_radius),
+            (
+                center_x - forest_radius,
+                center_y - forest_radius,
+                center_x + forest_radius,
+                center_y + forest_radius,
+            ),
             fill=background_color,
             outline=(34, 139, 34),  # Forest green
-            width=2
+            width=2,
         )
 
         # Draw trees
@@ -793,41 +982,57 @@ class MapGenerator:
             trunk_width = max(2, tree_size // 3)
             trunk_height = tree_size // 2
             draw.rectangle(
-                (tx - trunk_width // 2, ty - trunk_height // 2,
-                 tx + trunk_width // 2, ty + trunk_height // 2),
-                fill=(139, 69, 19)  # Brown
+                (
+                    tx - trunk_width // 2,
+                    ty - trunk_height // 2,
+                    tx + trunk_width // 2,
+                    ty + trunk_height // 2,
+                ),
+                fill=(139, 69, 19),  # Brown
             )
 
             # Draw tree top (green circle)
             tree_color = random.choice(tree_colors)
             draw.ellipse(
-                (tx - tree_size, ty - tree_size - trunk_height // 2,
-                 tx + tree_size, ty + tree_size - trunk_height // 2),
-                fill=tree_color
+                (
+                    tx - tree_size,
+                    ty - tree_size - trunk_height // 2,
+                    tx + tree_size,
+                    ty + tree_size - trunk_height // 2,
+                ),
+                fill=tree_color,
             )
 
         # Draw a clearing at the center
         clearing_radius = forest_radius // 4
         draw.ellipse(
-            (center_x - clearing_radius, center_y - clearing_radius,
-             center_x + clearing_radius, center_y + clearing_radius),
+            (
+                center_x - clearing_radius,
+                center_y - clearing_radius,
+                center_x + clearing_radius,
+                center_y + clearing_radius,
+            ),
             fill=(144, 238, 144),  # Light green
             outline=(34, 139, 34),  # Forest green
-            width=1
+            width=1,
         )
 
         # Add a label for the clearing
         clearing_label = "Forest Clearing"
-        label_width, label_height = draw.textsize(clearing_label, font=self.location_font)
+        label_width, label_height = draw.textsize(
+            clearing_label, font=self.location_font
+        )
         draw.text(
             (center_x - label_width // 2, center_y - label_height // 2),
             clearing_label,
             fill=self.map_style.text_color,
-            font=self.location_font
+            font=self.location_font,
         )
 
         # Draw paths to connected locations
-        self._draw_location_connections(draw, center_x, center_y, forest_radius, location_info, width, height)
+        self._draw_location_connections(
+            draw, center_x, center_y, forest_radius, location_info, width, height
+        )
 
     def _draw_mountain_map(self, draw, width, height, location_name, location_info):
         """Draw a detailed map for a mountain location."""
@@ -838,16 +1043,24 @@ class MapGenerator:
         background_color = (200, 200, 200)  # Gray
 
         draw.ellipse(
-            (center_x - mountain_radius, center_y - mountain_radius,
-             center_x + mountain_radius, center_y + mountain_radius),
+            (
+                center_x - mountain_radius,
+                center_y - mountain_radius,
+                center_x + mountain_radius,
+                center_y + mountain_radius,
+            ),
             fill=background_color,
             outline=(105, 105, 105),  # Dark gray
-            width=2
+            width=2,
         )
 
         # Draw mountain peaks
         num_peaks = random.randint(5, 10)
-        peak_colors = [(139, 137, 137), (105, 105, 105), (169, 169, 169)]  # Gray variations
+        peak_colors = [
+            (139, 137, 137),
+            (105, 105, 105),
+            (169, 169, 169),
+        ]  # Gray variations
 
         for i in range(num_peaks):
             # Position peaks in a roughly circular pattern
@@ -862,45 +1075,57 @@ class MapGenerator:
 
             # Draw triangular peak
             draw.polygon(
-                [(px, py - peak_size),
-                 (px - peak_size // 2, py + peak_size // 2),
-                 (px + peak_size // 2, py + peak_size // 2)],
+                [
+                    (px, py - peak_size),
+                    (px - peak_size // 2, py + peak_size // 2),
+                    (px + peak_size // 2, py + peak_size // 2),
+                ],
                 fill=peak_color,
-                outline=(0, 0, 0)
+                outline=(0, 0, 0),
             )
 
             # Add snow cap to some peaks
             if random.random() > 0.5:
                 snow_size = peak_size // 3
                 draw.polygon(
-                    [(px, py - peak_size),
-                     (px - snow_size // 2, py - peak_size + snow_size),
-                     (px + snow_size // 2, py - peak_size + snow_size)],
-                    fill=(255, 255, 255)  # White
+                    [
+                        (px, py - peak_size),
+                        (px - snow_size // 2, py - peak_size + snow_size),
+                        (px + snow_size // 2, py - peak_size + snow_size),
+                    ],
+                    fill=(255, 255, 255),  # White
                 )
 
         # Draw a plateau at the center
         plateau_radius = mountain_radius // 4
         draw.ellipse(
-            (center_x - plateau_radius, center_y - plateau_radius,
-             center_x + plateau_radius, center_y + plateau_radius),
+            (
+                center_x - plateau_radius,
+                center_y - plateau_radius,
+                center_x + plateau_radius,
+                center_y + plateau_radius,
+            ),
             fill=(160, 160, 160),  # Light gray
             outline=(105, 105, 105),  # Dark gray
-            width=1
+            width=1,
         )
 
         # Add a label for the plateau
         plateau_label = "Mountain Pass"
-        label_width, label_height = draw.textsize(plateau_label, font=self.location_font)
+        label_width, label_height = draw.textsize(
+            plateau_label, font=self.location_font
+        )
         draw.text(
             (center_x - label_width // 2, center_y - label_height // 2),
             plateau_label,
             fill=self.map_style.text_color,
-            font=self.location_font
+            font=self.location_font,
         )
 
         # Draw paths to connected locations
-        self._draw_location_connections(draw, center_x, center_y, mountain_radius, location_info, width, height)
+        self._draw_location_connections(
+            draw, center_x, center_y, mountain_radius, location_info, width, height
+        )
 
     def _draw_water_map(self, draw, width, height, location_name, location_info):
         """Draw a detailed map for a water location."""
@@ -911,11 +1136,15 @@ class MapGenerator:
         water_color = (65, 105, 225)  # Royal blue
 
         draw.ellipse(
-            (center_x - water_radius, center_y - water_radius,
-             center_x + water_radius, center_y + water_radius),
+            (
+                center_x - water_radius,
+                center_y - water_radius,
+                center_x + water_radius,
+                center_y + water_radius,
+            ),
             fill=water_color,
             outline=(25, 25, 112),  # Midnight blue
-            width=2
+            width=2,
         )
 
         # Draw wave patterns
@@ -935,10 +1164,12 @@ class MapGenerator:
             # Draw a curved wave line
             points = []
             for j in range(5):
-                points.append((
-                    wx + (j - 2) * wave_size // 2,
-                    wy + math.sin(j * math.pi / 2) * wave_size // 2
-                ))
+                points.append(
+                    (
+                        wx + (j - 2) * wave_size // 2,
+                        wy + math.sin(j * math.pi / 2) * wave_size // 2,
+                    )
+                )
 
             draw.line(points, fill=wave_color, width=2)
 
@@ -951,10 +1182,14 @@ class MapGenerator:
             island_color = (210, 180, 140)  # Tan
 
             draw.ellipse(
-                (center_x - island_radius, center_y - island_radius,
-                 center_x + island_radius, center_y + island_radius),
+                (
+                    center_x - island_radius,
+                    center_y - island_radius,
+                    center_x + island_radius,
+                    center_y + island_radius,
+                ),
                 fill=island_color,
-                outline=(139, 69, 19)  # Brown
+                outline=(139, 69, 19),  # Brown
             )
 
             # Add a palm tree
@@ -962,7 +1197,7 @@ class MapGenerator:
             draw.line(
                 (center_x, center_y, center_x, center_y - tree_height),
                 fill=(139, 69, 19),  # Brown
-                width=3
+                width=3,
             )
 
             # Draw palm leaves
@@ -974,17 +1209,19 @@ class MapGenerator:
                 draw.line(
                     (center_x, center_y - tree_height, leaf_x, leaf_y),
                     fill=(0, 128, 0),  # Green
-                    width=2
+                    width=2,
                 )
 
             # Add a label
             island_label = "Small Island"
-            label_width, label_height = draw.textsize(island_label, font=self.location_font)
+            label_width, label_height = draw.textsize(
+                island_label, font=self.location_font
+            )
             draw.text(
                 (center_x - label_width // 2, center_y + island_radius + 5),
                 island_label,
                 fill=self.map_style.text_color,
-                font=self.location_font
+                font=self.location_font,
             )
         else:
             # Draw a boat
@@ -994,35 +1231,52 @@ class MapGenerator:
 
             # Draw boat hull
             draw.rectangle(
-                (center_x - boat_width // 2, center_y - boat_height // 3,
-                 center_x + boat_width // 2, center_y + boat_height // 3),
+                (
+                    center_x - boat_width // 2,
+                    center_y - boat_height // 3,
+                    center_x + boat_width // 2,
+                    center_y + boat_height // 3,
+                ),
                 fill=boat_color,
-                outline=(0, 0, 0)
+                outline=(0, 0, 0),
             )
 
             # Draw sail
             sail_height = boat_height * 1.5
             draw.polygon(
-                [(center_x, center_y - sail_height),
-                 (center_x, center_y - boat_height // 3),
-                 (center_x + boat_width // 3, center_y - boat_height // 3)],
+                [
+                    (center_x, center_y - sail_height),
+                    (center_x, center_y - boat_height // 3),
+                    (center_x + boat_width // 3, center_y - boat_height // 3),
+                ],
                 fill=(255, 255, 255),  # White
-                outline=(0, 0, 0)
+                outline=(0, 0, 0),
             )
 
             # Add a label
             boat_label = "Your Boat"
-            label_width, label_height = draw.textsize(boat_label, font=self.location_font)
+            label_width, label_height = draw.textsize(
+                boat_label, font=self.location_font
+            )
             draw.text(
                 (center_x - label_width // 2, center_y + boat_height // 2 + 5),
                 boat_label,
                 fill=self.map_style.text_color,
-                font=self.location_font
+                font=self.location_font,
             )
 
         # Draw paths (docks or bridges) to connected locations
-        self._draw_location_connections(draw, center_x, center_y, water_radius, location_info, width, height,
-                                       path_width=4, path_color=(139, 69, 19))  # Brown docks/bridges
+        self._draw_location_connections(
+            draw,
+            center_x,
+            center_y,
+            water_radius,
+            location_info,
+            width,
+            height,
+            path_width=4,
+            path_color=(139, 69, 19),
+        )  # Brown docks/bridges
 
     def _draw_dungeon_map(self, draw, width, height, location_name, location_info):
         """Draw a detailed map for a dungeon location."""
@@ -1035,11 +1289,15 @@ class MapGenerator:
 
         # Draw dungeon outline
         draw.rectangle(
-            (center_x - dungeon_width // 2, center_y - dungeon_height // 2,
-             center_x + dungeon_width // 2, center_y + dungeon_height // 2),
+            (
+                center_x - dungeon_width // 2,
+                center_y - dungeon_height // 2,
+                center_x + dungeon_width // 2,
+                center_y + dungeon_height // 2,
+            ),
             fill=background_color,
             outline=(0, 0, 0),
-            width=3
+            width=3,
         )
 
         # Draw dungeon rooms and corridors
@@ -1054,17 +1312,23 @@ class MapGenerator:
 
             # Position within dungeon
             room_x = center_x + random.randint(-dungeon_width // 3, dungeon_width // 3)
-            room_y = center_y + random.randint(-dungeon_height // 3, dungeon_height // 3)
+            room_y = center_y + random.randint(
+                -dungeon_height // 3, dungeon_height // 3
+            )
 
             # Save room
             rooms.append((room_x, room_y, room_width, room_height))
 
             # Draw room
             draw.rectangle(
-                (room_x - room_width // 2, room_y - room_height // 2,
-                 room_x + room_width // 2, room_y + room_height // 2),
+                (
+                    room_x - room_width // 2,
+                    room_y - room_height // 2,
+                    room_x + room_width // 2,
+                    room_y + room_height // 2,
+                ),
                 fill=room_color,
-                outline=(0, 0, 0)
+                outline=(0, 0, 0),
             )
 
         # Draw corridors between rooms
@@ -1077,38 +1341,52 @@ class MapGenerator:
 
             # First horizontal then vertical (L-shaped corridor)
             draw.rectangle(
-                (room1_x - corridor_width // 2, room1_y - corridor_width // 2,
-                 room2_x + corridor_width // 2, room1_y + corridor_width // 2),
+                (
+                    room1_x - corridor_width // 2,
+                    room1_y - corridor_width // 2,
+                    room2_x + corridor_width // 2,
+                    room1_y + corridor_width // 2,
+                ),
                 fill=room_color,
-                outline=None
+                outline=None,
             )
 
             draw.rectangle(
-                (room2_x - corridor_width // 2, room1_y - corridor_width // 2,
-                 room2_x + corridor_width // 2, room2_y + corridor_width // 2),
+                (
+                    room2_x - corridor_width // 2,
+                    room1_y - corridor_width // 2,
+                    room2_x + corridor_width // 2,
+                    room2_y + corridor_width // 2,
+                ),
                 fill=room_color,
-                outline=None
+                outline=None,
             )
 
         # Draw entrance/exit at the bottom
         entrance_width = dungeon_width // 8
         entrance_height = dungeon_height // 10
         draw.rectangle(
-            (center_x - entrance_width // 2, center_y + dungeon_height // 2 - entrance_height,
-             center_x + entrance_width // 2, center_y + dungeon_height // 2),
+            (
+                center_x - entrance_width // 2,
+                center_y + dungeon_height // 2 - entrance_height,
+                center_x + entrance_width // 2,
+                center_y + dungeon_height // 2,
+            ),
             fill=(0, 0, 0),
             outline=(139, 69, 19),
-            width=2
+            width=2,
         )
 
         # Add a label for the entrance
         entrance_label = "Entrance"
-        label_width, label_height = draw.textsize(entrance_label, font=self.location_font)
+        label_width, label_height = draw.textsize(
+            entrance_label, font=self.location_font
+        )
         draw.text(
             (center_x - label_width // 2, center_y + dungeon_height // 2 + 5),
             entrance_label,
             fill=self.map_style.text_color,
-            font=self.location_font
+            font=self.location_font,
         )
 
         # Mark current position with an X
@@ -1116,16 +1394,24 @@ class MapGenerator:
         current_y = center_y
         marker_size = 10
         draw.line(
-            (current_x - marker_size, current_y - marker_size,
-             current_x + marker_size, current_y + marker_size),
+            (
+                current_x - marker_size,
+                current_y - marker_size,
+                current_x + marker_size,
+                current_y + marker_size,
+            ),
             fill=(255, 0, 0),
-            width=2
+            width=2,
         )
         draw.line(
-            (current_x - marker_size, current_y + marker_size,
-             current_x + marker_size, current_y - marker_size),
+            (
+                current_x - marker_size,
+                current_y + marker_size,
+                current_x + marker_size,
+                current_y - marker_size,
+            ),
             fill=(255, 0, 0),
-            width=2
+            width=2,
         )
 
         # Add "You are here" label
@@ -1135,13 +1421,19 @@ class MapGenerator:
             (current_x - label_width // 2, current_y + marker_size + 5),
             here_label,
             fill=(255, 0, 0),
-            font=self.location_font
+            font=self.location_font,
         )
 
         # Draw paths to connected locations outside the dungeon
         self._draw_location_connections(
-            draw, center_x, center_y + dungeon_height // 2, 0,
-            location_info, width, height, start_from_edge=True
+            draw,
+            center_x,
+            center_y + dungeon_height // 2,
+            0,
+            location_info,
+            width,
+            height,
+            start_from_edge=True,
         )
 
     def _draw_generic_map(self, draw, width, height, location_name, location_info):
@@ -1153,11 +1445,15 @@ class MapGenerator:
         location_color = self._get_location_color(location_name, is_current=True)
 
         draw.ellipse(
-            (center_x - location_radius, center_y - location_radius,
-             center_x + location_radius, center_y + location_radius),
+            (
+                center_x - location_radius,
+                center_y - location_radius,
+                center_x + location_radius,
+                center_y + location_radius,
+            ),
             fill=location_color,
             outline=self.map_style.border_color,
-            width=2
+            width=2,
         )
 
         # Add location name at center
@@ -1166,11 +1462,13 @@ class MapGenerator:
             (center_x - label_width // 2, center_y - label_height // 2),
             location_name,
             fill=self.map_style.text_color,
-            font=self.title_font
+            font=self.title_font,
         )
 
         # Draw paths to connected locations
-        self._draw_location_connections(draw, center_x, center_y, location_radius, location_info, width, height)
+        self._draw_location_connections(
+            draw, center_x, center_y, location_radius, location_info, width, height
+        )
 
     def _draw_castle_map(self, draw, width, height, location_name, location_info):
         """Draw a detailed map for a castle location."""
@@ -1183,11 +1481,15 @@ class MapGenerator:
 
         # Draw main castle walls (square)
         draw.rectangle(
-            (center_x - castle_width // 2, center_y - castle_height // 2,
-             center_x + castle_width // 2, center_y + castle_height // 2),
+            (
+                center_x - castle_width // 2,
+                center_y - castle_height // 2,
+                center_x + castle_width // 2,
+                center_y + castle_height // 2,
+            ),
             fill=(200, 200, 200),  # Light gray
             outline=wall_color,
-            width=3
+            width=3,
         )
 
         # Draw corner towers
@@ -1195,8 +1497,14 @@ class MapGenerator:
         tower_positions = [
             (center_x - castle_width // 2, center_y - castle_height // 2),  # Top-left
             (center_x + castle_width // 2, center_y - castle_height // 2),  # Top-right
-            (center_x - castle_width // 2, center_y + castle_height // 2),  # Bottom-left
-            (center_x + castle_width // 2, center_y + castle_height // 2)   # Bottom-right
+            (
+                center_x - castle_width // 2,
+                center_y + castle_height // 2,
+            ),  # Bottom-left
+            (
+                center_x + castle_width // 2,
+                center_y + castle_height // 2,
+            ),  # Bottom-right
         ]
 
         for tx, ty in tower_positions:
@@ -1204,38 +1512,48 @@ class MapGenerator:
                 (tx - tower_size, ty - tower_size, tx + tower_size, ty + tower_size),
                 fill=(150, 150, 150),  # Gray
                 outline=wall_color,
-                width=2
+                width=2,
             )
 
         # Draw central keep
         keep_size = castle_width // 3
         draw.rectangle(
-            (center_x - keep_size // 2, center_y - keep_size // 2,
-             center_x + keep_size // 2, center_y + keep_size // 2),
+            (
+                center_x - keep_size // 2,
+                center_y - keep_size // 2,
+                center_x + keep_size // 2,
+                center_y + keep_size // 2,
+            ),
             fill=(100, 100, 100),  # Dark gray
             outline=(0, 0, 0),
-            width=2
+            width=2,
         )
 
         # Draw keep roof (triangle)
         roof_height = keep_size // 2
         draw.polygon(
-            [(center_x - keep_size // 2, center_y - keep_size // 2),
-             (center_x + keep_size // 2, center_y - keep_size // 2),
-             (center_x, center_y - keep_size // 2 - roof_height)],
+            [
+                (center_x - keep_size // 2, center_y - keep_size // 2),
+                (center_x + keep_size // 2, center_y - keep_size // 2),
+                (center_x, center_y - keep_size // 2 - roof_height),
+            ],
             fill=(139, 0, 0),  # Dark red
-            outline=(0, 0, 0)
+            outline=(0, 0, 0),
         )
 
         # Draw castle gate
         gate_width = castle_width // 8
         gate_height = castle_height // 6
         draw.rectangle(
-            (center_x - gate_width // 2, center_y + castle_height // 2 - gate_height,
-             center_x + gate_width // 2, center_y + castle_height // 2),
+            (
+                center_x - gate_width // 2,
+                center_y + castle_height // 2 - gate_height,
+                center_x + gate_width // 2,
+                center_y + castle_height // 2,
+            ),
             fill=(0, 0, 0),
             outline=wall_color,
-            width=2
+            width=2,
         )
 
         # Add a label for the keep
@@ -1245,7 +1563,7 @@ class MapGenerator:
             (center_x - label_width // 2, center_y + 5),
             keep_label,
             fill=self.map_style.text_color,
-            font=self.location_font
+            font=self.location_font,
         )
 
         # Add a label for the gate
@@ -1255,17 +1573,34 @@ class MapGenerator:
             (center_x - label_width // 2, center_y + castle_height // 2 + 5),
             gate_label,
             fill=self.map_style.text_color,
-            font=self.location_font
+            font=self.location_font,
         )
 
         # Draw paths to connected locations from the gate
         self._draw_location_connections(
-            draw, center_x, center_y + castle_height // 2, 0,
-            location_info, width, height, start_from_edge=True
+            draw,
+            center_x,
+            center_y + castle_height // 2,
+            0,
+            location_info,
+            width,
+            height,
+            start_from_edge=True,
         )
 
-    def _draw_location_connections(self, draw, center_x, center_y, radius, location_info,
-                                  width, height, path_width=3, path_color=None, start_from_edge=False):
+    def _draw_location_connections(
+        self,
+        draw,
+        center_x,
+        center_y,
+        radius,
+        location_info,
+        width,
+        height,
+        path_width=3,
+        path_color=None,
+        start_from_edge=False,
+    ):
         """Helper method to draw connections to other locations."""
         if not path_color:
             path_color = self.map_style.path_color
@@ -1292,7 +1627,7 @@ class MapGenerator:
             draw.line(
                 (start_x, start_y, border_x, border_y),
                 fill=path_color,
-                width=path_width
+                width=path_width,
             )
 
             # Add a label for the connected location
@@ -1301,22 +1636,28 @@ class MapGenerator:
             label_y = center_y + label_dist * math.sin(angle)
 
             # Adjust label position for readability
-            label_width, label_height = draw.textsize(connected, font=self.location_font)
+            label_width, label_height = draw.textsize(
+                connected, font=self.location_font
+            )
             label_x -= label_width // 2
             label_y -= label_height // 2
 
             # Draw a small background for the text
             text_bg_padding = 3
             draw.rectangle(
-                (label_x - text_bg_padding, label_y - text_bg_padding,
-                 label_x + label_width + text_bg_padding, label_y + label_height + text_bg_padding),
+                (
+                    label_x - text_bg_padding,
+                    label_y - text_bg_padding,
+                    label_x + label_width + text_bg_padding,
+                    label_y + label_height + text_bg_padding,
+                ),
                 fill=(255, 255, 255, 180),
-                outline=self.map_style.border_color
+                outline=self.map_style.border_color,
             )
 
             draw.text(
                 (label_x, label_y),
                 connected,
                 fill=self.map_style.text_color,
-                font=self.location_font
+                font=self.location_font,
             )

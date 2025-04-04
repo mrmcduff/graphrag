@@ -3,6 +3,7 @@ import textwrap
 import time
 from typing import Dict, Any, Optional
 
+
 class OutputManager:
     """Class to handle formatting and display of game output."""
 
@@ -17,7 +18,9 @@ class OutputManager:
 
         # Set default configuration values
         self.width = self.config.get("width", 80)
-        self.delay = self.config.get("delay", 0.02)  # Delay between characters for typing effect
+        self.delay = self.config.get(
+            "delay", 0.02
+        )  # Delay between characters for typing effect
         self.use_color = self.config.get("use_color", True)
         self.wrap_text = self.config.get("wrap_text", True)
 
@@ -44,15 +47,35 @@ class OutputManager:
                 "bg_blue": "\033[44m",
                 "bg_magenta": "\033[45m",
                 "bg_cyan": "\033[46m",
-                "bg_white": "\033[47m"
+                "bg_white": "\033[47m",
             }
         else:
             # Empty color codes if color is disabled
-            self.colors = {k: "" for k in ["reset", "bold", "italic", "underline",
-                                          "black", "red", "green", "yellow", "blue",
-                                          "magenta", "cyan", "white", "bg_black",
-                                          "bg_red", "bg_green", "bg_yellow", "bg_blue",
-                                          "bg_magenta", "bg_cyan", "bg_white"]}
+            self.colors = {
+                k: ""
+                for k in [
+                    "reset",
+                    "bold",
+                    "italic",
+                    "underline",
+                    "black",
+                    "red",
+                    "green",
+                    "yellow",
+                    "blue",
+                    "magenta",
+                    "cyan",
+                    "white",
+                    "bg_black",
+                    "bg_red",
+                    "bg_green",
+                    "bg_yellow",
+                    "bg_blue",
+                    "bg_magenta",
+                    "bg_cyan",
+                    "bg_white",
+                ]
+            }
 
     def display_text(self, text: str, style: str = "normal") -> None:
         """
@@ -68,7 +91,9 @@ class OutputManager:
         elif style == "system":
             styled_text = f"{self.colors['italic']}{self.colors['cyan']}{text}{self.colors['reset']}"
         elif style == "error":
-            styled_text = f"{self.colors['bold']}{self.colors['red']}{text}{self.colors['reset']}"
+            styled_text = (
+                f"{self.colors['bold']}{self.colors['red']}{text}{self.colors['reset']}"
+            )
         else:
             styled_text = text
 
@@ -122,7 +147,9 @@ class OutputManager:
                     self.display_text(health_display, "system")
             else:
                 # Combat ended
-                style = "important" if result.get("combat_result") == "victory" else "error"
+                style = (
+                    "important" if result.get("combat_result") == "victory" else "error"
+                )
                 self.display_text(message, style)
 
         elif action_type == "inventory":
@@ -164,9 +191,9 @@ class OutputManager:
         if self.use_color:
             separator = f"{self.colors['cyan']}{'-' * self.width}{self.colors['reset']}"
         else:
-            separator = '-' * self.width
+            separator = "-" * self.width
         print(separator)
 
     def clear_screen(self) -> None:
         """Clear the terminal screen."""
-        os.system('cls' if os.name == 'nt' else 'clear')
+        os.system("cls" if os.name == "nt" else "clear")

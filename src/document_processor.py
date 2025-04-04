@@ -9,6 +9,7 @@ from concurrent.futures import ProcessPoolExecutor
 import matplotlib.pyplot as plt
 from typing import List, Dict, Tuple, Set
 
+
 # Step 1: Read text from Word documents
 def extract_text_from_docx(file_path: str) -> str:
     """
@@ -34,10 +35,11 @@ def extract_text_from_docx(file_path: str) -> str:
                 for cell in row.cells:
                     full_text.append(cell.text)
 
-        return '\n'.join(full_text)
+        return "\n".join(full_text)
     except Exception as e:
         print(f"Error processing {file_path}: {e}")
         return ""
+
 
 def process_documents(directory: str) -> pd.DataFrame:
     """
@@ -52,7 +54,7 @@ def process_documents(directory: str) -> pd.DataFrame:
     results = []
 
     # Get all docx files in the directory
-    docx_files = [f for f in os.listdir(directory) if f.endswith('.docx')]
+    docx_files = [f for f in os.listdir(directory) if f.endswith(".docx")]
 
     print(f"Found {len(docx_files)} Word documents to process")
 
@@ -62,13 +64,11 @@ def process_documents(directory: str) -> pd.DataFrame:
         content = extract_text_from_docx(file_path)
 
         if content:  # Only add if we got content
-            results.append({
-                'filename': filename,
-                'content': content
-            })
+            results.append({"filename": filename, "content": content})
 
     # Convert to DataFrame
     return pd.DataFrame(results)
+
 
 # Step 2: Chunk text for encoder input
 def chunk_text(text: str, chunk_size: int = 512, overlap: int = 50) -> List[str]:
@@ -95,7 +95,7 @@ def chunk_text(text: str, chunk_size: int = 512, overlap: int = 50) -> List[str]
     while start < len(words):
         # Get chunk of words
         end = min(start + chunk_size, len(words))
-        chunk = ' '.join(words[start:end])
+        chunk = " ".join(words[start:end])
         chunks.append(chunk)
 
         # Move start position for next chunk, accounting for overlap
@@ -103,7 +103,10 @@ def chunk_text(text: str, chunk_size: int = 512, overlap: int = 50) -> List[str]
 
     return chunks
 
-def process_documents_with_chunking(directory: str, chunk_size: int = 512, overlap: int = 50) -> pd.DataFrame:
+
+def process_documents_with_chunking(
+    directory: str, chunk_size: int = 512, overlap: int = 50
+) -> pd.DataFrame:
     """
     Process all Word documents in a directory and chunk their content.
 
@@ -121,19 +124,21 @@ def process_documents_with_chunking(directory: str, chunk_size: int = 512, overl
     # Then chunk each document
     results = []
 
-    for _, row in tqdm(df_documents.iterrows(), desc="Chunking documents", total=len(df_documents)):
-        chunks = chunk_text(row['content'], chunk_size, overlap)
+    for _, row in tqdm(
+        df_documents.iterrows(), desc="Chunking documents", total=len(df_documents)
+    ):
+        chunks = chunk_text(row["content"], chunk_size, overlap)
 
         for i, chunk in enumerate(chunks):
-            results.append({
-                'filename': row['filename'],
-                'chunk_id': i,
-                'chunk_text': chunk
-            })
+            results.append(
+                {"filename": row["filename"], "chunk_id": i, "chunk_text": chunk}
+            )
 
     return pd.DataFrame(results)
 
+
 # Step 3: Create entity-relation mapping (knowledge graph)
+
 
 def initialize_nlp():
     """
@@ -148,16 +153,19 @@ def initialize_nlp():
         nlp = spacy.load("en_core_web_lg")
 
         # Add the dependency parse and entity recognition components if not present
-        if 'parser' not in nlp.pipe_names:
-            nlp.add_pipe('parser')
-        if 'ner' not in nlp.pipe_names:
-            nlp.add_pipe('ner')
+        if "parser" not in nlp.pipe_names:
+            nlp.add_pipe("parser")
+        if "ner" not in nlp.pipe_names:
+            nlp.add_pipe("ner")
 
         return nlp
     except Exception as e:
         print(f"Error initializing spaCy: {e}")
-        print("Make sure to install spaCy and download the model: python -m spacy download en_core_web_lg")
+        print(
+            "Make sure to install spaCy and download the model: python -m spacy download en_core_web_lg"
+        )
         raise
+
 
 def extract_entities_and_relations(text: str, nlp) -> Tuple[List[Dict], List[Dict]]:
     """
@@ -176,38 +184,45 @@ def extract_entities_and_relations(text: str, nlp) -> Tuple[List[Dict], List[Dic
     # Extract entities
     entities = []
     for ent in doc.ents:
-        entities.append({
-            'id': ent.text.lower().replace(' ', '_'),
-            'text': ent.text,
-            'label': ent.label_,
-            'start': ent.start_char,
-            'end': ent.end_char
-        })
+        entities.append(
+            {
+                "id": ent.text.lower().replace(" ", "_"),
+                "text": ent.text,
+                "label": ent.label_,
+                "start": ent.start_char,
+                "end": ent.end_char,
+            }
+        )
 
     # Extract relations using dependency parsing
     relations = []
 
     # Focus on subject-verb-object structures
     for token in doc:
-        if token.dep_ in ('nsubj', 'nsubjpass') and token.head.pos_ == 'VERB':
+        if token.dep_ in ("nsubj", "nsubjpass") and token.head.pos_ == "VERB":
             # Found a subject-verb relation
             subject = token.text
             verb = token.head.text
 
             # Look for an object
             for child in token.head.children:
-                if child.dep_ in ('dobj', 'pobj'):
+                if child.dep_ in ("dobj", "pobj"):
                     obj = child.text
-                    relations.append({
-                        'subject': subject.lower(),
-                        'predicate': verb.lower(),
-                        'object': obj.lower(),
-                        'sentence': token.sent.text
-                    })
+                    relations.append(
+                        {
+                            "subject": subject.lower(),
+                            "predicate": verb.lower(),
+                            "object": obj.lower(),
+                            "sentence": token.sent.text,
+                        }
+                    )
 
     return entities, relations
 
-def build_knowledge_graph(df_chunks: pd.DataFrame) -> Tuple[nx.Graph, pd.DataFrame, pd.DataFrame]:
+
+def build_knowledge_graph(
+    df_chunks: pd.DataFrame,
+) -> Tuple[nx.Graph, pd.DataFrame, pd.DataFrame]:
     """
     Build a knowledge graph from document chunks.
 
@@ -227,17 +242,21 @@ def build_knowledge_graph(df_chunks: pd.DataFrame) -> Tuple[nx.Graph, pd.DataFra
     all_relations = []
 
     # Process each chunk
-    for _, row in tqdm(df_chunks.iterrows(), desc="Extracting entities and relations", total=len(df_chunks)):
-        entities, relations = extract_entities_and_relations(row['chunk_text'], nlp)
+    for _, row in tqdm(
+        df_chunks.iterrows(),
+        desc="Extracting entities and relations",
+        total=len(df_chunks),
+    ):
+        entities, relations = extract_entities_and_relations(row["chunk_text"], nlp)
 
         # Add source information to entities and relations
         for entity in entities:
-            entity['source_file'] = row['filename']
-            entity['chunk_id'] = row['chunk_id']
+            entity["source_file"] = row["filename"]
+            entity["chunk_id"] = row["chunk_id"]
 
         for relation in relations:
-            relation['source_file'] = row['filename']
-            relation['chunk_id'] = row['chunk_id']
+            relation["source_file"] = row["filename"]
+            relation["chunk_id"] = row["chunk_id"]
 
         all_entities.extend(entities)
         all_relations.extend(relations)
@@ -248,32 +267,31 @@ def build_knowledge_graph(df_chunks: pd.DataFrame) -> Tuple[nx.Graph, pd.DataFra
 
     # Remove duplicates
     if not df_entities.empty:
-        df_entities.drop_duplicates(subset=['id'], inplace=True)
+        df_entities.drop_duplicates(subset=["id"], inplace=True)
 
     if not df_relations.empty:
-        df_relations.drop_duplicates(subset=['subject', 'predicate', 'object'], inplace=True)
+        df_relations.drop_duplicates(
+            subset=["subject", "predicate", "object"], inplace=True
+        )
 
     # Create NetworkX graph
     G = nx.Graph()
 
     # Add entities as nodes
     for _, entity in df_entities.iterrows():
-        G.add_node(entity['id'],
-                  label=entity['text'],
-                  type=entity['label'])
+        G.add_node(entity["id"], label=entity["text"], type=entity["label"])
 
     # Add relations as edges
     for _, relation in df_relations.iterrows():
-        subject_id = relation['subject'].replace(' ', '_')
-        object_id = relation['object'].replace(' ', '_')
+        subject_id = relation["subject"].replace(" ", "_")
+        object_id = relation["object"].replace(" ", "_")
 
         # Only add edge if both nodes exist
         if subject_id in G.nodes and object_id in G.nodes:
-            G.add_edge(subject_id,
-                      object_id,
-                      relation=relation['predicate'])
+            G.add_edge(subject_id, object_id, relation=relation["predicate"])
 
     return G, df_entities, df_relations
+
 
 def visualize_graph(G: nx.Graph, max_nodes: int = 50):
     """
@@ -291,16 +309,27 @@ def visualize_graph(G: nx.Graph, max_nodes: int = 50):
     plt.figure(figsize=(12, 12))
     pos = nx.spring_layout(G)
 
-    nx.draw(G, pos, with_labels=True, node_color='skyblue',
-            node_size=1500, edge_color='gray', linewidths=1,
-            font_size=10, font_weight='bold')
+    nx.draw(
+        G,
+        pos,
+        with_labels=True,
+        node_color="skyblue",
+        node_size=1500,
+        edge_color="gray",
+        linewidths=1,
+        font_size=10,
+        font_weight="bold",
+    )
 
     plt.title(f"Knowledge Graph (showing {len(G.nodes)} nodes)")
     plt.tight_layout()
     plt.savefig("knowledge_graph.png", format="PNG", dpi=300)
     plt.show()
 
-def extract_game_elements(G: nx.Graph, df_entities: pd.DataFrame, df_relations: pd.DataFrame) -> Dict:
+
+def extract_game_elements(
+    G: nx.Graph, df_entities: pd.DataFrame, df_relations: pd.DataFrame
+) -> Dict:
     """
     Extract specific game elements from the knowledge graph.
 
@@ -313,46 +342,50 @@ def extract_game_elements(G: nx.Graph, df_entities: pd.DataFrame, df_relations: 
         Dictionary containing game elements
     """
     game_elements = {
-        'locations': set(),
-        'characters': set(),
-        'items': set(),
-        'actions': set(),
-        'character_relations': [],
-        'location_connections': []
+        "locations": set(),
+        "characters": set(),
+        "items": set(),
+        "actions": set(),
+        "character_relations": [],
+        "location_connections": [],
     }
 
     # Extract locations (GPE, LOC, FAC entities)
-    location_types = ['GPE', 'LOC', 'FAC']
+    location_types = ["GPE", "LOC", "FAC"]
     for _, entity in df_entities.iterrows():
-        if entity['label'] in location_types:
-            game_elements['locations'].add(entity['text'])
+        if entity["label"] in location_types:
+            game_elements["locations"].add(entity["text"])
 
     # Extract characters (PERSON entities)
     for _, entity in df_entities.iterrows():
-        if entity['label'] == 'PERSON':
-            game_elements['characters'].add(entity['text'])
+        if entity["label"] == "PERSON":
+            game_elements["characters"].add(entity["text"])
 
     # Extract items (potential objects)
     for _, relation in df_relations.iterrows():
-        if relation['predicate'] in ['have', 'carry', 'hold', 'own', 'possess']:
-            game_elements['items'].add(relation['object'])
+        if relation["predicate"] in ["have", "carry", "hold", "own", "possess"]:
+            game_elements["items"].add(relation["object"])
 
     # Extract actions (verbs in relations)
     for _, relation in df_relations.iterrows():
-        game_elements['actions'].add(relation['predicate'])
+        game_elements["actions"].add(relation["predicate"])
 
     # Extract character relations
     for _, relation in df_relations.iterrows():
-        if relation['subject'] in game_elements['characters'] and relation['object'] in game_elements['characters']:
-            game_elements['character_relations'].append(relation)
+        if (
+            relation["subject"] in game_elements["characters"]
+            and relation["object"] in game_elements["characters"]
+        ):
+            game_elements["character_relations"].append(relation)
 
     # Convert sets to lists for JSON serialization
-    game_elements['locations'] = list(game_elements['locations'])
-    game_elements['characters'] = list(game_elements['characters'])
-    game_elements['items'] = list(game_elements['items'])
-    game_elements['actions'] = list(game_elements['actions'])
+    game_elements["locations"] = list(game_elements["locations"])
+    game_elements["characters"] = list(game_elements["characters"])
+    game_elements["items"] = list(game_elements["items"])
+    game_elements["actions"] = list(game_elements["actions"])
 
     return game_elements
+
 
 # Example usage
 # nlp = initialize_nlp()
@@ -363,7 +396,13 @@ def extract_game_elements(G: nx.Graph, df_entities: pd.DataFrame, df_relations: 
 # game_elements = extract_game_elements(G, df_entities, df_relations)
 # print(f"Extracted {len(game_elements['locations'])} locations, {len(game_elements['characters'])} characters")
 
-def main(documents_dir: str, output_dir: str = "output", chunk_size: int = 512, overlap: int = 50):
+
+def main(
+    documents_dir: str,
+    output_dir: str = "output",
+    chunk_size: int = 512,
+    overlap: int = 50,
+):
     """
     Run the complete pipeline from document processing to game element extraction.
 
@@ -379,7 +418,9 @@ def main(documents_dir: str, output_dir: str = "output", chunk_size: int = 512, 
     print("Step 1: Processing documents...")
     df_chunks = process_documents_with_chunking(documents_dir, chunk_size, overlap)
     df_chunks.to_csv(os.path.join(output_dir, "document_chunks.csv"), index=False)
-    print(f"Created {len(df_chunks)} chunks from {df_chunks['filename'].nunique()} documents")
+    print(
+        f"Created {len(df_chunks)} chunks from {df_chunks['filename'].nunique()} documents"
+    )
 
     print("\nStep 2: Building knowledge graph...")
     G, df_entities, df_relations = build_knowledge_graph(df_chunks)
@@ -399,20 +440,25 @@ def main(documents_dir: str, output_dir: str = "output", chunk_size: int = 512, 
     game_elements = extract_game_elements(G, df_entities, df_relations)
 
     # Save game elements as CSV files
-    pd.DataFrame(game_elements['locations'], columns=['location']).to_csv(
-        os.path.join(output_dir, "game_locations.csv"), index=False)
+    pd.DataFrame(game_elements["locations"], columns=["location"]).to_csv(
+        os.path.join(output_dir, "game_locations.csv"), index=False
+    )
 
-    pd.DataFrame(game_elements['characters'], columns=['character']).to_csv(
-        os.path.join(output_dir, "game_characters.csv"), index=False)
+    pd.DataFrame(game_elements["characters"], columns=["character"]).to_csv(
+        os.path.join(output_dir, "game_characters.csv"), index=False
+    )
 
-    pd.DataFrame(game_elements['items'], columns=['item']).to_csv(
-        os.path.join(output_dir, "game_items.csv"), index=False)
+    pd.DataFrame(game_elements["items"], columns=["item"]).to_csv(
+        os.path.join(output_dir, "game_items.csv"), index=False
+    )
 
-    pd.DataFrame(game_elements['actions'], columns=['action']).to_csv(
-        os.path.join(output_dir, "game_actions.csv"), index=False)
+    pd.DataFrame(game_elements["actions"], columns=["action"]).to_csv(
+        os.path.join(output_dir, "game_actions.csv"), index=False
+    )
 
-    pd.DataFrame(game_elements['character_relations']).to_csv(
-        os.path.join(output_dir, "game_character_relations.csv"), index=False)
+    pd.DataFrame(game_elements["character_relations"]).to_csv(
+        os.path.join(output_dir, "game_character_relations.csv"), index=False
+    )
 
     print(f"\nExtracted game elements:")
     print(f"- {len(game_elements['locations'])} locations")
@@ -423,14 +469,25 @@ def main(documents_dir: str, output_dir: str = "output", chunk_size: int = 512, 
 
     print(f"\nAll results saved to {output_dir}/")
 
+
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="Process Word documents for a GraphRAG-based text adventure game")
-    parser.add_argument("--documents_dir", required=True, help="Directory containing Word documents")
-    parser.add_argument("--output_dir", default="output", help="Directory to save output files")
-    parser.add_argument("--chunk_size", type=int, default=512, help="Maximum chunk size in tokens")
-    parser.add_argument("--overlap", type=int, default=50, help="Overlap between chunks in tokens")
+    parser = argparse.ArgumentParser(
+        description="Process Word documents for a GraphRAG-based text adventure game"
+    )
+    parser.add_argument(
+        "--documents_dir", required=True, help="Directory containing Word documents"
+    )
+    parser.add_argument(
+        "--output_dir", default="output", help="Directory to save output files"
+    )
+    parser.add_argument(
+        "--chunk_size", type=int, default=512, help="Maximum chunk size in tokens"
+    )
+    parser.add_argument(
+        "--overlap", type=int, default=50, help="Overlap between chunks in tokens"
+    )
 
     args = parser.parse_args()
 

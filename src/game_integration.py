@@ -2,6 +2,7 @@
 from map_generator import MapGenerator
 from combat.combat_system import CombatSystem, CombatStatus
 
+
 # Modify the TextAdventureGame class to include the new systems
 class TextAdventureGame:
     """Main class for running the text adventure game."""
@@ -68,7 +69,10 @@ class TextAdventureGame:
 
         elif choice == "3":
             api_key = input("Enter OpenAI API key: ").strip()
-            model = input("Enter model name (default: gpt-3.5-turbo): ").strip() or "gpt-3.5-turbo"
+            model = (
+                input("Enter model name (default: gpt-3.5-turbo): ").strip()
+                or "gpt-3.5-turbo"
+            )
 
             if api_key:
                 provider = OpenAIProvider(api_key=api_key, model=model)
@@ -81,7 +85,10 @@ class TextAdventureGame:
 
         elif choice == "4":
             api_key = input("Enter Anthropic API key: ").strip()
-            model = input("Enter model name (default: claude-3-haiku-20240307): ").strip() or "claude-3-haiku-20240307"
+            model = (
+                input("Enter model name (default: claude-3-haiku-20240307): ").strip()
+                or "claude-3-haiku-20240307"
+            )
 
             if api_key:
                 provider = AnthropicProvider(api_key=api_key, model=model)
@@ -94,7 +101,10 @@ class TextAdventureGame:
 
         elif choice == "5":
             api_key = input("Enter Google API key: ").strip()
-            model = input("Enter model name (default: gemini-pro): ").strip() or "gemini-pro"
+            model = (
+                input("Enter model name (default: gemini-pro): ").strip()
+                or "gemini-pro"
+            )
 
             if api_key:
                 provider = GoogleProvider(api_key=api_key, model=model)
@@ -123,17 +133,17 @@ class TextAdventureGame:
         self.running = True
 
         # Display welcome message
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("Welcome to the Text Adventure Game with GraphRAG!")
         print("Type 'help' for commands or 'quit' to exit.")
-        print("="*60 + "\n")
+        print("=" * 60 + "\n")
 
         # Show initial location
         initial_context = self.game_state.get_current_context()
         print(f"You find yourself in {initial_context['player']['location']}.")
 
-        if initial_context['npcs_present']:
-            npcs = list(initial_context['npcs_present'].keys())
+        if initial_context["npcs_present"]:
+            npcs = list(initial_context["npcs_present"].keys())
             print(f"You can see: {', '.join(npcs)}.")
 
         print("\nWhat would you like to do?")
@@ -280,7 +290,11 @@ class TextAdventureGame:
             action, target = command_lower.split(" ", 1)
 
         # Process combat action
-        if action in ["attack", "block", "dodge", "flee"] or action in ["use", "cast"] and target:
+        if (
+            action in ["attack", "block", "dodge", "flee"]
+            or action in ["use", "cast"]
+            and target
+        ):
             result = self.combat_system.process_combat_action(action, target)
 
             # Display combat log
@@ -299,12 +313,18 @@ class TextAdventureGame:
                     print(f"\nYou have defeated {end_result['enemy']}!")
 
                     if "experience_gained" in end_result:
-                        print(f"You gained {end_result['experience_gained']} experience.")
+                        print(
+                            f"You gained {end_result['experience_gained']} experience."
+                        )
 
                     if "drops" in end_result:
                         print(f"You obtained: {', '.join(end_result['drops'])}")
 
-                    if "player_level" in end_result and end_result["player_level"] > self.combat_system.player_stats["level"]:
+                    if (
+                        "player_level" in end_result
+                        and end_result["player_level"]
+                        > self.combat_system.player_stats["level"]
+                    ):
                         print(f"You leveled up to level {end_result['player_level']}!")
 
                 elif end_result["status"] == "player_defeated":
@@ -360,7 +380,11 @@ class TextAdventureGame:
         available_providers = self.llm_manager.get_available_providers()
         print("\nConfigured LLM providers:")
         for i, (provider_type, provider_name) in enumerate(available_providers, 1):
-            active = " (active)" if self.llm_manager.active_provider.name == provider_name else ""
+            active = (
+                " (active)"
+                if self.llm_manager.active_provider.name == provider_name
+                else ""
+            )
             print(f"{i}. {provider_name}{active}")
 
     def _show_map(self):
@@ -374,13 +398,25 @@ class TextAdventureGame:
             print("Locations you've visited:")
 
             for i, location in enumerate(sorted(self.game_state.visited_locations), 1):
-                current = " (You are here)" if location == self.game_state.player_location else ""
+                current = (
+                    " (You are here)"
+                    if location == self.game_state.player_location
+                    else ""
+                )
                 print(f"{i}. {location}{current}")
 
             print("\nConnected locations:")
-            location_info = self.map_generator._get_location_info(self.game_state.player_location)
-            for i, connected in enumerate(sorted(location_info["connected_locations"]), 1):
-                visited = " (Visited)" if connected in self.game_state.visited_locations else ""
+            location_info = self.map_generator._get_location_info(
+                self.game_state.player_location
+            )
+            for i, connected in enumerate(
+                sorted(location_info["connected_locations"]), 1
+            ):
+                visited = (
+                    " (Visited)"
+                    if connected in self.game_state.visited_locations
+                    else ""
+                )
                 print(f"{i}. {connected}{visited}")
 
         except Exception as e:
@@ -390,22 +426,32 @@ class TextAdventureGame:
         """Display a detailed map of the current location."""
         try:
             # Generate detailed map of current location
-            map_path = self.map_generator.generate_zoomed_map(self.game_state.player_location)
+            map_path = self.map_generator.generate_zoomed_map(
+                self.game_state.player_location
+            )
 
             # In a terminal, we can't show the actual image, so provide information
-            print(f"Local map of {self.game_state.player_location} has been generated and saved to: {map_path}")
+            print(
+                f"Local map of {self.game_state.player_location} has been generated and saved to: {map_path}"
+            )
             print("Points of interest:")
 
             # Define some generic points of interest based on location type
             location_type = self.map_generator.location_types.get(
-                self.game_state.player_location, "default")
+                self.game_state.player_location, "default"
+            )
 
             if location_type == "town":
                 points = ["Town Square", "Marketplace", "Inn", "Blacksmith"]
             elif location_type == "forest":
                 points = ["Clearing", "Ancient Tree", "Stream", "Dense Woods"]
             elif location_type == "mountain":
-                points = ["Mountain Pass", "Lookout Point", "Cave Entrance", "Rocky Slope"]
+                points = [
+                    "Mountain Pass",
+                    "Lookout Point",
+                    "Cave Entrance",
+                    "Rocky Slope",
+                ]
             elif location_type == "water":
                 points = ["Shore", "Deep Water", "Small Island", "Current"]
             elif location_type == "dungeon":
@@ -419,8 +465,11 @@ class TextAdventureGame:
                 print(f"{i}. {point}")
 
             print("\nCharacters present:")
-            npcs_here = [npc for npc, data in self.game_state.npc_states.items()
-                        if data["location"] == self.game_state.player_location]
+            npcs_here = [
+                npc
+                for npc, data in self.game_state.npc_states.items()
+                if data["location"] == self.game_state.player_location
+            ]
 
             if npcs_here:
                 for i, npc in enumerate(npcs_here, 1):
@@ -536,8 +585,12 @@ class TextAdventureGame:
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="Run a GraphRAG-based text adventure game with flexible LLM options")
-    parser.add_argument("--game_data_dir", required=True, help="Directory containing game data files")
+    parser = argparse.ArgumentParser(
+        description="Run a GraphRAG-based text adventure game with flexible LLM options"
+    )
+    parser.add_argument(
+        "--game_data_dir", required=True, help="Directory containing game data files"
+    )
 
     args = parser.parse_args()
 

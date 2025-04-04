@@ -2,6 +2,7 @@ import requests
 from typing import Dict, Any
 from .base import LLMProvider
 
+
 class OpenAIProvider(LLMProvider):
     """Provider for OpenAI API."""
 
@@ -19,7 +20,9 @@ class OpenAIProvider(LLMProvider):
         self.model = model
         self.api_url = "https://api.openai.com/v1/chat/completions"
 
-    def generate_text(self, prompt: str, max_tokens: int = 500, temperature: float = 0.7) -> str:
+    def generate_text(
+        self, prompt: str, max_tokens: int = 500, temperature: float = 0.7
+    ) -> str:
         """
         Generate text using OpenAI API.
 
@@ -36,18 +39,21 @@ class OpenAIProvider(LLMProvider):
                 self.api_url,
                 headers={
                     "Authorization": f"Bearer {self.api_key}",
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
                 },
                 json={
                     "model": self.model,
                     "messages": [
-                        {"role": "system", "content": "You are an AI game master for a text adventure game. Provide immersive, descriptive responses based on the game world context."},
-                        {"role": "user", "content": prompt}
+                        {
+                            "role": "system",
+                            "content": "You are an AI game master for a text adventure game. Provide immersive, descriptive responses based on the game world context.",
+                        },
+                        {"role": "user", "content": prompt},
                     ],
                     "max_tokens": max_tokens,
-                    "temperature": temperature
+                    "temperature": temperature,
                 },
-                timeout=30
+                timeout=30,
             )
 
             if response.status_code == 200:

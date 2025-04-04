@@ -5,4 +5,4 @@ GraphRAG module for GraphRAG text adventure game.
 
 from .graph_rag_engine import GraphRAGEngine
 
-__all__ = ['GraphRAGEngine']
+__all__ = ["GraphRAGEngine"]

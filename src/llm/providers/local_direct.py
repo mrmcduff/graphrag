@@ -1,6 +1,7 @@
 from typing import Dict, Any, Optional
 from .base import LLMProvider
 
+
 class LocalDirectProvider(LLMProvider):
     """Provider for directly loaded local models."""
 
@@ -25,11 +26,7 @@ class LocalDirectProvider(LLMProvider):
                 from llama_cpp import Llama
 
                 print(f"Loading model from {self.model_path}...")
-                self.model = Llama(
-                    model_path=self.model_path,
-                    n_ctx=4096,
-                    n_threads=4
-                )
+                self.model = Llama(model_path=self.model_path, n_ctx=4096, n_threads=4)
                 print("Model loaded successfully with llama-cpp-python")
                 return
             except ImportError:
@@ -41,8 +38,7 @@ class LocalDirectProvider(LLMProvider):
 
                 print(f"Loading model using ctransformers from {self.model_path}...")
                 self.model = AutoModelForCausalLM.from_pretrained(
-                    self.model_path,
-                    model_type="llama"
+                    self.model_path, model_type="llama"
                 )
                 print("Model loaded successfully with ctransformers")
                 return
@@ -50,16 +46,21 @@ class LocalDirectProvider(LLMProvider):
                 print("ctransformers not found, trying alternative libraries...")
 
             # If we got here, no suitable library was found
-            print("No supported local model library found. Please install llama-cpp-python or ctransformers.")
+            print(
+                "No supported local model library found. Please install llama-cpp-python or ctransformers."
+            )
             self.model = None
 
         except Exception as e:
             print(f"Error loading model: {e}")
             import traceback
+
             traceback.print_exc()
             self.model = None
 
-    def generate_text(self, prompt: str, max_tokens: int = 500, temperature: float = 0.7) -> str:
+    def generate_text(
+        self, prompt: str, max_tokens: int = 500, temperature: float = 0.7
+    ) -> str:
         """
         Generate text using the directly loaded model.
 
@@ -80,19 +81,15 @@ class LocalDirectProvider(LLMProvider):
             full_prompt = f"{system_prompt}\n\n{prompt}"
 
             # Handle different model interfaces
-            if hasattr(self.model, '__call__'):  # For llama_cpp.Llama
+            if hasattr(self.model, "__call__"):  # For llama_cpp.Llama
                 output = self.model(
-                    prompt=full_prompt,
-                    max_tokens=max_tokens,
-                    temperature=temperature
+                    prompt=full_prompt, max_tokens=max_tokens, temperature=temperature
                 )
                 return output["choices"][0]["text"]
 
-            elif hasattr(self.model, 'generate'):  # For ctransformers
+            elif hasattr(self.model, "generate"):  # For ctransformers
                 output = self.model.generate(
-                    full_prompt,
-                    max_new_tokens=max_tokens,
-                    temperature=temperature
+                    full_prompt, max_new_tokens=max_tokens, temperature=temperature
                 )
                 return output
 
@@ -102,5 +99,6 @@ class LocalDirectProvider(LLMProvider):
         except Exception as e:
             print(f"Error generating with local model: {e}")
             import traceback
+
             traceback.print_exc()
             return "[Error generating response with local model]"

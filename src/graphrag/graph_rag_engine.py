@@ -5,6 +5,7 @@ from typing import Dict, List, Any, Set, Optional, Tuple
 import time
 import re
 
+
 class GraphRAGEngine:
     """Class to handle retrieval-augmented generation using the knowledge graph."""
 
@@ -33,13 +34,17 @@ class GraphRAGEngine:
             print(f"Loaded {len(self.chunks_df)} document chunks")
         else:
             print(f"Warning: Document chunks file not found at {chunks_path}")
-            self.chunks_df = pd.DataFrame(columns=['filename', 'chunk_id', 'chunk_text'])
+            self.chunks_df = pd.DataFrame(
+                columns=["filename", "chunk_id", "chunk_text"]
+            )
 
         # Load the knowledge graph
         graph_path = os.path.join(self.game_data_dir, "knowledge_graph.gexf")
         if os.path.exists(graph_path):
             self.graph = nx.read_gexf(graph_path)
-            print(f"Loaded knowledge graph with {len(self.graph.nodes)} nodes and {len(self.graph.edges)} edges")
+            print(
+                f"Loaded knowledge graph with {len(self.graph.nodes)} nodes and {len(self.graph.edges)} edges"
+            )
         else:
             print(f"Warning: Knowledge graph file not found at {graph_path}")
             self.graph = nx.Graph()
@@ -51,7 +56,9 @@ class GraphRAGEngine:
             print(f"Loaded {len(self.entities_df)} entities")
         else:
             print(f"Warning: Entities file not found at {entities_path}")
-            self.entities_df = pd.DataFrame(columns=['id', 'text', 'label', 'source_file', 'chunk_id'])
+            self.entities_df = pd.DataFrame(
+                columns=["id", "text", "label", "source_file", "chunk_id"]
+            )
 
         relations_path = os.path.join(self.game_data_dir, "relations.csv")
         if os.path.exists(relations_path):
@@ -59,8 +66,16 @@ class GraphRAGEngine:
             print(f"Loaded {len(self.relations_df)} relations")
         else:
             print(f"Warning: Relations file not found at {relations_path}")
-            self.relations_df = pd.DataFrame(columns=['subject', 'predicate', 'object', 'sentence',
-                                                     'source_file', 'chunk_id'])
+            self.relations_df = pd.DataFrame(
+                columns=[
+                    "subject",
+                    "predicate",
+                    "object",
+                    "sentence",
+                    "source_file",
+                    "chunk_id",
+                ]
+            )
 
     def retrieve_relevant_context(self, query: str, state, top_k: int = 3) -> List[str]:
         """
@@ -78,16 +93,19 @@ class GraphRAGEngine:
         query_terms = set(query.lower().split())
 
         # Get entities related to current location
-        location_id = state.player_location.lower().replace(' ', '_')
+        location_id = state.player_location.lower().replace(" ", "_")
         location_related_entities = self._get_related_entities(location_id)
 
         # Get entities related to NPCs in current location
         npc_related_entities = set()
-        npcs_here = [npc for npc, data in state.npc_states.items()
-                    if data["location"] == state.player_location]
+        npcs_here = [
+            npc
+            for npc, data in state.npc_states.items()
+            if data["location"] == state.player_location
+        ]
 
         for npc in npcs_here:
-            npc_id = npc.lower().replace(' ', '_')
+            npc_id = npc.lower().replace(" ", "_")
             npc_related_entities.update(self._get_related_entities(npc_id))
 
         # Get entities related to world events
@@ -101,7 +119,7 @@ class GraphRAGEngine:
         # Get entities related to player inventory
         inventory_related_entities = set()
         for item in state.inventory:
-            item_id = item.lower().replace(' ', '_')
+            item_id = item.lower().replace(" ", "_")
             inventory_related_entities.update(self._get_related_entities(item_id))
 
         # Combine all search terms
@@ -109,7 +127,7 @@ class GraphRAGEngine:
             location_related_entities,
             npc_related_entities,
             event_related_entities,
-            inventory_related_entities
+            inventory_related_entities,
         )
 
         # Simple search functionality - find chunks containing the search terms
@@ -119,7 +137,11 @@ class GraphRAGEngine:
 
         if not self.chunks_df.empty:
             for _, row in self.chunks_df.iterrows():
-                chunk_text = row['chunk_text'].lower() if isinstance(row['chunk_text'], str) else ""
+                chunk_text = (
+                    row["chunk_text"].lower()
+                    if isinstance(row["chunk_text"], str)
+                    else ""
+                )
                 score = sum(1 for term in search_terms if term in chunk_text)
 
                 # Boost score for chunks that match multiple terms
@@ -135,16 +157,20 @@ class GraphRAGEngine:
                         score += 1.5
 
                 if score > 0:
-                    relevant_chunks.append(row['chunk_text'])
+                    relevant_chunks.append(row["chunk_text"])
                     scores.append(score)
 
         # Sort chunks by relevance score and take top-k
         if relevant_chunks:
-            sorted_chunks = [x for _, x in sorted(zip(scores, relevant_chunks), reverse=True)]
+            sorted_chunks = [
+                x for _, x in sorted(zip(scores, relevant_chunks), reverse=True)
+            ]
             return sorted_chunks[:top_k]
 
         # Fallback to current location description if no relevant chunks found
-        return [f"You are in {state.player_location}. There are {len(npcs_here)} characters here."]
+        return [
+            f"You are in {state.player_location}. There are {len(npcs_here)} characters here."
+        ]
 
     def _get_related_entities(self, entity_id: str) -> Set[str]:
         """
@@ -162,8 +188,8 @@ class GraphRAGEngine:
             # Get nodes connected to entity
             for neighbor in self.graph.neighbors(entity_id):
                 node_data = self.graph.nodes[neighbor]
-                if 'label' in node_data:
-                    related_entities.add(node_data['label'].lower())
+                if "label" in node_data:
+                    related_entities.add(node_data["label"].lower())
 
                     # Also add ID as a term (useful for matching with underscores)
                     related_entities.add(neighbor.lower())
@@ -209,7 +235,13 @@ class GraphRAGEngine:
 
         return response
 
-    def _construct_prompt(self, query: str, context: Dict, relevant_chunks: List[str], action_success: bool) -> str:
+    def _construct_prompt(
+        self,
+        query: str,
+        context: Dict,
+        relevant_chunks: List[str],
+        action_success: bool,
+    ) -> str:
         """
         Construct a prompt for the language model.
 
@@ -233,7 +265,11 @@ class GraphRAGEngine:
             context_text = context_text[:2000] + "..."
 
         # Format player inventory
-        inventory_text = ", ".join(context['player']['inventory']) if context['player']['inventory'] else "Nothing"
+        inventory_text = (
+            ", ".join(context["player"]["inventory"])
+            if context["player"]["inventory"]
+            else "Nothing"
+        )
 
         # Format player faction standings
         faction_text = ""
@@ -258,15 +294,22 @@ class GraphRAGEngine:
 
         # Format player history (limit to avoid token issues)
         history_text = ""
-        if "significant_actions" in context["player"] and context["player"]["significant_actions"]:
-            actions = context["player"]["significant_actions"][-5:]  # Only last 5 actions
+        if (
+            "significant_actions" in context["player"]
+            and context["player"]["significant_actions"]
+        ):
+            actions = context["player"]["significant_actions"][
+                -5:
+            ]  # Only last 5 actions
             history_text = "\nRecent significant actions:\n- " + "\n- ".join(actions)
 
         # Format world events
         event_text = ""
         if context["world_events"]:
             events = []
-            for event, data in list(context["world_events"].items())[:3]:  # Limit to 3 events
+            for event, data in list(context["world_events"].items())[
+                :3
+            ]:  # Limit to 3 events
                 events.append(f"{event} (turn {data['turn']})")
 
             if events:
@@ -289,7 +332,11 @@ class GraphRAGEngine:
                 else:
                     feeling = "very friendly"
 
-                met_before = "you have met before" if info["met_player"] else "you haven't met before"
+                met_before = (
+                    "you have met before"
+                    if info["met_player"]
+                    else "you haven't met before"
+                )
                 npc_details.append(f"{npc} ({feeling}, {met_before})")
 
             npc_text = f"\nCharacters present: {', '.join(npc_details)}"
@@ -301,7 +348,7 @@ class GraphRAGEngine:
 # Current Game State
 You are in {current_location}.{npc_text}
 Inventory: {inventory_text}{faction_text}{history_text}{event_text}
-Game turn: {context['game_turn']}
+Game turn: {context["game_turn"]}
 
 # Player Command
 {query}

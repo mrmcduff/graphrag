@@ -2,6 +2,7 @@ import time
 from typing import Dict, List, Any, Optional, Tuple
 import importlib
 
+
 class LLMManager:
     """Class to manage multiple LLM providers."""
 
@@ -30,41 +31,45 @@ class LLMManager:
         # Import the appropriate provider class based on type
         if provider_type.value == "local_api":
             from .providers.local_api import LocalAPIProvider
+
             return LocalAPIProvider(
                 host=kwargs.get("host", "localhost"),
                 port=kwargs.get("port", 8000),
-                api_path=kwargs.get("api_path", "/api/generate")
+                api_path=kwargs.get("api_path", "/api/generate"),
             )
 
         elif provider_type.value == "local_direct":
             from .providers.local_direct import LocalDirectProvider
-            return LocalDirectProvider(
-                model_path=kwargs.get("model_path", "")
-            )
+
+            return LocalDirectProvider(model_path=kwargs.get("model_path", ""))
 
         elif provider_type.value == "openai":
             from .providers.openai import OpenAIProvider
+
             return OpenAIProvider(
                 api_key=kwargs.get("api_key", ""),
-                model=kwargs.get("model", "gpt-3.5-turbo")
+                model=kwargs.get("model", "gpt-3.5-turbo"),
             )
 
         elif provider_type.value == "anthropic":
             from .providers.anthropic import AnthropicProvider
+
             return AnthropicProvider(
                 api_key=kwargs.get("api_key", ""),
-                model=kwargs.get("model", "claude-3-haiku-20240307")
+                model=kwargs.get("model", "claude-3-haiku-20240307"),
             )
 
         elif provider_type.value == "google":
             from .providers.google import GoogleProvider
+
             return GoogleProvider(
                 api_key=kwargs.get("api_key", ""),
-                model=kwargs.get("model", "gemini-pro")
+                model=kwargs.get("model", "gemini-pro"),
             )
 
         elif provider_type.value == "rule_based":
             from .providers.rule_based import RuleBasedProvider
+
             return RuleBasedProvider()
 
         else:
@@ -109,9 +114,14 @@ class LLMManager:
         Returns:
             List of (provider_type, name) tuples
         """
-        return [(provider_type, provider.name) for provider_type, provider in self.providers.items()]
+        return [
+            (provider_type, provider.name)
+            for provider_type, provider in self.providers.items()
+        ]
 
-    def generate_text(self, prompt: str, max_tokens: int = 500, temperature: float = 0.7) -> str:
+    def generate_text(
+        self, prompt: str, max_tokens: int = 500, temperature: float = 0.7
+    ) -> str:
         """
         Generate text using the active provider with fallback.
 
@@ -129,10 +139,14 @@ class LLMManager:
 
         try:
             start_time = time.time()
-            response = self.active_provider.generate_text(prompt, max_tokens, temperature)
+            response = self.active_provider.generate_text(
+                prompt, max_tokens, temperature
+            )
             end_time = time.time()
 
-            print(f"Response generated using {self.active_provider.name} in {end_time - start_time:.2f} seconds")
+            print(
+                f"Response generated using {self.active_provider.name} in {end_time - start_time:.2f} seconds"
+            )
             return response
         except Exception as e:
             print(f"Error using active provider: {e}")

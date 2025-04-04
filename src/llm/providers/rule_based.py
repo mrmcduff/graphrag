@@ -2,6 +2,7 @@ import re
 from typing import Dict, List, Any, Optional
 from .base import LLMProvider
 
+
 class RuleBasedProvider(LLMProvider):
     """Fallback rule-based response provider."""
 
@@ -9,7 +10,9 @@ class RuleBasedProvider(LLMProvider):
         super().__init__()
         self.name = "Rule-Based Fallback"
 
-    def generate_text(self, prompt: str, max_tokens: int = 500, temperature: float = 0.7) -> str:
+    def generate_text(
+        self, prompt: str, max_tokens: int = 500, temperature: float = 0.7
+    ) -> str:
         """
         Generate a rule-based response based on prompt patterns.
 
@@ -40,11 +43,7 @@ class RuleBasedProvider(LLMProvider):
         Returns:
             Dictionary containing extracted game state
         """
-        state = {
-            "location": "Unknown",
-            "npcs_present": [],
-            "items": []
-        }
+        state = {"location": "Unknown", "npcs_present": [], "items": []}
 
         # Extract current location
         location_match = re.search(r"You are in ([^\.]+)", prompt)
@@ -55,7 +54,9 @@ class RuleBasedProvider(LLMProvider):
         npc_match = re.search(r"Characters present: (.+?)(?=\n|$)", prompt)
         if npc_match:
             npcs_text = npc_match.group(1)
-            state["npcs_present"] = [npc.split(" (")[0] for npc in npcs_text.split(", ")]
+            state["npcs_present"] = [
+                npc.split(" (")[0] for npc in npcs_text.split(", ")
+            ]
 
         # Extract inventory
         inventory_match = re.search(r"Inventory: (.+?)(?=\n|$)", prompt)
@@ -127,7 +128,9 @@ class RuleBasedProvider(LLMProvider):
                 response += f"You see {', '.join(state['npcs_present'])}. "
 
             if state.get("items", []):
-                response += f"There are several items here: {', '.join(state['items'])}. "
+                response += (
+                    f"There are several items here: {', '.join(state['items'])}. "
+                )
             else:
                 response += "You don't see any notable items. "
 

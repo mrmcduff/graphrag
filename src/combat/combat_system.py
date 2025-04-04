@@ -6,23 +6,29 @@ import pandas as pd
 import json
 import os
 
+
 class CombatStatus(Enum):
     """Enum for the status of a combat encounter."""
+
     ACTIVE = "active"
     PLAYER_VICTORY = "player_victory"
     PLAYER_DEFEATED = "player_defeated"
     PLAYER_FLED = "player_fled"
     ENDED = "ended"  # Generic ended state (e.g., through dialogue/surrender)
 
+
 class AttackType(Enum):
     """Types of attacks available in combat."""
+
     MELEE = "melee"
     RANGED = "ranged"
     MAGIC = "magic"
     SPECIAL = "special"
 
+
 class StatusEffect(Enum):
     """Status effects that can be applied during combat."""
+
     NONE = "none"
     POISONED = "poisoned"
     STUNNED = "stunned"
@@ -31,6 +37,7 @@ class StatusEffect(Enum):
     ENRAGED = "enraged"
     BLESSED = "blessed"
     CURSED = "cursed"
+
 
 class CombatSystem:
     """Class to handle combat mechanics in the game."""
@@ -73,7 +80,7 @@ class CombatSystem:
             "equipped_weapon": None,
             "equipped_armor": None,
             "status_effects": [],
-            "abilities": ["strike", "block", "dodge"]
+            "abilities": ["strike", "block", "dodge"],
         }
 
     def _load_enemy_database(self) -> Dict[str, Dict[str, Any]]:
@@ -85,9 +92,11 @@ class CombatSystem:
         """
         # Try to load from file first
         try:
-            enemy_file = os.path.join(self.game_state.game_data_dir, "game_enemies.json")
+            enemy_file = os.path.join(
+                self.game_state.game_data_dir, "game_enemies.json"
+            )
             if os.path.exists(enemy_file):
-                with open(enemy_file, 'r') as f:
+                with open(enemy_file, "r") as f:
                     return json.load(f)
         except Exception as e:
             print(f"Error loading enemy database: {e}")
@@ -98,18 +107,20 @@ class CombatSystem:
         # Extract PERSON entities that could be combatants
         for character in self.game_state.characters:
             char_lower = character.lower()
-            character_id = char_lower.replace(' ', '_')
+            character_id = char_lower.replace(" ", "_")
 
             # Check character relations to identify potential enemies
             is_potential_enemy = False
-            aggressive_relations = ['hates', 'hunts', 'attacks', 'enemy_of']
+            aggressive_relations = ["hates", "hunts", "attacks", "enemy_of"]
 
             # Check relations in the graph
             if character_id in self.game_state.graph.nodes:
                 for neighbor in self.game_state.graph.neighbors(character_id):
-                    edge_data = self.game_state.graph.get_edge_data(character_id, neighbor)
-                    if edge_data and 'relation' in edge_data:
-                        if edge_data['relation'].lower() in aggressive_relations:
+                    edge_data = self.game_state.graph.get_edge_data(
+                        character_id, neighbor
+                    )
+                    if edge_data and "relation" in edge_data:
+                        if edge_data["relation"].lower() in aggressive_relations:
                             is_potential_enemy = True
                             break
 
@@ -120,7 +131,7 @@ class CombatSystem:
                 ("undead", ["zombie", "skeleton", "ghost", "undead", "vampire"]),
                 ("magical", ["wizard", "mage", "witch", "sorcerer", "warlock"]),
                 ("monster", ["troll", "ogre", "goblin", "orc", "monster"]),
-                ("elemental", ["elemental", "fire", "water", "earth", "air"])
+                ("elemental", ["elemental", "fire", "water", "earth", "air"]),
             ]:
                 if any(keyword in char_lower for keyword in keywords):
                     enemy_type = type_name
@@ -144,7 +155,7 @@ class CombatSystem:
                     "abilities": ["strike"],
                     "drops": [],
                     "experience_value": 20 + name_power * 5,
-                    "description": f"A hostile {enemy_type}."
+                    "description": f"A hostile {enemy_type}.",
                 }
 
                 # Add special abilities based on type
@@ -173,9 +184,11 @@ class CombatSystem:
         """
         # Try to load from file first
         try:
-            weapon_file = os.path.join(self.game_state.game_data_dir, "game_weapons.json")
+            weapon_file = os.path.join(
+                self.game_state.game_data_dir, "game_weapons.json"
+            )
             if os.path.exists(weapon_file):
-                with open(weapon_file, 'r') as f:
+                with open(weapon_file, "r") as f:
                     return json.load(f)
         except Exception as e:
             print(f"Error loading weapon database: {e}")
@@ -184,7 +197,19 @@ class CombatSystem:
         weapons = {}
 
         # Find items that could be weapons based on name
-        weapon_keywords = ["sword", "axe", "bow", "staff", "wand", "dagger", "mace", "spear", "knife", "hammer", "blade"]
+        weapon_keywords = [
+            "sword",
+            "axe",
+            "bow",
+            "staff",
+            "wand",
+            "dagger",
+            "mace",
+            "spear",
+            "knife",
+            "hammer",
+            "blade",
+        ]
 
         for item in self.game_state.items:
             item_lower = item.lower()
@@ -216,7 +241,18 @@ class CombatSystem:
                 name_power = len(item) % 5 + 1
 
                 # Check for magical qualities
-                has_magic = any(word in item_lower for word in ["magic", "enchanted", "ancient", "mystic", "legendary", "cursed", "blessed"])
+                has_magic = any(
+                    word in item_lower
+                    for word in [
+                        "magic",
+                        "enchanted",
+                        "ancient",
+                        "mystic",
+                        "legendary",
+                        "cursed",
+                        "blessed",
+                    ]
+                )
                 elemental_type = None
 
                 for element, keywords in [
@@ -225,7 +261,7 @@ class CombatSystem:
                     ("lightning", ["lightning", "thunder", "storm"]),
                     ("poison", ["poison", "venom", "toxic"]),
                     ("holy", ["holy", "sacred", "divine"]),
-                    ("dark", ["dark", "shadow", "void"])
+                    ("dark", ["dark", "shadow", "void"]),
                 ]:
                     if any(keyword in item_lower for keyword in keywords):
                         elemental_type = element
@@ -243,7 +279,7 @@ class CombatSystem:
                     "elemental_type": elemental_type,
                     "durability": 100,
                     "abilities": [],
-                    "requirements": {"level": 1}
+                    "requirements": {"level": 1},
                 }
 
                 # Add special abilities based on weapon properties
@@ -274,7 +310,7 @@ class CombatSystem:
         try:
             armor_file = os.path.join(self.game_state.game_data_dir, "game_armor.json")
             if os.path.exists(armor_file):
-                with open(armor_file, 'r') as f:
+                with open(armor_file, "r") as f:
                     return json.load(f)
         except Exception as e:
             print(f"Error loading armor database: {e}")
@@ -283,7 +319,19 @@ class CombatSystem:
         armor = {}
 
         # Find items that could be armor based on name
-        armor_keywords = ["armor", "shield", "helmet", "gauntlet", "glove", "boot", "robe", "cloak", "plate", "chain", "leather"]
+        armor_keywords = [
+            "armor",
+            "shield",
+            "helmet",
+            "gauntlet",
+            "glove",
+            "boot",
+            "robe",
+            "cloak",
+            "plate",
+            "chain",
+            "leather",
+        ]
 
         for item in self.game_state.items:
             item_lower = item.lower()
@@ -295,7 +343,9 @@ class CombatSystem:
                 # Determine armor type
                 armor_type = "light"  # Default
 
-                if any(word in item_lower for word in ["plate", "heavy", "steel", "iron"]):
+                if any(
+                    word in item_lower for word in ["plate", "heavy", "steel", "iron"]
+                ):
                     armor_type = "heavy"
                 elif any(word in item_lower for word in ["robe", "cloth", "silk"]):
                     armor_type = "cloth"
@@ -308,7 +358,18 @@ class CombatSystem:
                 name_power = len(item) % 5 + 1
 
                 # Check for magical qualities
-                has_magic = any(word in item_lower for word in ["magic", "enchanted", "ancient", "mystic", "legendary", "cursed", "blessed"])
+                has_magic = any(
+                    word in item_lower
+                    for word in [
+                        "magic",
+                        "enchanted",
+                        "ancient",
+                        "mystic",
+                        "legendary",
+                        "cursed",
+                        "blessed",
+                    ]
+                )
                 elemental_resistance = None
 
                 for element, keywords in [
@@ -317,7 +378,7 @@ class CombatSystem:
                     ("lightning", ["lightning", "thunder", "shock"]),
                     ("poison", ["poison", "venom", "toxic"]),
                     ("holy", ["holy", "sacred", "divine"]),
-                    ("dark", ["dark", "shadow", "void"])
+                    ("dark", ["dark", "shadow", "void"]),
                 ]:
                     if any(keyword in item_lower for keyword in keywords):
                         elemental_resistance = element
@@ -333,7 +394,7 @@ class CombatSystem:
                     "elemental_resistance": elemental_resistance,
                     "durability": 100,
                     "effects": [],
-                    "requirements": {"level": 1}
+                    "requirements": {"level": 1},
                 }
 
                 # Add special effects based on armor properties
@@ -373,17 +434,19 @@ class CombatSystem:
             "magical": ["physical", "surprise"],
             "monster": ["silver", "magic"],
             "elemental": [],
-            "humanoid": []
+            "humanoid": [],
         }
 
         # Enhance with data from the knowledge graph if available
         weakness_relations = self.game_state.relations_df.loc[
-            self.game_state.relations_df['predicate'].isin(['weak_against', 'vulnerable_to', 'fears'])
+            self.game_state.relations_df["predicate"].isin(
+                ["weak_against", "vulnerable_to", "fears"]
+            )
         ]
 
         for _, relation in weakness_relations.iterrows():
-            subject = relation['subject']
-            object_ = relation['object']
+            subject = relation["subject"]
+            object_ = relation["object"]
 
             # Try to map subject to an enemy type
             subject_type = None
@@ -421,11 +484,14 @@ class CombatSystem:
             "forest": {"evasion_bonus": 10, "effects": ["cover"]},
             "cave": {"evasion_penalty": 5, "effects": ["darkness"]},
             "mountain": {"stamina_cost": 1.2, "effects": ["high_ground"]},
-            "swamp": {"movement_penalty": 0.7, "effects": ["difficult_terrain", "poison_hazard"]},
+            "swamp": {
+                "movement_penalty": 0.7,
+                "effects": ["difficult_terrain", "poison_hazard"],
+            },
             "castle": {"defense_bonus": 5, "effects": ["defensible_position"]},
             "temple": {"magic_bonus": 10, "effects": ["holy_ground"]},
             "dungeon": {"attack_penalty": 5, "effects": ["confined_space"]},
-            "river": {"magic_bonus": 5, "effects": ["flowing_water"]}
+            "river": {"magic_bonus": 5, "effects": ["flowing_water"]},
         }
 
         # Apply default effects based on location name patterns
@@ -445,12 +511,14 @@ class CombatSystem:
 
         # Enhance with data from the knowledge graph if available
         environment_relations = self.game_state.relations_df.loc[
-            self.game_state.relations_df['predicate'].isin(['has_feature', 'contains', 'provides'])
+            self.game_state.relations_df["predicate"].isin(
+                ["has_feature", "contains", "provides"]
+            )
         ]
 
         for _, relation in environment_relations.iterrows():
-            subject = relation['subject']
-            object_ = relation['object']
+            subject = relation["subject"]
+            object_ = relation["object"]
 
             # If subject is a location we know
             if subject in environment_effects:
@@ -466,13 +534,16 @@ class CombatSystem:
                     (["curse", "evil", "corrupt"], "cursed_ground"),
                     (["narrow", "tight", "confined"], "confined_space"),
                     (["open", "vast", "wide"], "open_ground"),
-                    (["elevated", "high", "tall"], "high_ground")
+                    (["elevated", "high", "tall"], "high_ground"),
                 ]:
                     if any(word in object_ for word in effect_word):
                         special_effect = effect_name
                         break
 
-                if special_effect and special_effect not in environment_effects[subject]["effects"]:
+                if (
+                    special_effect
+                    and special_effect not in environment_effects[subject]["effects"]
+                ):
                     environment_effects[subject]["effects"].append(special_effect)
 
         return environment_effects
@@ -488,8 +559,11 @@ class CombatSystem:
             Boolean indicating if combat started successfully
         """
         # Check if enemy exists and is in the current location
-        npcs_here = [npc for npc, data in self.game_state.npc_states.items()
-                    if data["location"] == self.game_state.player_location]
+        npcs_here = [
+            npc
+            for npc, data in self.game_state.npc_states.items()
+            if data["location"] == self.game_state.player_location
+        ]
 
         if enemy_name not in npcs_here:
             return False
@@ -503,7 +577,9 @@ class CombatSystem:
         enemy_data = self.enemy_database[enemy_name].copy()
 
         # Get environment effects
-        environment = self.environment_effects.get(self.game_state.player_location, {"effects": [], "bonuses": {}})
+        environment = self.environment_effects.get(
+            self.game_state.player_location, {"effects": [], "bonuses": {}}
+        )
 
         # Initialize combat state
         self.active_combat = {
@@ -515,7 +591,7 @@ class CombatSystem:
             "combat_log": [f"Combat with {enemy_name} has begun!"],
             "environment": environment,
             "player_temp_stats": self.player_stats.copy(),
-            "enemy_temp_stats": enemy_data.copy()
+            "enemy_temp_stats": enemy_data.copy(),
         }
 
         # Apply environment effects to starting stats
@@ -525,7 +601,9 @@ class CombatSystem:
         self._apply_equipment_effects()
 
         # Record the combat event
-        self.game_state.player_actions.append(f"Started combat with {enemy_name} in {self.game_state.player_location}")
+        self.game_state.player_actions.append(
+            f"Started combat with {enemy_name} in {self.game_state.player_location}"
+        )
 
         return True
 
@@ -553,7 +631,9 @@ class CombatSystem:
         # Record effects in combat log
         if environment.get("effects"):
             effects_str = ", ".join(environment["effects"])
-            self.active_combat["combat_log"].append(f"The environment provides effects: {effects_str}")
+            self.active_combat["combat_log"].append(
+                f"The environment provides effects: {effects_str}"
+            )
 
     def _apply_equipment_effects(self):
         """Apply effects from equipped items."""
@@ -566,15 +646,21 @@ class CombatSystem:
             weapon_data = self.weapon_database[weapon]
 
             # Basic damage bonus
-            self.active_combat["player_temp_stats"]["damage_bonus"] = weapon_data["damage"]
+            self.active_combat["player_temp_stats"]["damage_bonus"] = weapon_data[
+                "damage"
+            ]
 
             # Critical hit bonus
             if "critical_bonus" in weapon_data:
-                self.active_combat["player_temp_stats"]["critical_chance"] += weapon_data["critical_bonus"]
+                self.active_combat["player_temp_stats"]["critical_chance"] += (
+                    weapon_data["critical_bonus"]
+                )
 
             # Elemental effects
             if weapon_data.get("elemental_type"):
-                self.active_combat["player_temp_stats"]["damage_type"] = weapon_data["elemental_type"]
+                self.active_combat["player_temp_stats"]["damage_type"] = weapon_data[
+                    "elemental_type"
+                ]
 
             # Log equipment
             self.active_combat["combat_log"].append(f"You are wielding {weapon}")
@@ -605,7 +691,9 @@ class CombatSystem:
                 resistance = armor_data["elemental_resistance"]
                 if "resistances" not in self.active_combat["player_temp_stats"]:
                     self.active_combat["player_temp_stats"]["resistances"] = []
-                self.active_combat["player_temp_stats"]["resistances"].append(resistance)
+                self.active_combat["player_temp_stats"]["resistances"].append(
+                    resistance
+                )
 
             # Log equipment
             self.active_combat["combat_log"].append(f"You are wearing {armor}")
@@ -621,7 +709,10 @@ class CombatSystem:
         Returns:
             Dictionary with the results of the action
         """
-        if not self.active_combat or self.active_combat["status"] != CombatStatus.ACTIVE:
+        if (
+            not self.active_combat
+            or self.active_combat["status"] != CombatStatus.ACTIVE
+        ):
             return {"success": False, "message": "No active combat"}
 
         # Increment turn counter
@@ -651,19 +742,17 @@ class CombatSystem:
             "combat_status": self.active_combat["status"].value,
             "player_health": self.active_combat["player_temp_stats"]["health"],
             "enemy_health": self.active_combat["enemy"]["health"],
-            "combat_log": self.active_combat["combat_log"][-3:]  # Last 3 log entries
+            "combat_log": self.active_combat["combat_log"][-3:],  # Last 3 log entries
         }
 
         return result
 
-    def _process_player_combat_action(self, action: str, target: str = None) -> Dict[str, Any]:
+    def _process_player_combat_action(
+        self, action: str, target: str = None
+    ) -> Dict[str, Any]:
         """Process the player's combat action."""
         # Default result
-        result = {
-            "success": False,
-            "message": "Invalid action",
-            "damage": 0
-        }
+        result = {"success": False, "message": "Invalid action", "damage": 0}
 
         # Get player and enemy data
         player = self.active_combat["player_temp_stats"]
@@ -701,7 +790,7 @@ class CombatSystem:
                     "success": True,
                     "message": f"You hit {enemy['name']} for {damage} damage.",
                     "damage": damage,
-                    "critical": crit_roll <= crit_chance
+                    "critical": crit_roll <= crit_chance,
                 }
 
                 # Add to combat log
@@ -711,7 +800,7 @@ class CombatSystem:
                 result = {
                     "success": False,
                     "message": f"Your attack misses {enemy['name']}.",
-                    "damage": 0
+                    "damage": 0,
                 }
 
                 # Add to combat log
@@ -726,7 +815,7 @@ class CombatSystem:
             result = {
                 "success": True,
                 "message": f"You assume a defensive stance, increasing your defense by {defense_bonus}.",
-                "defense_bonus": defense_bonus
+                "defense_bonus": defense_bonus,
             }
 
             # Add to combat log
@@ -741,7 +830,7 @@ class CombatSystem:
             result = {
                 "success": True,
                 "message": f"You prepare to dodge, increasing your evasion by {evasion_bonus}.",
-                "evasion_bonus": evasion_bonus
+                "evasion_bonus": evasion_bonus,
             }
 
             # Add to combat log
@@ -753,7 +842,7 @@ class CombatSystem:
                 result = {
                     "success": False,
                     "message": f"You don't have {target} in your inventory.",
-                    "damage": 0
+                    "damage": 0,
                 }
                 self.active_combat["combat_log"].append(result["message"])
                 return result
@@ -762,10 +851,12 @@ class CombatSystem:
             if "potion" in target.lower() or "heal" in target.lower():
                 # Healing item
                 heal_amount = random.randint(20, 40)
-                player["health"] = min(player["max_health"], player["health"] + heal_amount)
+                player["health"] = min(
+                    player["max_health"], player["health"] + heal_amount
+                )
 
                 result = {
                     "success": True,
                     "message": f"You use {target} and heal for {heal_amount} health.",
-                    "heal_amount": heal_amount
+                    "heal_amount": heal_amount,
                 }

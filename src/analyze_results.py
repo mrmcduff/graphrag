@@ -23,7 +23,7 @@ print(f"Identified {len(characters_df)} characters")
 print(f"Identified {len(items_df)} items")
 
 # Show most common entity types
-entity_types = entities_df['label'].value_counts()
+entity_types = entities_df["label"].value_counts()
 print("\nEntity types:")
 print(entity_types)
 
@@ -36,14 +36,21 @@ if len(G.nodes) > 0:
     plt.figure(figsize=(10, 8))
 
     # Take first 20 nodes for visualization
-    nodes = list(G.nodes)[:min(20, len(G.nodes))]
+    nodes = list(G.nodes)[: min(20, len(G.nodes))]
     subgraph = G.subgraph(nodes)
 
     pos = nx.spring_layout(subgraph)
-    labels = {node: G.nodes[node].get('label', node) for node in subgraph.nodes}
+    labels = {node: G.nodes[node].get("label", node) for node in subgraph.nodes}
 
-    nx.draw(subgraph, pos, with_labels=True, labels=labels,
-            node_color='lightblue', node_size=1500, font_size=8)
+    nx.draw(
+        subgraph,
+        pos,
+        with_labels=True,
+        labels=labels,
+        node_color="lightblue",
+        node_size=1500,
+        font_size=8,
+    )
 
     plt.title("Sample of Knowledge Graph")
     plt.savefig("data/output/graph_sample.png")

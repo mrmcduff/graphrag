@@ -2,14 +2,17 @@ import re
 from typing import Dict, List, Any, Optional, Tuple
 from enum import Enum
 
+
 class CommandType(Enum):
     """Types of commands the player can input."""
+
     MOVEMENT = "movement"
     INTERACTION = "interaction"
     INVENTORY = "inventory"
     COMBAT = "combat"
     SYSTEM = "system"
     UNKNOWN = "unknown"
+
 
 class CommandProcessor:
     """Process and execute player commands."""
@@ -31,11 +34,21 @@ class CommandProcessor:
 
         # Command patterns - regular expressions to match different command types
         self.command_patterns = {
-            CommandType.MOVEMENT: re.compile(r"^(go|move|travel|walk)\s+(.+)$", re.IGNORECASE),
-            CommandType.INTERACTION: re.compile(r"^(look|examine|talk|speak|take|get|use)\s*(.*)$", re.IGNORECASE),
-            CommandType.INVENTORY: re.compile(r"^(inventory|items|i|equip)\s*(.*)$", re.IGNORECASE),
-            CommandType.COMBAT: re.compile(r"^(attack|fight|stats|block|dodge|flee)\s*(.*)$", re.IGNORECASE),
-            CommandType.SYSTEM: re.compile(r"^(save|load|help|map|settings|llm)\s*(.*)$", re.IGNORECASE)
+            CommandType.MOVEMENT: re.compile(
+                r"^(go|move|travel|walk)\s+(.+)$", re.IGNORECASE
+            ),
+            CommandType.INTERACTION: re.compile(
+                r"^(look|examine|talk|speak|take|get|use)\s*(.*)$", re.IGNORECASE
+            ),
+            CommandType.INVENTORY: re.compile(
+                r"^(inventory|items|i|equip)\s*(.*)$", re.IGNORECASE
+            ),
+            CommandType.COMBAT: re.compile(
+                r"^(attack|fight|stats|block|dodge|flee)\s*(.*)$", re.IGNORECASE
+            ),
+            CommandType.SYSTEM: re.compile(
+                r"^(save|load|help|map|settings|llm)\s*(.*)$", re.IGNORECASE
+            ),
         }
 
     def setup_llm_provider(self, choice: int) -> None:
@@ -58,10 +71,8 @@ class CommandProcessor:
             self.llm_manager.add_provider(
                 LLMType.LOCAL_API,
                 self.llm_manager.create_provider(
-                    LLMType.LOCAL_API,
-                    host=host,
-                    port=int(port)
-                )
+                    LLMType.LOCAL_API, host=host, port=int(port)
+                ),
             )
             self.llm_manager.set_active_provider(LLMType.LOCAL_API)
 
@@ -71,9 +82,8 @@ class CommandProcessor:
             self.llm_manager.add_provider(
                 LLMType.LOCAL_DIRECT,
                 self.llm_manager.create_provider(
-                    LLMType.LOCAL_DIRECT,
-                    model_path=model_path
-                )
+                    LLMType.LOCAL_DIRECT, model_path=model_path
+                ),
             )
             self.llm_manager.set_active_provider(LLMType.LOCAL_DIRECT)
 
@@ -82,14 +92,14 @@ class CommandProcessor:
             api_key = get_api_key("openai")
             if not api_key:
                 api_key = input("Enter OpenAI API key: ")
-            model = input("Enter model name (default: gpt-3.5-turbo): ") or "gpt-3.5-turbo"
+            model = (
+                input("Enter model name (default: gpt-3.5-turbo): ") or "gpt-3.5-turbo"
+            )
             self.llm_manager.add_provider(
                 LLMType.OPENAI,
                 self.llm_manager.create_provider(
-                    LLMType.OPENAI,
-                    api_key=api_key,
-                    model=model
-                )
+                    LLMType.OPENAI, api_key=api_key, model=model
+                ),
             )
             self.llm_manager.set_active_provider(LLMType.OPENAI)
 
@@ -98,14 +108,15 @@ class CommandProcessor:
             api_key = get_api_key("anthropic")
             if not api_key:
                 api_key = input("Enter Anthropic API key: ")
-            model = input("Enter model name (default: claude-3-haiku-20240307): ") or "claude-3-haiku-20240307"
+            model = (
+                input("Enter model name (default: claude-3-haiku-20240307): ")
+                or "claude-3-haiku-20240307"
+            )
             self.llm_manager.add_provider(
                 LLMType.ANTHROPIC,
                 self.llm_manager.create_provider(
-                    LLMType.ANTHROPIC,
-                    api_key=api_key,
-                    model=model
-                )
+                    LLMType.ANTHROPIC, api_key=api_key, model=model
+                ),
             )
             self.llm_manager.set_active_provider(LLMType.ANTHROPIC)
 
@@ -118,20 +129,15 @@ class CommandProcessor:
             self.llm_manager.add_provider(
                 LLMType.GOOGLE,
                 self.llm_manager.create_provider(
-                    LLMType.GOOGLE,
-                    api_key=api_key,
-                    model=model
-                )
+                    LLMType.GOOGLE, api_key=api_key, model=model
+                ),
             )
             self.llm_manager.set_active_provider(LLMType.GOOGLE)
 
         else:
             # Rule-based (fallback)
             self.llm_manager.add_provider(
-                LLMType.RULE_BASED,
-                self.llm_manager.create_provider(
-                    LLMType.RULE_BASED
-                )
+                LLMType.RULE_BASED, self.llm_manager.create_provider(LLMType.RULE_BASED)
             )
             self.llm_manager.set_active_provider(LLMType.RULE_BASED)
 
@@ -149,7 +155,7 @@ class CommandProcessor:
         result = {
             "success": False,
             "message": "I don't understand that command.",
-            "action_type": CommandType.UNKNOWN.value
+            "action_type": CommandType.UNKNOWN.value,
         }
 
         # Check if we're in combat
@@ -178,11 +184,7 @@ class CommandProcessor:
         else:
             # Use the GraphRAG engine for unknown commands
             response = self.graph_rag_engine.generate_response(command, self.game_state)
-            result = {
-                "success": True,
-                "message": response,
-                "action_type": "narrative"
-            }
+            result = {"success": True, "message": response, "action_type": "narrative"}
 
         # Update game turn only if action was successful
         if result.get("success", False):
@@ -242,7 +244,7 @@ class CommandProcessor:
             return {
                 "success": False,
                 "message": "Where do you want to go?",
-                "action_type": CommandType.MOVEMENT.value
+                "action_type": CommandType.MOVEMENT.value,
             }
 
         # Try to move to the target location
@@ -254,13 +256,13 @@ class CommandProcessor:
                 "success": True,
                 "message": f"You travel to {target}.",
                 "action_type": CommandType.MOVEMENT.value,
-                "location": self.game_state.player_location
+                "location": self.game_state.player_location,
             }
         else:
             return {
                 "success": False,
                 "message": f"You can't go to {target} from here.",
-                "action_type": CommandType.MOVEMENT.value
+                "action_type": CommandType.MOVEMENT.value,
             }
 
     def _process_interaction(self, action: str, target: str) -> Dict[str, Any]:
@@ -276,11 +278,13 @@ class CommandProcessor:
         """
         if action == "look" and not target:
             # Look around the current location
-            description = self.graph_rag_engine.generate_response("look around", self.game_state)
+            description = self.graph_rag_engine.generate_response(
+                "look around", self.game_state
+            )
             return {
                 "success": True,
                 "message": description,
-                "action_type": CommandType.INTERACTION.value
+                "action_type": CommandType.INTERACTION.value,
             }
 
         elif action in ["talk", "speak"] and target:
@@ -288,18 +292,20 @@ class CommandProcessor:
             success = self.game_state.update_state(action, target)
             if success:
                 query = f"talk to {target}"
-                response = self.graph_rag_engine.generate_response(query, self.game_state)
+                response = self.graph_rag_engine.generate_response(
+                    query, self.game_state
+                )
                 return {
                     "success": True,
                     "message": response,
                     "action_type": CommandType.INTERACTION.value,
-                    "target": target
+                    "target": target,
                 }
             else:
                 return {
                     "success": False,
                     "message": f"There's no one named {target} here.",
-                    "action_type": CommandType.INTERACTION.value
+                    "action_type": CommandType.INTERACTION.value,
                 }
 
         elif action in ["take", "get"] and target:
@@ -310,13 +316,13 @@ class CommandProcessor:
                     "success": True,
                     "message": f"You take the {target} and add it to your inventory.",
                     "action_type": CommandType.INTERACTION.value,
-                    "target": target
+                    "target": target,
                 }
             else:
                 return {
                     "success": False,
                     "message": f"There's no {target} here that you can take.",
-                    "action_type": CommandType.INTERACTION.value
+                    "action_type": CommandType.INTERACTION.value,
                 }
 
         elif action == "use" and target:
@@ -324,28 +330,32 @@ class CommandProcessor:
             if target in self.game_state.inventory:
                 success = self.game_state.update_state(action, target)
                 if success:
-                    response = self.graph_rag_engine.generate_response(f"use {target}", self.game_state)
+                    response = self.graph_rag_engine.generate_response(
+                        f"use {target}", self.game_state
+                    )
                     return {
                         "success": True,
                         "message": response,
                         "action_type": CommandType.INTERACTION.value,
-                        "target": target
+                        "target": target,
                     }
 
             return {
                 "success": False,
                 "message": f"You don't have {target} in your inventory.",
-                "action_type": CommandType.INTERACTION.value
+                "action_type": CommandType.INTERACTION.value,
             }
 
         elif action in ["examine", "inspect"] and target:
             # Examine something specific
-            response = self.graph_rag_engine.generate_response(f"examine {target}", self.game_state)
+            response = self.graph_rag_engine.generate_response(
+                f"examine {target}", self.game_state
+            )
             return {
                 "success": True,
                 "message": response,
                 "action_type": CommandType.INTERACTION.value,
-                "target": target
+                "target": target,
             }
 
         # Default response for other interactions
@@ -354,7 +364,7 @@ class CommandProcessor:
         return {
             "success": True,
             "message": response,
-            "action_type": CommandType.INTERACTION.value
+            "action_type": CommandType.INTERACTION.value,
         }
 
     def _process_inventory(self, action: str, target: str) -> Dict[str, Any]:
@@ -374,7 +384,7 @@ class CommandProcessor:
                 return {
                     "success": True,
                     "message": "Your inventory is empty.",
-                    "action_type": CommandType.INVENTORY.value
+                    "action_type": CommandType.INVENTORY.value,
                 }
 
             items = ", ".join(self.game_state.inventory)
@@ -382,7 +392,7 @@ class CommandProcessor:
                 "success": True,
                 "message": f"Inventory: {items}",
                 "action_type": CommandType.INVENTORY.value,
-                "inventory": self.game_state.inventory
+                "inventory": self.game_state.inventory,
             }
 
         elif action == "equip" and target:
@@ -391,7 +401,7 @@ class CommandProcessor:
                 return {
                     "success": False,
                     "message": f"You don't have {target} in your inventory.",
-                    "action_type": CommandType.INVENTORY.value
+                    "action_type": CommandType.INVENTORY.value,
                 }
 
             # Check if it's a weapon or armor
@@ -405,7 +415,7 @@ class CommandProcessor:
                     "message": f"You equip the {target}.",
                     "action_type": CommandType.INVENTORY.value,
                     "equipped": target,
-                    "slot": "weapon"
+                    "slot": "weapon",
                 }
             elif is_armor:
                 self.combat_system.player_stats["equipped_armor"] = target
@@ -414,20 +424,20 @@ class CommandProcessor:
                     "message": f"You equip the {target}.",
                     "action_type": CommandType.INVENTORY.value,
                     "equipped": target,
-                    "slot": "armor"
+                    "slot": "armor",
                 }
             else:
                 return {
                     "success": False,
                     "message": f"You can't equip {target}.",
-                    "action_type": CommandType.INVENTORY.value
+                    "action_type": CommandType.INVENTORY.value,
                 }
 
         # Default response
         return {
             "success": False,
             "message": "Invalid inventory command.",
-            "action_type": CommandType.INVENTORY.value
+            "action_type": CommandType.INVENTORY.value,
         }
 
     def _process_combat_initiation(self, action: str, target: str) -> Dict[str, Any]:
@@ -452,13 +462,13 @@ class CommandProcessor:
                     "message": f"You engage in combat with {enemy_name}!",
                     "action_type": CommandType.COMBAT.value,
                     "combat_started": True,
-                    "enemy": enemy_name
+                    "enemy": enemy_name,
                 }
             else:
                 return {
                     "success": False,
                     "message": f"You can't attack {target}.",
-                    "action_type": CommandType.COMBAT.value
+                    "action_type": CommandType.COMBAT.value,
                 }
 
         elif action == "stats":
@@ -482,14 +492,14 @@ class CommandProcessor:
                 "success": True,
                 "message": stats_message,
                 "action_type": CommandType.COMBAT.value,
-                "stats": stats
+                "stats": stats,
             }
 
         # Default response
         return {
             "success": False,
             "message": "Invalid combat command.",
-            "action_type": CommandType.COMBAT.value
+            "action_type": CommandType.COMBAT.value,
         }
 
     def _process_combat_command(self, command: str) -> Dict[str, Any]:
@@ -535,13 +545,13 @@ class CommandProcessor:
                     "combat_active": is_active,
                     "combat_result": combat_result,
                     "player_health": result["player_health"],
-                    "enemy_health": result["enemy_health"]
+                    "enemy_health": result["enemy_health"],
                 }
             else:
                 return {
                     "success": False,
                     "message": result["message"],
-                    "action_type": CommandType.COMBAT.value
+                    "action_type": CommandType.COMBAT.value,
                 }
 
         elif action == "use" and target:
@@ -558,25 +568,26 @@ class CommandProcessor:
                         "message": combat_message,
                         "action_type": CommandType.COMBAT.value,
                         "combat_active": result["combat_status"] == "active",
-                        "item_used": target
+                        "item_used": target,
                     }
                 else:
                     return {
                         "success": False,
                         "message": result["message"],
-                        "action_type": CommandType.COMBAT.value
+                        "action_type": CommandType.COMBAT.value,
                     }
             else:
                 return {
                     "success": False,
                     "message": f"You don't have {target} in your inventory.",
-                    "action_type": CommandType.COMBAT.value
+                    "action_type": CommandType.COMBAT.value,
                 }
 
         elif action == "flee":
             # Attempt to flee from combat
             # 50% chance of success
             import random
+
             success = random.random() > 0.5
 
             if success:
@@ -587,7 +598,7 @@ class CommandProcessor:
                     "message": "You successfully flee from combat!",
                     "action_type": CommandType.COMBAT.value,
                     "combat_active": False,
-                    "combat_result": "fled"
+                    "combat_result": "fled",
                 }
             else:
                 # Failed to flee, enemy gets a free attack
@@ -596,14 +607,14 @@ class CommandProcessor:
                     "success": False,
                     "message": f"You fail to escape! {enemy_action.get('message', 'The enemy attacks you!')}",
                     "action_type": CommandType.COMBAT.value,
-                    "combat_active": True
+                    "combat_active": True,
                 }
 
         # Default response
         return {
             "success": False,
             "message": "Invalid combat command. You can 'attack', 'block', 'dodge', 'use [item]', or 'flee'.",
-            "action_type": CommandType.COMBAT.value
+            "action_type": CommandType.COMBAT.value,
         }
 
     def _process_system_command(self, action: str, target: str) -> Dict[str, Any]:
@@ -627,13 +638,13 @@ class CommandProcessor:
                     "success": True,
                     "message": f"Game saved to {save_file}.",
                     "action_type": CommandType.SYSTEM.value,
-                    "save_file": save_file
+                    "save_file": save_file,
                 }
             else:
                 return {
                     "success": False,
                     "message": f"Failed to save game to {save_file}.",
-                    "action_type": CommandType.SYSTEM.value
+                    "action_type": CommandType.SYSTEM.value,
                 }
 
         elif action == "load":
@@ -646,13 +657,13 @@ class CommandProcessor:
                     "success": True,
                     "message": f"Game loaded from {load_file}.",
                     "action_type": CommandType.SYSTEM.value,
-                    "load_file": load_file
+                    "load_file": load_file,
                 }
             else:
                 return {
                     "success": False,
                     "message": f"Failed to load game from {load_file}.",
-                    "action_type": CommandType.SYSTEM.value
+                    "action_type": CommandType.SYSTEM.value,
                 }
 
         elif action == "help":
@@ -678,7 +689,7 @@ quit - Exit the game
                 "success": True,
                 "message": help_text,
                 "action_type": CommandType.SYSTEM.value,
-                "help_displayed": True
+                "help_displayed": True,
             }
 
         elif action == "map":
@@ -690,7 +701,7 @@ quit - Exit the game
                     "action_type": CommandType.SYSTEM.value,
                     "map_type": "local",
                     "location": self.game_state.player_location,
-                    "display_map": True
+                    "display_map": True,
                 }
             else:
                 return {
@@ -699,7 +710,7 @@ quit - Exit the game
                     "action_type": CommandType.SYSTEM.value,
                     "map_type": "world",
                     "locations": list(self.game_state.visited_locations),
-                    "display_map": True
+                    "display_map": True,
                 }
 
         elif action == "llm" and target == "info":
@@ -711,7 +722,7 @@ quit - Exit the game
                 "success": True,
                 "message": f"Current LLM provider: {provider_name}",
                 "action_type": CommandType.SYSTEM.value,
-                "llm_info": True
+                "llm_info": True,
             }
 
         elif action == "llm" and target == "change":
@@ -724,12 +735,12 @@ quit - Exit the game
                 "success": True,
                 "message": f"LLM provider changed to {provider_name}.",
                 "action_type": CommandType.SYSTEM.value,
-                "llm_changed": True
+                "llm_changed": True,
             }
 
         # Default response
         return {
             "success": False,
             "message": "Unknown system command. Try 'help' for a list of commands.",
-            "action_type": CommandType.SYSTEM.value
+            "action_type": CommandType.SYSTEM.value,
         }

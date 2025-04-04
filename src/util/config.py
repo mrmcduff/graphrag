@@ -5,28 +5,20 @@ from typing import Dict, Any, Optional
 # Import dotenv for environment variable loading
 try:
     from dotenv import load_dotenv
+
     DOTENV_AVAILABLE = True
 except ImportError:
     DOTENV_AVAILABLE = False
-    print("Warning: python-dotenv not found. Install with 'pip install python-dotenv' to use .env files.")
+    print(
+        "Warning: python-dotenv not found. Install with 'pip install python-dotenv' to use .env files."
+    )
 
 DEFAULT_CONFIG = {
-    "output": {
-        "use_color": True,
-        "delay": 0.02,
-        "width": 80
-    },
-    "llm": {
-        "default_provider": "rule_based",
-        "temperature": 0.7,
-        "max_tokens": 500
-    },
-    "game": {
-        "autosave": True,
-        "autosave_turns": 10,
-        "save_dir": "saves"
-    }
+    "output": {"use_color": True, "delay": 0.02, "width": 80},
+    "llm": {"default_provider": "rule_based", "temperature": 0.7, "max_tokens": 500},
+    "game": {"autosave": True, "autosave_turns": 10, "save_dir": "saves"},
 }
+
 
 def load_environment_variables(env_file: str = ".env") -> bool:
     """
@@ -53,6 +45,7 @@ def load_environment_variables(env_file: str = ".env") -> bool:
         print(f"Environment file {env_file} not found")
         return False
 
+
 def get_api_key(provider_name: str) -> Optional[str]:
     """
     Get API key for a specific provider.
@@ -67,7 +60,7 @@ def get_api_key(provider_name: str) -> Optional[str]:
     env_var_map = {
         "anthropic": "ANTHROPIC_API_KEY",
         "openai": "OPENAI_API_KEY",
-        "google": "GOOGLE_API_KEY"
+        "google": "GOOGLE_API_KEY",
     }
 
     if provider_name.lower() in env_var_map:
@@ -75,6 +68,7 @@ def get_api_key(provider_name: str) -> Optional[str]:
         return os.environ.get(env_var)
 
     return None
+
 
 def load_config(config_file: Optional[str] = None) -> Dict[str, Any]:
     """
@@ -90,7 +84,7 @@ def load_config(config_file: Optional[str] = None) -> Dict[str, Any]:
 
     if config_file and os.path.exists(config_file):
         try:
-            with open(config_file, 'r') as f:
+            with open(config_file, "r") as f:
                 user_config = json.load(f)
 
             # Merge user config into defaults
@@ -103,6 +97,7 @@ def load_config(config_file: Optional[str] = None) -> Dict[str, Any]:
             print(f"Error loading config file: {e}")
 
     return config
+
 
 def save_config(config: Dict[str, Any], config_file: str) -> bool:
     """
@@ -118,7 +113,7 @@ def save_config(config: Dict[str, Any], config_file: str) -> bool:
     try:
         os.makedirs(os.path.dirname(os.path.abspath(config_file)), exist_ok=True)
 
-        with open(config_file, 'w') as f:
+        with open(config_file, "w") as f:
             json.dump(config, f, indent=2)
 
         return True

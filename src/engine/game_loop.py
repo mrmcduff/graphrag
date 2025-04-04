@@ -3,6 +3,7 @@ from typing import Dict, Any, Optional
 import os
 import sys
 
+
 class GameLoop:
     """Main game loop that coordinates all components of the text adventure game."""
 
@@ -40,10 +41,7 @@ class GameLoop:
 
         print("Initializing Command Processor...")
         self.command_processor = CommandProcessor(
-            self.game_state,
-            self.graph_rag_engine,
-            self.combat_system,
-            self.llm_manager
+            self.game_state, self.graph_rag_engine, self.combat_system, self.llm_manager
         )
 
         print("Initializing Output Manager...")
@@ -120,6 +118,7 @@ class GameLoop:
             except Exception as e:
                 print(f"\nError in game loop: {e}")
                 import traceback
+
                 traceback.print_exc()
                 print("\nThe game will try to continue...")
 
@@ -150,7 +149,9 @@ The message should be 3-4 sentences long.
     def _display_location_description(self) -> None:
         """Display a description of the current location."""
         location_query = f"look around {self.game_state.player_location}"
-        description = self.graph_rag_engine.generate_response(location_query, self.game_state)
+        description = self.graph_rag_engine.generate_response(
+            location_query, self.game_state
+        )
         self.output_manager.display_text(f"\n{description}")
 
     def _handle_state_changes(self, result: Dict[str, Any]) -> None:
@@ -160,7 +161,9 @@ The message should be 3-4 sentences long.
             self._display_location_description()
 
         # If combat ended, update game state and display result
-        if result.get("action_type") == "combat" and not result.get("combat_active", True):
+        if result.get("action_type") == "combat" and not result.get(
+            "combat_active", True
+        ):
             if result.get("combat_result") == "victory":
                 self.output_manager.display_text("\nYou have defeated your enemy!")
             elif result.get("combat_result") == "defeat":
@@ -170,16 +173,23 @@ The message should be 3-4 sentences long.
 
     def _handle_player_defeat(self) -> None:
         """Handle player defeat in combat."""
-        self.output_manager.display_text("\nYou wake up later, feeling weakened but alive...")
+        self.output_manager.display_text(
+            "\nYou wake up later, feeling weakened but alive..."
+        )
         # Restore some health
-        self.combat_system.player_stats["health"] = self.combat_system.player_stats["max_health"] // 2
+        self.combat_system.player_stats["health"] = (
+            self.combat_system.player_stats["max_health"] // 2
+        )
 
     def _handle_quit(self) -> None:
         """Handle game exit with optional save."""
-        save_on_exit = input("\nSave game before exiting? (y/n): ").lower() == 'y'
+        save_on_exit = input("\nSave game before exiting? (y/n): ").lower() == "y"
 
         if save_on_exit:
-            save_file = input("Enter save filename (default: autosave.json): ") or "autosave.json"
+            save_file = (
+                input("Enter save filename (default: autosave.json): ")
+                or "autosave.json"
+            )
             success = self.game_state.save_game(save_file)
             if success:
                 print(f"Game saved to {save_file}")

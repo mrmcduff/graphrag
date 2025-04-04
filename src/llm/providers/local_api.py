@@ -2,10 +2,13 @@ import requests
 from typing import Dict, Any
 from .base import LLMProvider
 
+
 class LocalAPIProvider(LLMProvider):
     """Provider for local LLM API servers."""
 
-    def __init__(self, host: str = "localhost", port: int = 8000, api_path: str = "/api/generate"):
+    def __init__(
+        self, host: str = "localhost", port: int = 8000, api_path: str = "/api/generate"
+    ):
         """
         Initialize the Local API provider.
 
@@ -20,7 +23,9 @@ class LocalAPIProvider(LLMProvider):
         self.port = port
         self.api_url = f"http://{host}:{port}{api_path}"
 
-    def generate_text(self, prompt: str, max_tokens: int = 500, temperature: float = 0.7) -> str:
+    def generate_text(
+        self, prompt: str, max_tokens: int = 500, temperature: float = 0.7
+    ) -> str:
         """
         Generate text using a local LLM API server.
 
@@ -42,9 +47,9 @@ class LocalAPIProvider(LLMProvider):
                 json={
                     "prompt": full_prompt,
                     "max_tokens": max_tokens,
-                    "temperature": temperature
+                    "temperature": temperature,
                 },
-                timeout=30
+                timeout=30,
             )
 
             if response.status_code == 200:
