@@ -1,199 +1,111 @@
-import os
 import textwrap
-import time
-from typing import Dict, Any, Optional
+from typing import Any, Dict
+from src.engine.feedback.command_result import CommandResult
 
 
 class OutputManager:
-    """Class to handle formatting and display of game output."""
+    """Manages the display of command results."""
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: Dict[str, Any] = None):
         """
         Initialize the output manager.
 
         Args:
-            config: Optional configuration dictionary
+            config: Configuration dictionary
         """
         self.config = config or {}
-
-        # Set default configuration values
         self.width = self.config.get("width", 80)
-        self.delay = self.config.get(
-            "delay", 0.02
-        )  # Delay between characters for typing effect
         self.use_color = self.config.get("use_color", True)
-        self.wrap_text = self.config.get("wrap_text", True)
+        self.typing_effect = self.config.get("typing_effect", False)
+        self.typing_speed = self.config.get("typing_speed", 0.02)
 
-        # Set color codes if color is enabled
-        if self.use_color:
-            # ANSI color codes
-            self.colors = {
-                "reset": "\033[0m",
-                "bold": "\033[1m",
-                "italic": "\033[3m",
-                "underline": "\033[4m",
-                "black": "\033[30m",
-                "red": "\033[31m",
-                "green": "\033[32m",
-                "yellow": "\033[33m",
-                "blue": "\033[34m",
-                "magenta": "\033[35m",
-                "cyan": "\033[36m",
-                "white": "\033[37m",
-                "bg_black": "\033[40m",
-                "bg_red": "\033[41m",
-                "bg_green": "\033[42m",
-                "bg_yellow": "\033[43m",
-                "bg_blue": "\033[44m",
-                "bg_magenta": "\033[45m",
-                "bg_cyan": "\033[46m",
-                "bg_white": "\033[47m",
-            }
-        else:
-            # Empty color codes if color is disabled
-            self.colors = {
-                k: ""
-                for k in [
-                    "reset",
-                    "bold",
-                    "italic",
-                    "underline",
-                    "black",
-                    "red",
-                    "green",
-                    "yellow",
-                    "blue",
-                    "magenta",
-                    "cyan",
-                    "white",
-                    "bg_black",
-                    "bg_red",
-                    "bg_green",
-                    "bg_yellow",
-                    "bg_blue",
-                    "bg_magenta",
-                    "bg_cyan",
-                    "bg_white",
-                ]
-            }
-
-    def display_text(self, text: str, style: str = "normal") -> None:
+    def display_result(self, result: CommandResult) -> None:
         """
-        Display text with optional styling and typing effect.
+        Display a command result to the player.
+
+        Args:
+            result: The command result to display
+        """
+        if result.feedback_type == "text":
+            self._display_text_result(result)
+        elif result.feedback_type == "visual":
+            self._display_visual_result(result)
+        # Handle other feedback types...
+
+    def _display_text_result(self, result: CommandResult) -> None:
+        """
+        Display a text-based command result.
+
+        Args:
+            result: The command result to display
+        """
+        import time
+
+        # Format the message with word wrapping
+        wrapped_message = textwrap.fill(result.message, width=self.width)
+
+        # Apply color if enabled
+        if self.use_color:
+            try:
+                import colorama
+
+                colorama.init()
+
+                # Use color based on success/failure
+                if result.success:
+                    color = colorama.Fore.GREEN
+                else:
+                    color = colorama.Fore.RED
+
+                wrapped_message = f"{color}{wrapped_message}{colorama.Style.RESET_ALL}"
+            except ImportError:
+                # Continue without color if colorama isn't available
+                pass
+
+        # Display with typing effect if enabled
+        if self.typing_effect:
+            for char in wrapped_message:
+                print(char, end="", flush=True)
+                time.sleep(self.typing_speed)
+            print()
+        else:
+            print(wrapped_message)
+
+        # Display alternatives if the command failed
+        if not result.success and result.alternatives:
+            print("\nDid you mean:")
+            for alternative in result.alternatives[:3]:  # Show up to 3 alternatives
+                print(f"  - {alternative}")
+
+    def _display_visual_result(self, result: CommandResult) -> None:
+        """
+        Display a visual result (e.g., ASCII art, map).
+
+        Args:
+            result: The command result to display
+        """
+        print(result.message)
+
+        # If there are additional visual elements
+        for effect in result.effects:
+            if effect.type == "visual" and effect.description:
+                print(effect.description)
+
+    def display_text(self, text: str) -> None:
+        """
+        Display plain text to the player.
 
         Args:
             text: The text to display
-            style: Style to apply ("normal", "important", "system", "error")
         """
-        # Apply styling based on the style parameter
-        if style == "important":
-            styled_text = f"{self.colors['bold']}{self.colors['yellow']}{text}{self.colors['reset']}"
-        elif style == "system":
-            styled_text = f"{self.colors['italic']}{self.colors['cyan']}{text}{self.colors['reset']}"
-        elif style == "error":
-            styled_text = (
-                f"{self.colors['bold']}{self.colors['red']}{text}{self.colors['reset']}"
-            )
-        else:
-            styled_text = text
+        wrapped_text = textwrap.fill(text, width=self.width)
 
-        # Wrap text if enabled
-        if self.wrap_text:
-            lines = []
-            for line in styled_text.split("\n"):
-                if line.strip():
-                    lines.extend(textwrap.wrap(line, width=self.width))
-                else:
-                    lines.append("")
-            wrapped_text = "\n".join(lines)
-        else:
-            wrapped_text = styled_text
+        if self.typing_effect:
+            import time
 
-        # Display text with typing effect if delay is > 0
-        if self.delay > 0 and style != "system":
             for char in wrapped_text:
                 print(char, end="", flush=True)
-                time.sleep(self.delay)
+                time.sleep(self.typing_speed)
             print()
         else:
             print(wrapped_text)
-
-    def display_result(self, result: Dict[str, Any]) -> None:
-        """
-        Display the result of a command.
-
-        Args:
-            result: Dictionary with command result information
-        """
-        # Extract key information from the result
-        message = result.get("message", "")
-        success = result.get("success", False)
-        action_type = result.get("action_type", "unknown")
-
-        # Handle different result types
-        if action_type == "combat" and "combat_active" in result:
-            # Combat result
-            if result["combat_active"]:
-                # Active combat
-                self.display_text(message)
-
-                # Display health if available
-                if "player_health" in result and "enemy_health" in result:
-                    enemy = result.get("enemy", "Enemy")
-                    health_display = (
-                        f"\nYou: {result['player_health']} HP | "
-                        f"{enemy}: {result['enemy_health']} HP"
-                    )
-                    self.display_text(health_display, "system")
-            else:
-                # Combat ended
-                style = (
-                    "important" if result.get("combat_result") == "victory" else "error"
-                )
-                self.display_text(message, style)
-
-        elif action_type == "inventory":
-            # Inventory result
-            self.display_text(message, "system")
-
-        elif action_type == "system":
-            # System command result
-            if result.get("help_displayed", False):
-                # Help text gets special formatting
-                self.display_text(message, "system")
-            elif not success:
-                # Failed system command
-                self.display_text(message, "error")
-            else:
-                # Successful system command
-                self.display_text(message, "system")
-
-        elif action_type == "movement":
-            # Movement result
-            if success:
-                self.display_text(message)
-            else:
-                self.display_text(message, "error")
-
-        elif action_type == "narrative":
-            # Narrative or descriptive text
-            self.display_text(message)
-
-        else:
-            # Default handling
-            if success:
-                self.display_text(message)
-            else:
-                self.display_text(message, "error")
-
-    def display_separator(self) -> None:
-        """Display a separator line."""
-        if self.use_color:
-            separator = f"{self.colors['cyan']}{'-' * self.width}{self.colors['reset']}"
-        else:
-            separator = "-" * self.width
-        print(separator)
-
-    def clear_screen(self) -> None:
-        """Clear the terminal screen."""
-        os.system("cls" if os.name == "nt" else "clear")

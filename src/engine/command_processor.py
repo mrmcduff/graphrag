@@ -1,23 +1,42 @@
-import re
-from typing import Dict, List, Any, Optional, Tuple
-from enum import Enum
+import random
+import os
+import sys
+from typing import TYPE_CHECKING
+from engine.command_queue.command_queue import CommandQueue
+from engine.command_registry.command_registry import CommandRegistry
+from engine.context.command_context import CommandContext
+from engine.feedback.feedback_generator import FeedbackGenerator
+from engine.intent_recognition import IntentRecognizer, Intent, IntentType
+from engine.feedback import CommandResult, Effect
+from engine.handlers import (
+    ExamineHandler,
+    MovementHandler,
+    InventoryHandler,
+    TakeHandler,
+    UseHandler,
+    TalkHandler,
+    EquipHandler,
+    CombatHandler,
+    SystemHandler,
+)
 
-
-class CommandType(Enum):
-    """Types of commands the player can input."""
-
-    MOVEMENT = "movement"
-    INTERACTION = "interaction"
-    INVENTORY = "inventory"
-    COMBAT = "combat"
-    SYSTEM = "system"
-    UNKNOWN = "unknown"
+if TYPE_CHECKING:
+    from game_engine import GameState  # Only imported for type checking
+    from graphrag import GraphRAGEngine
+    from combat import CombatSystem
+    from llm import LLMManager
 
 
 class CommandProcessor:
-    """Process and execute player commands."""
+    """Process and execute player commands with advanced natural language understanding."""
 
-    def __init__(self, game_state, graph_rag_engine, combat_system, llm_manager):
+    def __init__(
+        self,
+        game_state: "GameState",
+        graph_rag_engine: "GraphRAGEngine",
+        combat_system: "CombatSystem",
+        llm_manager: "LLMManager",
+    ):
         """
         Initialize the command processor.
 
@@ -32,24 +51,51 @@ class CommandProcessor:
         self.combat_system = combat_system
         self.llm_manager = llm_manager
 
-        # Command patterns - regular expressions to match different command types
-        self.command_patterns = {
-            CommandType.MOVEMENT: re.compile(
-                r"^(go|move|travel|walk)\s+(.+)$", re.IGNORECASE
-            ),
-            CommandType.INTERACTION: re.compile(
-                r"^(look|examine|talk|speak|take|get|use)\s*(.*)$", re.IGNORECASE
-            ),
-            CommandType.INVENTORY: re.compile(
-                r"^(inventory|items|i|equip)\s*(.*)$", re.IGNORECASE
-            ),
-            CommandType.COMBAT: re.compile(
-                r"^(attack|fight|stats|block|dodge|flee)\s*(.*)$", re.IGNORECASE
-            ),
-            CommandType.SYSTEM: re.compile(
-                r"^(save|load|help|map|settings|llm)\s*(.*)$", re.IGNORECASE
-            ),
-        }
+        # Initialize advanced command processing components
+        self.intent_recognizer = IntentRecognizer(llm_manager)
+        self.command_context = CommandContext(game_state)
+        self.command_registry = CommandRegistry(game_state)
+        self.feedback_generator = FeedbackGenerator(game_state)
+
+        # Initialize command queue
+        self.command_queue = CommandQueue()
+
+        # Register handlers
+        self._register_command_handlers()
+
+    def _register_command_handlers(self):
+        """Register the command handlers with the registry."""
+        # Core handler types
+        self.command_registry.register_handler(MovementHandler(self.game_state))
+        self.command_registry.register_handler(
+            ExamineHandler(self.game_state, self.graph_rag_engine)
+        )
+        self.command_registry.register_handler(TakeHandler(self.game_state))
+        self.command_registry.register_handler(
+            UseHandler(self.game_state, self.graph_rag_engine)
+        )
+        self.command_registry.register_handler(
+            TalkHandler(self.game_state, self.graph_rag_engine)
+        )
+        self.command_registry.register_handler(InventoryHandler(self.game_state))
+        self.command_registry.register_handler(
+            EquipHandler(self.game_state, self.combat_system)
+        )
+        self.command_registry.register_handler(
+            CombatHandler(self.game_state, self.combat_system)
+        )
+        self.command_registry.register_handler(SystemHandler(self.game_state))
+
+        # Try to load any custom handlers from plugins
+        try:
+            plugins_path = os.path.join(
+                os.path.dirname(__file__), "..", "plugins", "commands"
+            )
+            if os.path.exists(plugins_path):
+                sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+                self.command_registry.load_handlers_from_module("plugins.commands")
+        except Exception as e:
+            print(f"Warning: Failed to load command plugins: {e}")
 
     def setup_llm_provider(self, choice: int) -> None:
         """
@@ -141,368 +187,67 @@ class CommandProcessor:
             )
             self.llm_manager.set_active_provider(LLMType.RULE_BASED)
 
-    def process_command(self, command: str) -> Dict[str, Any]:
+    def process_command(self, command: str) -> CommandResult:
         """
-        Process a player command.
+        Process a player command with natural language understanding.
 
         Args:
             command: The player's command string
 
         Returns:
-            Dictionary with the results of the command
+            CommandResult with the results of the command
         """
-        # Default result
-        result = {
-            "success": False,
-            "message": "I don't understand that command.",
-            "action_type": CommandType.UNKNOWN.value,
-        }
-
         # Check if we're in combat
         if self.combat_system.active_combat:
             return self._process_combat_command(command)
 
-        # Try to match command against patterns
-        command_type, action, target = self._parse_command(command)
+        # Recognize intent
+        intents = self.intent_recognizer.recognize(command)
+        if not intents:
+            # No intent recognized
+            return CommandResult(
+                success=False,
+                message="I don't understand that command.",
+                action_type="unknown",
+            )
 
-        # Process based on command type
-        if command_type == CommandType.MOVEMENT:
-            result = self._process_movement(action, target)
+        # Get highest confidence intent
+        intent = intents[0]
 
-        elif command_type == CommandType.INTERACTION:
-            result = self._process_interaction(action, target)
+        # Get handler for the intent
+        handler = self.command_registry.get_handler_for_intent(intent)
 
-        elif command_type == CommandType.INVENTORY:
-            result = self._process_inventory(action, target)
-
-        elif command_type == CommandType.COMBAT:
-            result = self._process_combat_initiation(action, target)
-
-        elif command_type == CommandType.SYSTEM:
-            result = self._process_system_command(action, target)
-
+        if handler:
+            # Process with the appropriate handler
+            basic_result = handler.handle(intent, self.command_context)
         else:
-            # Use the GraphRAG engine for unknown commands
+            # No handler found, use GraphRAG fallback
             response = self.graph_rag_engine.generate_response(command, self.game_state)
-            result = {"success": True, "message": response, "action_type": "narrative"}
+            basic_result = {
+                "success": True,
+                "message": response,
+                "action_type": "narrative",
+            }
+
+        # Generate detailed feedback
+        result = self.feedback_generator.generate_feedback(
+            command, intent, basic_result
+        )
 
         # Update game turn only if action was successful
-        if result.get("success", False):
+        if result.success:
             self.game_state.game_turn += 1
+
+            # Queue any delayed effects
+            for effect in result.effects:
+                if effect.delay > 0:
+                    self.command_queue.enqueue(
+                        self._process_delayed_effect, args=(effect,), delay=effect.delay
+                    )
 
         return result
 
-    def _parse_command(self, command: str) -> Tuple[CommandType, str, str]:
-        """
-        Parse the command to determine type, action, and target.
-
-        Args:
-            command: The player's command string
-
-        Returns:
-            Tuple of (command_type, action, target)
-        """
-        # Try to match against patterns
-        for cmd_type, pattern in self.command_patterns.items():
-            match = pattern.match(command)
-            if match:
-                action = match.group(1).lower()
-                target = match.group(2).strip() if match.group(2) else ""
-                return cmd_type, action, target
-
-        # If no match, check for simple commands
-        simple_command = command.lower().strip()
-
-        if simple_command in ["look", "l"]:
-            return CommandType.INTERACTION, "look", ""
-
-        if simple_command in ["inventory", "i"]:
-            return CommandType.INVENTORY, "inventory", ""
-
-        if simple_command in ["help", "h", "?"]:
-            return CommandType.SYSTEM, "help", ""
-
-        # No match found - treat as unknown
-        words = simple_command.split()
-        action = words[0] if words else ""
-        target = " ".join(words[1:]) if len(words) > 1 else ""
-
-        return CommandType.UNKNOWN, action, target
-
-    def _process_movement(self, action: str, target: str) -> Dict[str, Any]:
-        """
-        Process movement commands.
-
-        Args:
-            action: The movement action (go, move, etc.)
-            target: The destination location
-
-        Returns:
-            Dictionary with the results of the movement
-        """
-        if not target:
-            return {
-                "success": False,
-                "message": "Where do you want to go?",
-                "action_type": CommandType.MOVEMENT.value,
-            }
-
-        # Try to move to the target location
-        success = self.game_state.update_state(action, target)
-
-        if success:
-            # Just set basic info - the actual description will be handled by the game loop
-            return {
-                "success": True,
-                "message": f"You travel to {target}.",
-                "action_type": CommandType.MOVEMENT.value,
-                "location": self.game_state.player_location,
-            }
-        else:
-            return {
-                "success": False,
-                "message": f"You can't go to {target} from here.",
-                "action_type": CommandType.MOVEMENT.value,
-            }
-
-    def _process_interaction(self, action: str, target: str) -> Dict[str, Any]:
-        """
-        Process interaction commands (look, talk, take, use).
-
-        Args:
-            action: The interaction action
-            target: The target of the interaction
-
-        Returns:
-            Dictionary with the results of the interaction
-        """
-        if action == "look" and not target:
-            # Look around the current location
-            description = self.graph_rag_engine.generate_response(
-                "look around", self.game_state
-            )
-            return {
-                "success": True,
-                "message": description,
-                "action_type": CommandType.INTERACTION.value,
-            }
-
-        elif action in ["talk", "speak"] and target:
-            # Talk to an NPC
-            success = self.game_state.update_state(action, target)
-            if success:
-                query = f"talk to {target}"
-                response = self.graph_rag_engine.generate_response(
-                    query, self.game_state
-                )
-                return {
-                    "success": True,
-                    "message": response,
-                    "action_type": CommandType.INTERACTION.value,
-                    "target": target,
-                }
-            else:
-                return {
-                    "success": False,
-                    "message": f"There's no one named {target} here.",
-                    "action_type": CommandType.INTERACTION.value,
-                }
-
-        elif action in ["take", "get"] and target:
-            # Take an item
-            success = self.game_state.update_state(action, target)
-            if success:
-                return {
-                    "success": True,
-                    "message": f"You take the {target} and add it to your inventory.",
-                    "action_type": CommandType.INTERACTION.value,
-                    "target": target,
-                }
-            else:
-                return {
-                    "success": False,
-                    "message": f"There's no {target} here that you can take.",
-                    "action_type": CommandType.INTERACTION.value,
-                }
-
-        elif action == "use" and target:
-            # Use an item
-            if target in self.game_state.inventory:
-                success = self.game_state.update_state(action, target)
-                if success:
-                    response = self.graph_rag_engine.generate_response(
-                        f"use {target}", self.game_state
-                    )
-                    return {
-                        "success": True,
-                        "message": response,
-                        "action_type": CommandType.INTERACTION.value,
-                        "target": target,
-                    }
-
-            return {
-                "success": False,
-                "message": f"You don't have {target} in your inventory.",
-                "action_type": CommandType.INTERACTION.value,
-            }
-
-        elif action in ["examine", "inspect"] and target:
-            # Examine something specific
-            response = self.graph_rag_engine.generate_response(
-                f"examine {target}", self.game_state
-            )
-            return {
-                "success": True,
-                "message": response,
-                "action_type": CommandType.INTERACTION.value,
-                "target": target,
-            }
-
-        # Default response for other interactions
-        query = f"{action} {target}".strip()
-        response = self.graph_rag_engine.generate_response(query, self.game_state)
-        return {
-            "success": True,
-            "message": response,
-            "action_type": CommandType.INTERACTION.value,
-        }
-
-    def _process_inventory(self, action: str, target: str) -> Dict[str, Any]:
-        """
-        Process inventory-related commands.
-
-        Args:
-            action: The inventory action
-            target: The target item
-
-        Returns:
-            Dictionary with the results of the inventory action
-        """
-        if action in ["inventory", "items", "i"] and not target:
-            # Display inventory
-            if not self.game_state.inventory:
-                return {
-                    "success": True,
-                    "message": "Your inventory is empty.",
-                    "action_type": CommandType.INVENTORY.value,
-                }
-
-            items = ", ".join(self.game_state.inventory)
-            return {
-                "success": True,
-                "message": f"Inventory: {items}",
-                "action_type": CommandType.INVENTORY.value,
-                "inventory": self.game_state.inventory,
-            }
-
-        elif action == "equip" and target:
-            # Equip an item
-            if target not in self.game_state.inventory:
-                return {
-                    "success": False,
-                    "message": f"You don't have {target} in your inventory.",
-                    "action_type": CommandType.INVENTORY.value,
-                }
-
-            # Check if it's a weapon or armor
-            is_weapon = target in self.combat_system.weapon_database
-            is_armor = target in self.combat_system.armor_database
-
-            if is_weapon:
-                self.combat_system.player_stats["equipped_weapon"] = target
-                return {
-                    "success": True,
-                    "message": f"You equip the {target}.",
-                    "action_type": CommandType.INVENTORY.value,
-                    "equipped": target,
-                    "slot": "weapon",
-                }
-            elif is_armor:
-                self.combat_system.player_stats["equipped_armor"] = target
-                return {
-                    "success": True,
-                    "message": f"You equip the {target}.",
-                    "action_type": CommandType.INVENTORY.value,
-                    "equipped": target,
-                    "slot": "armor",
-                }
-            else:
-                return {
-                    "success": False,
-                    "message": f"You can't equip {target}.",
-                    "action_type": CommandType.INVENTORY.value,
-                }
-
-        # Default response
-        return {
-            "success": False,
-            "message": "Invalid inventory command.",
-            "action_type": CommandType.INVENTORY.value,
-        }
-
-    def _process_combat_initiation(self, action: str, target: str) -> Dict[str, Any]:
-        """
-        Process commands that initiate combat.
-
-        Args:
-            action: The combat action
-            target: The combat target
-
-        Returns:
-            Dictionary with the results of the combat initiation
-        """
-        if action in ["attack", "fight"] and target:
-            # Start combat with the target
-            combat_started = self.combat_system.start_combat(target)
-
-            if combat_started:
-                enemy_name = self.combat_system.active_combat["enemy"]["name"]
-                return {
-                    "success": True,
-                    "message": f"You engage in combat with {enemy_name}!",
-                    "action_type": CommandType.COMBAT.value,
-                    "combat_started": True,
-                    "enemy": enemy_name,
-                }
-            else:
-                return {
-                    "success": False,
-                    "message": f"You can't attack {target}.",
-                    "action_type": CommandType.COMBAT.value,
-                }
-
-        elif action == "stats":
-            # Display player stats
-            stats = self.combat_system.player_stats
-            weapon = stats.get("equipped_weapon", "None")
-            armor = stats.get("equipped_armor", "None")
-
-            stats_message = (
-                f"Player Stats:\n"
-                f"Health: {stats['health']}/{stats['max_health']}\n"
-                f"Strength: {stats['strength']}\n"
-                f"Dexterity: {stats['dexterity']}\n"
-                f"Intelligence: {stats['intelligence']}\n"
-                f"Defense: {stats['defense']}\n"
-                f"Equipped Weapon: {weapon}\n"
-                f"Equipped Armor: {armor}"
-            )
-
-            return {
-                "success": True,
-                "message": stats_message,
-                "action_type": CommandType.COMBAT.value,
-                "stats": stats,
-            }
-
-        # Default response
-        return {
-            "success": False,
-            "message": "Invalid combat command.",
-            "action_type": CommandType.COMBAT.value,
-        }
-
-    def _process_combat_command(self, command: str) -> Dict[str, Any]:
+    def _process_combat_command(self, command: str) -> CommandResult:
         """
         Process commands during active combat.
 
@@ -510,237 +255,140 @@ class CommandProcessor:
             command: The combat command
 
         Returns:
-            Dictionary with the results of the combat action
+            CommandResult with the results of the combat action
         """
-        words = command.lower().split()
-        action = words[0] if words else ""
-        target = " ".join(words[1:]) if len(words) > 1 else ""
+        # Recognize intent in combat context
+        intents = self.intent_recognizer.recognize(command)
+        intent = (
+            intents[0]
+            if intents
+            else Intent(
+                type=IntentType.UNKNOWN,
+                confidence=0.1,
+                parameters={},
+                original_text=command,
+            )
+        )
 
-        if action in ["attack", "block", "dodge"]:
-            # Basic combat actions
-            result = self.combat_system.process_combat_action(action, target)
+        # Very simple routing based on intent type
+        if intent.type in [IntentType.ATTACK, IntentType.USE]:
+            target = intent.parameters.get("target", "")
 
-            if result["success"]:
-                # Format the combat log for display
-                log_entries = result["combat_log"]
-                combat_message = "\n".join(log_entries)
+            # Process combat action
+            result = self.combat_system.process_combat_action(
+                intent.type.name.lower(), target
+            )
 
-                # Check if combat has ended
-                is_active = result["combat_status"] == "active"
+            # Convert to CommandResult
+            combat_message = "\n".join(result.get("combat_log", []))
 
-                # Determine combat result if combat has ended
+            cmd_result = CommandResult(
+                success=result.get("success", False),
+                message=combat_message or result.get("message", ""),
+                action_type="combat",
+            )
+
+            # Add combat-specific effects
+            if "player_health" in result:
+                cmd_result.add_effect(
+                    Effect(
+                        type="state_change",
+                        entity_type="player",
+                        property="health",
+                        new_value=result["player_health"],
+                        description="Your health changed.",
+                    )
+                )
+
+            if "enemy_health" in result:
+                cmd_result.add_effect(
+                    Effect(
+                        type="state_change",
+                        entity_type="enemy",
+                        property="health",
+                        new_value=result["enemy_health"],
+                        description="Enemy health changed.",
+                    )
+                )
+
+            # Check if combat has ended
+            is_active = result.get("combat_status", "") == "active"
+            if not is_active:
                 combat_result = None
-                if not is_active:
-                    if result["combat_status"] == "player_victory":
-                        combat_result = "victory"
-                    elif result["combat_status"] == "player_defeated":
-                        combat_result = "defeat"
-                    elif result["combat_status"] == "player_fled":
-                        combat_result = "fled"
+                if result.get("combat_status") == "player_victory":
+                    combat_result = "victory"
+                elif result.get("combat_status") == "player_defeated":
+                    combat_result = "defeat"
+                elif result.get("combat_status") == "player_fled":
+                    combat_result = "fled"
 
-                return {
-                    "success": True,
-                    "message": combat_message,
-                    "action_type": CommandType.COMBAT.value,
-                    "combat_active": is_active,
-                    "combat_result": combat_result,
-                    "player_health": result["player_health"],
-                    "enemy_health": result["enemy_health"],
-                }
-            else:
-                return {
-                    "success": False,
-                    "message": result["message"],
-                    "action_type": CommandType.COMBAT.value,
-                }
+                cmd_result.add_effect(
+                    Effect(
+                        type="state_change",
+                        entity_type="combat",
+                        property="active",
+                        new_value=False,
+                        description=f"Combat ended with {combat_result}.",
+                    )
+                )
 
-        elif action == "use" and target:
-            # Use an item in combat
-            if target in self.game_state.inventory:
-                result = self.combat_system.process_combat_action(action, target)
+            return cmd_result
 
-                if result["success"]:
-                    log_entries = result["combat_log"]
-                    combat_message = "\n".join(log_entries)
-
-                    return {
-                        "success": True,
-                        "message": combat_message,
-                        "action_type": CommandType.COMBAT.value,
-                        "combat_active": result["combat_status"] == "active",
-                        "item_used": target,
-                    }
-                else:
-                    return {
-                        "success": False,
-                        "message": result["message"],
-                        "action_type": CommandType.COMBAT.value,
-                    }
-            else:
-                return {
-                    "success": False,
-                    "message": f"You don't have {target} in your inventory.",
-                    "action_type": CommandType.COMBAT.value,
-                }
-
-        elif action == "flee":
-            # Attempt to flee from combat
-            # 50% chance of success
-            import random
-
-            success = random.random() > 0.5
+        elif intent.type == IntentType.QUIT or intent.original_text.lower() == "flee":
+            # Handle fleeing
+            success = random.random() > 0.5  # 50% chance to flee
 
             if success:
-                self.combat_system.active_combat["status"] = "player_fled"
                 self.combat_system.active_combat = None
-                return {
-                    "success": True,
-                    "message": "You successfully flee from combat!",
-                    "action_type": CommandType.COMBAT.value,
-                    "combat_active": False,
-                    "combat_result": "fled",
-                }
+                return CommandResult(
+                    success=True,
+                    message="You successfully flee from combat!",
+                    action_type="combat",
+                    effects=[
+                        Effect(
+                            type="state_change",
+                            entity_type="combat",
+                            property="active",
+                            new_value=False,
+                            description="Combat ended with fled.",
+                        )
+                    ],
+                )
             else:
-                # Failed to flee, enemy gets a free attack
-                enemy_action = self.combat_system._process_enemy_combat_action()
-                return {
-                    "success": False,
-                    "message": f"You fail to escape! {enemy_action.get('message', 'The enemy attacks you!')}",
-                    "action_type": CommandType.COMBAT.value,
-                    "combat_active": True,
-                }
+                # Failed to flee
+                result = self.combat_system.process_enemy_action()
+                return CommandResult(
+                    success=False,
+                    message=f"You fail to escape! {result.get('message', '')}",
+                    action_type="combat",
+                )
 
-        # Default response
-        return {
-            "success": False,
-            "message": "Invalid combat command. You can 'attack', 'block', 'dodge', 'use [item]', or 'flee'.",
-            "action_type": CommandType.COMBAT.value,
-        }
+        # Default response for unknown combat commands
+        return CommandResult(
+            success=False,
+            message="Invalid combat command. You can 'attack', 'use [item]', or 'flee'.",
+            action_type="combat",
+            alternatives=["attack", "use health potion", "flee"],
+        )
 
-    def _process_system_command(self, action: str, target: str) -> Dict[str, Any]:
+    def _process_delayed_effect(self, effect: Effect) -> CommandResult:
         """
-        Process system commands.
+        Process a delayed effect.
 
         Args:
-            action: The system action
-            target: The target of the system action
+            effect: The effect to process
 
         Returns:
-            Dictionary with the results of the system command
+            CommandResult representing the effect
         """
-        if action == "save":
-            # Save the game
-            save_file = target if target else "save.json"
-            success = self.game_state.save_game(save_file)
+        # Apply the effect to the game state
+        if effect.entity_type and effect.entity_id and effect.property:
+            # TODO: Implement proper state updates for delayed effects
+            pass
 
-            if success:
-                return {
-                    "success": True,
-                    "message": f"Game saved to {save_file}.",
-                    "action_type": CommandType.SYSTEM.value,
-                    "save_file": save_file,
-                }
-            else:
-                return {
-                    "success": False,
-                    "message": f"Failed to save game to {save_file}.",
-                    "action_type": CommandType.SYSTEM.value,
-                }
-
-        elif action == "load":
-            # Load a saved game
-            load_file = target if target else "save.json"
-            success = self.game_state.load_game(load_file)
-
-            if success:
-                return {
-                    "success": True,
-                    "message": f"Game loaded from {load_file}.",
-                    "action_type": CommandType.SYSTEM.value,
-                    "load_file": load_file,
-                }
-            else:
-                return {
-                    "success": False,
-                    "message": f"Failed to load game from {load_file}.",
-                    "action_type": CommandType.SYSTEM.value,
-                }
-
-        elif action == "help":
-            # Display help
-            help_text = """
-Available Commands:
-------------------
-Movement: go [location], move [location], walk [location]
-Look: look, examine [object/person]
-Interaction: talk [character], take [item], use [item]
-Inventory: inventory, equip [item]
-Combat: attack [enemy], stats, block, dodge, flee
-System: save [filename], load [filename], help, map, quit
-
-Special Commands:
-----------------
-map - Show the world map
-local map - Show detailed map of current location
-quit - Exit the game
-            """
-
-            return {
-                "success": True,
-                "message": help_text,
-                "action_type": CommandType.SYSTEM.value,
-                "help_displayed": True,
-            }
-
-        elif action == "map":
-            # Show map
-            if target and target.lower() == "local":
-                return {
-                    "success": True,
-                    "message": f"Displaying local map of {self.game_state.player_location}...",
-                    "action_type": CommandType.SYSTEM.value,
-                    "map_type": "local",
-                    "location": self.game_state.player_location,
-                    "display_map": True,
-                }
-            else:
-                return {
-                    "success": True,
-                    "message": "Displaying world map...",
-                    "action_type": CommandType.SYSTEM.value,
-                    "map_type": "world",
-                    "locations": list(self.game_state.visited_locations),
-                    "display_map": True,
-                }
-
-        elif action == "llm" and target == "info":
-            # Display LLM information
-            provider = self.llm_manager.active_provider
-            provider_name = provider.name if provider else "None"
-
-            return {
-                "success": True,
-                "message": f"Current LLM provider: {provider_name}",
-                "action_type": CommandType.SYSTEM.value,
-                "llm_info": True,
-            }
-
-        elif action == "llm" and target == "change":
-            # Change LLM provider
-            self.setup_llm_provider(int(input("Enter new LLM provider (1-6): ")))
-            provider = self.llm_manager.active_provider
-            provider_name = provider.name if provider else "None"
-
-            return {
-                "success": True,
-                "message": f"LLM provider changed to {provider_name}.",
-                "action_type": CommandType.SYSTEM.value,
-                "llm_changed": True,
-            }
-
-        # Default response
-        return {
-            "success": False,
-            "message": "Unknown system command. Try 'help' for a list of commands.",
-            "action_type": CommandType.SYSTEM.value,
-        }
+        # Return a command result for the effect
+        return CommandResult(
+            success=True,
+            message=effect.description or "Something changes in the world.",
+            effects=[effect],
+        )
