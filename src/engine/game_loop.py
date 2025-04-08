@@ -37,7 +37,12 @@ class GameLoop:
         self.graph_rag_engine = GraphRAGEngine(game_data_dir, self.llm_manager)
 
         print("Initializing Combat System...")
-        self.combat_system = CombatSystem(self.game_state)
+        self.combat_system = CombatSystem(
+            game_state_data=self.game_state.data,
+            game_state=self.game_state,
+            graph=self.game_state.graph,
+            relations_df=self.game_state.relations_df
+        )
 
         print("Initializing Command Processor...")
         self.command_processor = CommandProcessor(

@@ -28,9 +28,14 @@ class TextAdventureGame:
         # Initialize map generator with GameStateData and graph
         self.map_generator = MapGenerator(self.game_state.data, self.game_state.graph)
 
-        # Initialize combat system with full GameState object
-        # Note: This could be refactored in the future to use GameStateData
-        self.combat_system = CombatSystem(self.game_state)
+        # Initialize combat system with both GameStateData and GameState
+        # This allows for gradual refactoring of the CombatSystem class
+        self.combat_system = CombatSystem(
+            game_state_data=self.game_state.data,
+            game_state=self.game_state,
+            graph=self.game_state.graph,
+            relations_df=self.game_state.relations_df
+        )
 
         self.running = False
         self.in_combat = False
