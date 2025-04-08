@@ -42,14 +42,35 @@ class StatusEffect(Enum):
 class CombatSystem:
     """Class to handle combat mechanics in the game."""
 
-    def __init__(self, game_state):
+    def __init__(self, game_state_data, game_state=None, graph=None, relations_df=None):
         """
         Initialize the combat system.
 
         Args:
-            game_state: The current game state
+            game_state_data: The current game state data
+            game_state: The full game state object (for backward compatibility)
+            graph: The knowledge graph (optional)
+            relations_df: The relations dataframe (optional)
         """
-        self.game_state = game_state
+        self.game_state_data = game_state_data
+        self.game_state = game_state  # Keep for backward compatibility
+        self.graph = graph
+        self.relations_df = relations_df
+        
+        # If graph is not provided, try to get it from game_state_data or game_state
+        if self.graph is None:
+            if hasattr(game_state_data, 'graph'):
+                self.graph = game_state_data.graph
+            elif game_state is not None and hasattr(game_state, 'graph'):
+                self.graph = game_state.graph
+                
+        # If relations_df is not provided, try to get it from game_state_data or game_state
+        if self.relations_df is None:
+            if hasattr(game_state_data, 'relations_df'):
+                self.relations_df = game_state_data.relations_df
+            elif game_state is not None and hasattr(game_state, 'relations_df'):
+                self.relations_df = game_state.relations_df
+                
         self.active_combat = None
         self.player_stats = self._initialize_player_stats()
         self.enemy_database = self._load_enemy_database()
@@ -61,8 +82,12 @@ class CombatSystem:
         self.environment_effects = self._derive_environment_effects()
 
     def _initialize_player_stats(self) -> Dict[str, Any]:
-        """Initialize default player combat stats."""
-        return {
+        """
+        Initialize player combat stats based on game_state_data if available,
+        otherwise use default values.
+        """
+        # Default player stats
+        default_stats = {
             "health": 100,
             "max_health": 100,
             "stamina": 100,
@@ -82,6 +107,15 @@ class CombatSystem:
             "status_effects": [],
             "abilities": ["strike", "block", "dodge"],
         }
+        
+        # Try to get player stats from game_state_data if available
+        if hasattr(self.game_state_data, 'player_stats'):
+            # Update default stats with values from game_state_data
+            for key, value in self.game_state_data.player_stats.items():
+                if key in default_stats:
+                    default_stats[key] = value
+        
+        return default_stats
 
     def _load_enemy_database(self) -> Dict[str, Dict[str, Any]]:
         """
@@ -90,22 +124,29 @@ class CombatSystem:
         Returns:
             Dictionary of enemy data
         """
+        # Get game_data_dir from game_state_data or game_state
+        game_data_dir = None
+        if hasattr(self.game_state_data, 'game_data_dir'):
+            game_data_dir = self.game_state_data.game_data_dir
+        elif self.game_state is not None and hasattr(self.game_state, 'game_data_dir'):
+            game_data_dir = self.game_state.game_data_dir
+            
         # Try to load from file first
-        try:
-            enemy_file = os.path.join(
-                self.game_state.game_data_dir, "game_enemies.json"
-            )
-            if os.path.exists(enemy_file):
-                with open(enemy_file, "r") as f:
-                    return json.load(f)
-        except Exception as e:
-            print(f"Error loading enemy database: {e}")
+        if game_data_dir:
+            try:
+                enemy_file = os.path.join(game_data_dir, "game_enemies.json")
+                if os.path.exists(enemy_file):
+                    with open(enemy_file, "r") as f:
+                        return json.load(f)
+            except Exception as e:
+                print(f"Error loading enemy database: {e}")
 
         # If file loading fails, derive from entities graph
         enemies = {}
 
         # Extract PERSON entities that could be combatants
-        for character in self.game_state.characters:
+        characters = self.game_state_data.characters
+        for character in characters:
             char_lower = character.lower()
             character_id = char_lower.replace(" ", "_")
 
@@ -114,9 +155,9 @@ class CombatSystem:
             aggressive_relations = ["hates", "hunts", "attacks", "enemy_of"]
 
             # Check relations in the graph
-            if character_id in self.game_state.graph.nodes:
-                for neighbor in self.game_state.graph.neighbors(character_id):
-                    edge_data = self.game_state.graph.get_edge_data(
+            if self.graph and character_id in self.graph.nodes:
+                for neighbor in self.graph.neighbors(character_id):
+                    edge_data = self.graph.get_edge_data(
                         character_id, neighbor
                     )
                     if edge_data and "relation" in edge_data:
@@ -182,16 +223,22 @@ class CombatSystem:
         Returns:
             Dictionary of weapon data
         """
+        # Get game_data_dir from game_state_data or game_state
+        game_data_dir = None
+        if hasattr(self.game_state_data, 'game_data_dir'):
+            game_data_dir = self.game_state_data.game_data_dir
+        elif self.game_state is not None and hasattr(self.game_state, 'game_data_dir'):
+            game_data_dir = self.game_state.game_data_dir
+            
         # Try to load from file first
-        try:
-            weapon_file = os.path.join(
-                self.game_state.game_data_dir, "game_weapons.json"
-            )
-            if os.path.exists(weapon_file):
-                with open(weapon_file, "r") as f:
-                    return json.load(f)
-        except Exception as e:
-            print(f"Error loading weapon database: {e}")
+        if game_data_dir:
+            try:
+                weapon_file = os.path.join(game_data_dir, "game_weapons.json")
+                if os.path.exists(weapon_file):
+                    with open(weapon_file, "r") as f:
+                        return json.load(f)
+            except Exception as e:
+                print(f"Error loading weapon database: {e}")
 
         # If file loading fails, derive from items in graph
         weapons = {}
@@ -211,7 +258,14 @@ class CombatSystem:
             "blade",
         ]
 
-        for item in self.game_state.items:
+        # Get items from game_state_data or fall back to game_state
+        items = []
+        if hasattr(self.game_state_data, 'items'):
+            items = self.game_state_data.items
+        elif self.game_state is not None and hasattr(self.game_state, 'items'):
+            items = self.game_state.items
+            
+        for item in items:
             item_lower = item.lower()
 
             # Check if item name contains weapon keywords
@@ -306,14 +360,22 @@ class CombatSystem:
         Returns:
             Dictionary of armor data
         """
+        # Get game_data_dir from game_state_data or game_state
+        game_data_dir = None
+        if hasattr(self.game_state_data, 'game_data_dir'):
+            game_data_dir = self.game_state_data.game_data_dir
+        elif self.game_state is not None and hasattr(self.game_state, 'game_data_dir'):
+            game_data_dir = self.game_state.game_data_dir
+            
         # Try to load from file first
-        try:
-            armor_file = os.path.join(self.game_state.game_data_dir, "game_armor.json")
-            if os.path.exists(armor_file):
-                with open(armor_file, "r") as f:
-                    return json.load(f)
-        except Exception as e:
-            print(f"Error loading armor database: {e}")
+        if game_data_dir:
+            try:
+                armor_file = os.path.join(game_data_dir, "game_armor.json")
+                if os.path.exists(armor_file):
+                    with open(armor_file, "r") as f:
+                        return json.load(f)
+            except Exception as e:
+                print(f"Error loading armor database: {e}")
 
         # If file loading fails, derive from items in graph
         armor = {}
@@ -333,7 +395,14 @@ class CombatSystem:
             "leather",
         ]
 
-        for item in self.game_state.items:
+        # Get items from game_state_data or fall back to game_state
+        items = []
+        if hasattr(self.game_state_data, 'items'):
+            items = self.game_state_data.items
+        elif self.game_state is not None and hasattr(self.game_state, 'items'):
+            items = self.game_state.items
+            
+        for item in items:
             item_lower = item.lower()
 
             # Check if item name contains armor keywords
@@ -438,11 +507,15 @@ class CombatSystem:
         }
 
         # Enhance with data from the knowledge graph if available
-        weakness_relations = self.game_state.relations_df.loc[
-            self.game_state.relations_df["predicate"].isin(
-                ["weak_against", "vulnerable_to", "fears"]
-            )
-        ]
+        if self.relations_df is not None:
+            weakness_relations = self.relations_df.loc[
+                self.relations_df["predicate"].isin(
+                    ["weak_against", "vulnerable_to", "fears"]
+                )
+            ]
+        else:
+            # If no relations dataframe is available, return just the default weakness map
+            return weakness_map
 
         for _, relation in weakness_relations.iterrows():
             subject = relation["subject"]
@@ -494,8 +567,15 @@ class CombatSystem:
             "river": {"magic_bonus": 5, "effects": ["flowing_water"]},
         }
 
+        # Get locations from game_state_data or fall back to game_state
+        locations = []
+        if hasattr(self.game_state_data, 'locations'):
+            locations = self.game_state_data.locations
+        elif self.game_state is not None and hasattr(self.game_state, 'locations'):
+            locations = self.game_state.locations
+        
         # Apply default effects based on location name patterns
-        for location in self.game_state.locations:
+        for location in locations:
             location_lower = location.lower()
             environment_effects[location] = {"effects": [], "bonuses": {}}
 
@@ -510,11 +590,15 @@ class CombatSystem:
                             environment_effects[location]["bonuses"][key] = value
 
         # Enhance with data from the knowledge graph if available
-        environment_relations = self.game_state.relations_df.loc[
-            self.game_state.relations_df["predicate"].isin(
-                ["has_feature", "contains", "provides"]
-            )
-        ]
+        if self.relations_df is not None:
+            environment_relations = self.relations_df.loc[
+                self.relations_df["predicate"].isin(
+                    ["has_feature", "contains", "provides"]
+                )
+            ]
+        else:
+            # If no relations dataframe is available, return just the default environment effects
+            return environment_effects
 
         for _, relation in environment_relations.iterrows():
             subject = relation["subject"]
@@ -561,8 +645,8 @@ class CombatSystem:
         # Check if enemy exists and is in the current location
         npcs_here = [
             npc
-            for npc, data in self.game_state.npc_states.items()
-            if data["location"] == self.game_state.player_location
+            for npc, data in self.game_state_data.npc_states.items()
+            if data["location"] == self.game_state_data.player_location
         ]
 
         if enemy_name not in npcs_here:
@@ -578,7 +662,7 @@ class CombatSystem:
 
         # Get environment effects
         environment = self.environment_effects.get(
-            self.game_state.player_location, {"effects": [], "bonuses": {}}
+            self.game_state_data.player_location, {"effects": [], "bonuses": {}}
         )
 
         # Initialize combat state
@@ -601,9 +685,14 @@ class CombatSystem:
         self._apply_equipment_effects()
 
         # Record the combat event
-        self.game_state.player_actions.append(
-            f"Started combat with {enemy_name} in {self.game_state.player_location}"
-        )
+        if self.game_state:
+            self.game_state.player_actions.append(
+                f"Started combat with {enemy_name} in {self.game_state_data.player_location}"
+            )
+        elif hasattr(self.game_state_data, 'player_actions'):
+            self.game_state_data.player_actions.append(
+                f"Started combat with {enemy_name} in {self.game_state_data.player_location}"
+            )
 
         return True
 
@@ -838,7 +927,14 @@ class CombatSystem:
 
         elif action == "use":
             # Use an item in combat
-            if not target or target not in self.game_state.inventory:
+            # Get inventory from game_state_data or fall back to game_state
+            inventory = []
+            if hasattr(self.game_state_data, 'inventory'):
+                inventory = self.game_state_data.inventory
+            elif self.game_state is not None and hasattr(self.game_state, 'inventory'):
+                inventory = self.game_state.inventory
+                
+            if not target or target not in inventory:
                 result = {
                     "success": False,
                     "message": f"You don't have {target} in your inventory.",
