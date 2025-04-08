@@ -31,6 +31,10 @@ class CommandProcessor:
         self.graph_rag_engine = graph_rag_engine
         self.combat_system = combat_system
         self.llm_manager = llm_manager
+        
+        # Initialize the intent resolver for natural language processing
+        from .intent_resolver import IntentResolver
+        self.intent_resolver = IntentResolver(llm_manager)
 
         # Command patterns - regular expressions to match different command types
         self.command_patterns = {
@@ -161,6 +165,22 @@ class CommandProcessor:
         # Check if we're in combat
         if self.combat_system.active_combat:
             return self._process_combat_command(command)
+            
+        # First, try to resolve the natural language intent
+        original_command = command
+        resolved_command = self.intent_resolver.resolve_intent(command, self.game_state)
+        
+        # If the resolved command is different from the original, use it
+        if resolved_command != original_command:
+            print(f"Resolved '{original_command}' to '{resolved_command}'")
+            command = resolved_command
+            
+            # Store the original and resolved commands for reference
+            result["original_input"] = original_command
+            result["resolved_command"] = resolved_command
+            
+            # Add a debug flag to help diagnose command parsing issues
+            result["intent_resolved"] = True
 
         # Try to match command against patterns
         command_type, action, target = self._parse_command(command)
@@ -302,6 +322,25 @@ class CommandProcessor:
                     "target": target,
                 }
             else:
+                # Check if the target might contain prepositions that weren't properly removed
+                words = target.split()
+                if len(words) > 1:
+                    # Try with just the last word, which is likely the actual name
+                    potential_name = words[-1]
+                    success = self.game_state.update_state(action, potential_name)
+                    if success:
+                        query = f"talk to {potential_name}"
+                        response = self.graph_rag_engine.generate_response(
+                            query, self.game_state
+                        )
+                        return {
+                            "success": True,
+                            "message": response,
+                            "action_type": CommandType.INTERACTION.value,
+                            "target": potential_name,
+                            "original_target": target,
+                        }
+                
                 return {
                     "success": False,
                     "message": f"There's no one named {target} here.",

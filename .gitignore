@@ -1,4 +1,4 @@
 .DS_Store
 .env
 /comms/*
-*/__pycache__/*
+**/__pycache__/
