@@ -3,12 +3,14 @@ import json
 import networkx as nx
 import pandas as pd
 import random
+import difflib
 from typing import Dict, List, Tuple, Optional, Set, Any
 import time
+from .game_state_data import GameStateData
 
 
 class GameState:
-    """Class to maintain the current state of the game."""
+    """Class to maintain the current state of the game and provide game logic operations."""
 
     def __init__(self, game_data_dir: str, save_file: str = None):
         """
@@ -18,22 +20,17 @@ class GameState:
             game_data_dir: Directory containing game data files
             save_file: Path to save file (optional)
         """
+        # Store game_data_dir for backward compatibility
         self.game_data_dir = game_data_dir
-        self.player_location = None
-        self.inventory = []
-        self.visited_locations = set()
-        self.npc_states = {}  # For tracking NPC states and relationships with player
-        self.quests = {}  # For tracking active and completed quests
-        self.game_turn = 0  # Track the number of turns
-        self.player_actions = []  # History of significant player actions
-
-        # World state for factions and global events
-        self.world_state = {
-            "faction_relationships": {},  # Relationships between factions
-            "player_faction_standing": {},  # Player's standing with each faction
-            "world_events": {},  # Major world events that have occurred
-        }
-
+        
+        # Initialize the data container
+        self.data = GameStateData(game_data_dir=game_data_dir)
+        
+        # Graph and dataframes for knowledge representation
+        self.graph = None
+        self.entities_df = None
+        self.relations_df = None
+        
         # Load the knowledge graph and game elements
         self.load_game_data()
 
@@ -41,9 +38,101 @@ class GameState:
         if save_file and os.path.exists(save_file):
             self.load_game(save_file)
         else:
-            if hasattr(self, "locations") and self.locations:
-                self.player_location = self.locations[0]
-                self.visited_locations.add(self.player_location)
+            if self.data.locations:
+                self.data.player_location = self.data.locations[0]
+                
+    # Property accessors for backward compatibility
+    @property
+    def player_location(self):
+        return self.data.player_location
+        
+    @player_location.setter
+    def player_location(self, value):
+        self.data.player_location = value
+        
+    @property
+    def inventory(self):
+        return self.data.inventory
+        
+    @inventory.setter
+    def inventory(self, value):
+        self.data.inventory = value
+        
+    @property
+    def visited_locations(self):
+        return self.data.visited_locations
+        
+    @visited_locations.setter
+    def visited_locations(self, value):
+        self.data.visited_locations = value
+        
+    @property
+    def npc_states(self):
+        return self.data.npc_states
+        
+    @npc_states.setter
+    def npc_states(self, value):
+        self.data.npc_states = value
+        
+    @property
+    def quests(self):
+        return self.data.quests
+        
+    @quests.setter
+    def quests(self, value):
+        self.data.quests = value
+        
+    @property
+    def game_turn(self):
+        return self.data.game_turn
+        
+    @game_turn.setter
+    def game_turn(self, value):
+        self.data.game_turn = value
+        
+    @property
+    def player_actions(self):
+        return self.data.player_actions
+        
+    @player_actions.setter
+    def player_actions(self, value):
+        self.data.player_actions = value
+        
+    @property
+    def world_state(self):
+        return self.data.world_state
+        
+    @world_state.setter
+    def world_state(self, value):
+        self.data.world_state = value
+        
+    @property
+    def characters(self):
+        return self.data.characters
+        
+    @characters.setter
+    def characters(self, value):
+        self.data.characters = value
+        
+    @property
+    def locations(self):
+        return self.data.locations
+        
+    @locations.setter
+    def locations(self, value):
+        self.data.locations = value
+        
+    @property
+    def items(self):
+        return self.data.items
+        
+    @items.setter
+    def items(self, value):
+        self.data.items = value
+        
+    def add_to_visited_locations(self):
+        """Add the current player location to visited locations."""
+        self.data.visited_locations.add(self.data.player_location)
 
     def load_game_data(self):
         """Load the knowledge graph and game elements from files."""
@@ -51,7 +140,7 @@ class GameState:
 
         try:
             # Load graph
-            graph_path = os.path.join(self.game_data_dir, "knowledge_graph.gexf")
+            graph_path = os.path.join(self.data.game_data_dir, "knowledge_graph.gexf")
             if os.path.exists(graph_path):
                 self.graph = nx.read_gexf(graph_path)
                 print(f"Loaded knowledge graph with {len(self.graph.nodes)} nodes")
@@ -60,21 +149,21 @@ class GameState:
                 self.graph = nx.Graph()
 
             # Load game elements
-            self.locations = self._load_csv_column(
-                os.path.join(self.game_data_dir, "game_locations.csv"), "location"
+            self.data.locations = self._load_csv_column(
+                os.path.join(self.data.game_data_dir, "game_locations.csv"), "location"
             )
-            self.characters = self._load_csv_column(
-                os.path.join(self.game_data_dir, "game_characters.csv"), "character"
+            self.data.characters = self._load_csv_column(
+                os.path.join(self.data.game_data_dir, "game_characters.csv"), "character"
             )
-            self.items = self._load_csv_column(
-                os.path.join(self.game_data_dir, "game_items.csv"), "item"
+            self.data.items = self._load_csv_column(
+                os.path.join(self.data.game_data_dir, "game_items.csv"), "item"
             )
-            self.actions = self._load_csv_column(
-                os.path.join(self.game_data_dir, "game_actions.csv"), "action"
+            self.data.actions = self._load_csv_column(
+                os.path.join(self.data.game_data_dir, "game_actions.csv"), "action"
             )
 
             # Load entities and relations for context retrieval
-            entities_path = os.path.join(self.game_data_dir, "entities.csv")
+            entities_path = os.path.join(self.data.game_data_dir, "entities.csv")
             if os.path.exists(entities_path):
                 self.entities_df = pd.read_csv(entities_path)
             else:
@@ -83,7 +172,7 @@ class GameState:
                     columns=["id", "text", "label", "source_file", "chunk_id"]
                 )
 
-            relations_path = os.path.join(self.game_data_dir, "relations.csv")
+            relations_path = os.path.join(self.data.game_data_dir, "relations.csv")
             if os.path.exists(relations_path):
                 self.relations_df = pd.read_csv(relations_path)
             else:
@@ -100,45 +189,46 @@ class GameState:
                 )
 
             # Initialize NPC states
-            for character in self.characters:
-                self.npc_states[character] = {
-                    "location": random.choice(self.locations)
-                    if self.locations
-                    else "Unknown",
-                    "disposition": random.randint(
-                        30, 70
-                    ),  # 0-100 scale for NPC opinion of player
-                    "state": "neutral",
-                    "met_player": False,
-                    "conversations": [],
-                }
+            for character in self.data.characters:
+                if character not in self.data.npc_states:
+                    self.data.npc_states[character] = {
+                        "location": random.choice(self.data.locations)
+                        if self.data.locations
+                        else "Unknown",
+                        "disposition": random.randint(
+                            30, 70
+                        ),  # 0-100 scale for NPC opinion of player
+                        "state": "neutral",
+                        "met_player": False,
+                        "conversations": [],
+                    }
 
             # Initialize faction relationships if any are defined in files
-            faction_file = os.path.join(self.game_data_dir, "game_factions.csv")
+            faction_file = os.path.join(self.data.game_data_dir, "game_factions.csv")
             if os.path.exists(faction_file):
                 factions_df = pd.read_csv(faction_file)
                 for _, row in factions_df.iterrows():
-                    self.world_state["player_faction_standing"][row["faction"]] = 0
+                    self.data.world_state["player_faction_standing"][row["faction"]] = 0
 
             # Initialize faction relationships
             faction_relation_file = os.path.join(
-                self.game_data_dir, "game_faction_relations.csv"
+                self.data.game_data_dir, "game_faction_relations.csv"
             )
             if os.path.exists(faction_relation_file):
                 relations_df = pd.read_csv(faction_relation_file)
                 for _, row in relations_df.iterrows():
                     if (
                         row["faction_1"]
-                        not in self.world_state["faction_relationships"]
+                        not in self.data.world_state["faction_relationships"]
                     ):
-                        self.world_state["faction_relationships"][row["faction_1"]] = {}
+                        self.data.world_state["faction_relationships"][row["faction_1"]] = {}
 
-                    self.world_state["faction_relationships"][row["faction_1"]][
+                    self.data.world_state["faction_relationships"][row["faction_1"]][
                         row["faction_2"]
                     ] = row["relation_value"]
 
             print(
-                f"Loaded {len(self.locations)} locations, {len(self.characters)} characters, {len(self.items)} items"
+                f"Loaded {len(self.data.locations)} locations, {len(self.data.characters)} characters, {len(self.data.items)} items"
             )
 
         except Exception as e:
@@ -149,10 +239,10 @@ class GameState:
 
             # Initialize with empty data to avoid crashes
             self.graph = nx.Graph()
-            self.locations = ["Starting Location"]
-            self.characters = []
-            self.items = []
-            self.actions = []
+            self.data.locations = ["Starting Location"]
+            self.data.characters = []
+            self.data.items = []
+            self.data.actions = []
             self.entities_df = pd.DataFrame()
             self.relations_df = pd.DataFrame()
 
@@ -186,13 +276,13 @@ class GameState:
             Dictionary with all relevant context
         """
         # Get information about current location
-        location_info = self._get_location_info(self.player_location)
+        location_info = self._get_location_info(self.data.player_location)
 
         # Get information about NPCs in current location
         npcs_here = [
             npc
-            for npc, data in self.npc_states.items()
-            if data["location"] == self.player_location
+            for npc, data in self.data.npc_states.items()
+            if data["location"] == self.data.player_location
         ]
 
         npc_info = {}
@@ -202,18 +292,18 @@ class GameState:
         # Compile context
         context = {
             "player": {
-                "location": self.player_location,
-                "inventory": self.inventory,
-                "visited_locations": list(self.visited_locations),
-                "faction_standings": self.world_state["player_faction_standing"],
-                "significant_actions": self.player_actions[-10:]
-                if self.player_actions
+                "location": self.data.player_location,
+                "inventory": self.data.inventory,
+                "visited_locations": list(self.data.visited_locations),
+                "faction_standings": self.data.world_state["player_faction_standing"],
+                "significant_actions": self.data.player_actions[-10:]
+                if self.data.player_actions
                 else [],
             },
             "current_location": location_info,
             "npcs_present": npc_info,
-            "world_events": self.world_state["world_events"],
-            "game_turn": self.game_turn,
+            "world_events": self.data.world_state["world_events"],
+            "game_turn": self.data.game_turn,
         }
 
         return context
@@ -243,8 +333,8 @@ class GameState:
         # In a real game, you'd have a proper item placement system
         # This is a simplified approach where items are placed somewhat randomly
         items_here = []
-        if hasattr(self, "graph") and hasattr(self, "items"):
-            for item in self.items:
+        if hasattr(self, "graph") and hasattr(self.data, "items"):
+            for item in self.data.items:
                 item_id = item.lower().replace(" ", "_")
                 if item_id in self.graph.nodes:
                     # Check if item is related to this location in the graph
@@ -255,7 +345,7 @@ class GameState:
         # (This ensures there are always some items for testing)
         if not items_here and random.random() < 0.7:
             potential_items = [
-                item for item in self.items if item not in self.inventory
+                item for item in self.data.items if item not in self.data.inventory
             ]
             if potential_items:
                 num_items = random.randint(1, min(3, len(potential_items)))
@@ -295,8 +385,8 @@ class GameState:
                         )
 
         # Get the character's state
-        state = self.npc_states.get(
-            character, {"state": "neutral", "disposition": 50, "met_player": False}
+        state = self.data.npc_states.get(
+            character, {"state": "neutral", "disposition": 50, "met_player": False, "conversations": []}
         )
 
         # Get character's faction if any
@@ -340,15 +430,15 @@ class GameState:
             
             if matched_location and confidence >= 0.6:
                 # Check if location is connected to current location
-                location_info = self._get_location_info(self.player_location)
+                location_info = self._get_location_info(self.data.player_location)
                 if matched_location in location_info["connected_locations"]:
-                    self.player_location = matched_location
-                    self.visited_locations.add(matched_location)
+                    self.data.player_location = matched_location
+                    self.data.visited_locations.add(matched_location)
 
                     # Update NPCs who see the player arrive
-                    for npc, data in self.npc_states.items():
+                    for npc, data in self.data.npc_states.items():
                         if data["location"] == matched_location and not data["met_player"]:
-                            self.npc_states[npc]["met_player"] = True
+                            self.data.npc_states[npc]["met_player"] = True
 
                     return True
                 else:
@@ -362,13 +452,13 @@ class GameState:
             matched_item, confidence = self.find_best_match(target, "item") if target else (None, 0.0)
             
             if matched_item and confidence >= 0.6:
-                location_info = self._get_location_info(self.player_location)
+                location_info = self._get_location_info(self.data.player_location)
                 if matched_item in location_info["items"]:
-                    self.inventory.append(matched_item)
+                    self.data.inventory.append(matched_item)
                     # In a full game, you'd remove it from the location
                     # This simplified version doesn't track item locations accurately
-                    self.player_actions.append(
-                        f"Took {matched_item} from {self.player_location}"
+                    self.data.player_actions.append(
+                        f"Took {matched_item} from {self.data.player_location}"
                     )
                     return True
                 else:
@@ -380,8 +470,8 @@ class GameState:
         elif action in ["talk", "speak", "ask"]:
             npcs_here = [
                 npc
-                for npc, data in self.npc_states.items()
-                if data["location"] == self.player_location
+                for npc, data in self.data.npc_states.items()
+                if data["location"] == self.data.player_location
             ]
             
             # Use fuzzy matching for character names
@@ -404,26 +494,26 @@ class GameState:
             
             if matched_npc:
                 # Record that the player has met this NPC
-                self.npc_states[matched_npc]["met_player"] = True
+                self.data.npc_states[matched_npc]["met_player"] = True
 
                 # Add to conversation history (would add actual dialogue in a full game)
-                self.npc_states[matched_npc]["conversations"].append(
-                    f"Turn {self.game_turn}"
+                self.data.npc_states[matched_npc]["conversations"].append(
+                    f"Turn {self.data.game_turn}"
                 )
 
                 # Update disposition based on faction relationships
                 # Get NPC's faction
                 npc_faction = None
-                for faction, standing in self.world_state[
+                for faction, standing in self.data.world_state[
                     "player_faction_standing"
                 ].items():
                     if self._is_character_in_faction(matched_npc, faction):
                         npc_faction = faction
                         # NPC's initial reaction is influenced by faction standing
                         faction_modifier = standing / 10
-                        self.npc_states[matched_npc]["disposition"] += faction_modifier
-                        self.npc_states[matched_npc]["disposition"] = max(
-                            0, min(100, self.npc_states[matched_npc]["disposition"])
+                        self.data.npc_states[matched_npc]["disposition"] += faction_modifier
+                        self.data.npc_states[matched_npc]["disposition"] = max(
+                            0, min(100, self.data.npc_states[matched_npc]["disposition"])
                         )
 
                 return True
@@ -435,14 +525,14 @@ class GameState:
             # Use fuzzy matching for inventory items
             matched_item, confidence = None, 0.0
             if target:
-                for item in self.inventory:
+                for item in self.data.inventory:
                     similarity = difflib.SequenceMatcher(None, target.lower(), item.lower()).ratio()
                     if similarity > confidence and similarity >= 0.6:
                         matched_item, confidence = item, similarity
             
             if matched_item:
                 # Record the action
-                self.player_actions.append(f"Used {matched_item} in {self.player_location}")
+                self.data.player_actions.append(f"Used {matched_item} in {self.data.player_location}")
                 return True
             else:
                 return False  # Item not in inventory
@@ -451,42 +541,42 @@ class GameState:
         elif action in ["attack", "fight", "kill"]:
             npcs_here = [
                 npc
-                for npc, data in self.npc_states.items()
-                if data["location"] == self.player_location
+                for npc, data in self.data.npc_states.items()
+                if data["location"] == self.data.player_location
             ]
             
             # Use fuzzy matching for character names
             matched_npc, confidence = self.find_best_match(target, "character") if target else (None, 0.0)
             if matched_npc and matched_npc in npcs_here:
                 # Record the action - this is a major action that impacts relationships
-                self.player_actions.append(
-                    f"Attacked {matched_npc} in {self.player_location}"
+                self.data.player_actions.append(
+                    f"Attacked {matched_npc} in {self.data.player_location}"
                 )
 
                 # Drastically reduce NPC disposition
-                self.npc_states[matched_npc]["disposition"] = max(
-                    0, self.npc_states[matched_npc]["disposition"] - 50
+                self.data.npc_states[matched_npc]["disposition"] = max(
+                    0, self.data.npc_states[matched_npc]["disposition"] - 50
                 )
-                self.npc_states[matched_npc]["state"] = "hostile"
+                self.data.npc_states[matched_npc]["state"] = "hostile"
 
                 # Update faction standing if NPC belongs to a faction
-                for faction, standing in self.world_state[
+                for faction, standing in self.data.world_state[
                     "player_faction_standing"
                 ].items():
                     if self._is_character_in_faction(matched_npc, faction):
-                        self.world_state["player_faction_standing"][faction] -= 20
+                        self.data.world_state["player_faction_standing"][faction] -= 20
 
                         # Also affect allied factions
-                        if faction in self.world_state["faction_relationships"]:
-                            for other_faction, relation in self.world_state[
+                        if faction in self.data.world_state["faction_relationships"]:
+                            for other_faction, relation in self.data.world_state[
                                 "faction_relationships"
                             ][faction].items():
                                 if relation > 50:  # Allied faction
                                     if (
                                         other_faction
-                                        in self.world_state["player_faction_standing"]
+                                        in self.data.world_state["player_faction_standing"]
                                     ):
-                                        self.world_state["player_faction_standing"][
+                                        self.data.world_state["player_faction_standing"][
                                             other_faction
                                         ] -= 10
 
@@ -597,37 +687,37 @@ class GameState:
         Returns:
             Boolean indicating success
         """
-        if faction in self.world_state["player_faction_standing"]:
-            current = self.world_state["player_faction_standing"][faction]
-            self.world_state["player_faction_standing"][faction] = max(
+        if faction in self.data.world_state["player_faction_standing"]:
+            current = self.data.world_state["player_faction_standing"][faction]
+            self.data.world_state["player_faction_standing"][faction] = max(
                 -100, min(100, current + change)
             )
 
             # Also update relations with opposing or allied factions
-            if faction in self.world_state["faction_relationships"]:
-                for other_faction, relation in self.world_state[
+            if faction in self.data.world_state["faction_relationships"]:
+                for other_faction, relation in self.data.world_state[
                     "faction_relationships"
                 ][faction].items():
                     if relation < -50:  # Enemy factions
-                        if other_faction in self.world_state["player_faction_standing"]:
+                        if other_faction in self.data.world_state["player_faction_standing"]:
                             inverse_change = (
                                 -change * 0.5
                             )  # Inverse effect, but not as strong
-                            current = self.world_state["player_faction_standing"][
+                            current = self.data.world_state["player_faction_standing"][
                                 other_faction
                             ]
-                            self.world_state["player_faction_standing"][
+                            self.data.world_state["player_faction_standing"][
                                 other_faction
                             ] = max(-100, min(100, current + inverse_change))
                     elif relation > 50:  # Allied factions
-                        if other_faction in self.world_state["player_faction_standing"]:
+                        if other_faction in self.data.world_state["player_faction_standing"]:
                             reduced_change = (
                                 change * 0.5
                             )  # Same direction, but not as strong
-                            current = self.world_state["player_faction_standing"][
+                            current = self.data.world_state["player_faction_standing"][
                                 other_faction
                             ]
-                            self.world_state["player_faction_standing"][
+                            self.data.world_state["player_faction_standing"][
                                 other_faction
                             ] = max(-100, min(100, current + reduced_change))
             return True
@@ -653,14 +743,14 @@ class GameState:
         
         # Determine which list to search
         if category == "character":
-            search_list = self.characters
+            search_list = self.data.characters
         elif category == "location":
-            search_list = self.locations
+            search_list = self.data.locations
         elif category == "item":
-            search_list = self.items
+            search_list = self.data.items
         else:
             # Search all entities if no category specified
-            search_list = self.characters + self.locations + self.items
+            search_list = self.data.characters + self.data.locations + self.data.items
         
         # If the name is empty, return no match
         if not name:
@@ -673,7 +763,7 @@ class GameState:
         
         # Check for first name matches for characters with multi-word names
         if category == "character" or category is None:
-            for character in self.characters:
+            for character in self.data.characters:
                 parts = character.lower().split()
                 if parts and name == parts[0]:
                     return (character, 0.9)
@@ -700,8 +790,8 @@ class GameState:
             event_name: Name of the event
             event_data: Additional data about the event (optional)
         """
-        self.world_state["world_events"][event_name] = {
-            "turn": self.game_turn,
+        self.data.world_state["world_events"][event_name] = {
+            "turn": self.data.game_turn,
             "data": event_data,
         }
 
