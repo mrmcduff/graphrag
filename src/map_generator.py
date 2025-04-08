@@ -60,14 +60,16 @@ class MapStyle:
 class MapGenerator:
     """Class to generate maps for the text adventure game."""
 
-    def __init__(self, game_state):
+    def __init__(self, game_state_data, graph=None):
         """
         Initialize the map generator.
 
         Args:
-            game_state: The current game state
+            game_state_data: The current game state data
+            graph: The knowledge graph (optional, if not provided in game_state_data)
         """
-        self.game_state = game_state
+        self.game_state_data = game_state_data
+        self.graph = graph  # Optional external graph
         self.map_style = MapStyle()
         self.font = self._load_font()
         self.title_font = self._load_font(size=self.map_style.title_font_size)
@@ -121,7 +123,7 @@ class MapGenerator:
         location_types = {}
 
         # Analyze location names to guess types
-        for location in self.game_state.locations:
+        for location in self.game_state_data.locations:
             location_lower = location.lower()
 
             # Check for type keywords in name
@@ -166,34 +168,35 @@ class MapGenerator:
             else:
                 location_types[location] = "default"
 
-        # Enhance with data from relations
-        location_relations = self.game_state.relations_df.loc[
-            self.game_state.relations_df["predicate"].isin(
-                ["is_a", "type_of", "contains"]
-            )
-        ]
+        # Enhance with data from relations if available
+        if hasattr(self, 'relations_df') and self.relations_df is not None:
+            location_relations = self.relations_df.loc[
+                self.relations_df["predicate"].isin(
+                    ["is_a", "type_of", "contains"]
+                )
+            ]
 
-        for _, relation in location_relations.iterrows():
-            subject = relation["subject"]
-            object_ = relation["object"]
+            for _, relation in location_relations.iterrows():
+                subject = relation["subject"]
+                object_ = relation["object"]
 
-            # If subject is a location we know
-            if subject in location_types:
-                # Check if object describes a type
-                for type_name, keywords in [
-                    ("town", ["town", "village", "city", "settlement"]),
-                    ("forest", ["forest", "woods", "grove"]),
-                    ("mountain", ["mountain", "peak", "hill"]),
-                    ("water", ["lake", "river", "ocean", "sea"]),
-                    ("dungeon", ["dungeon", "prison"]),
-                    ("castle", ["castle", "fort", "fortress"]),
-                    ("cave", ["cave", "cavern"]),
-                    ("temple", ["temple", "shrine", "sanctuary"]),
-                    ("ruins", ["ruin", "ruins", "ancient"]),
-                ]:
-                    if any(keyword in object_.lower() for keyword in keywords):
-                        location_types[subject] = type_name
-                        break
+                # If subject is a location we know
+                if subject in location_types:
+                    # Check if object describes a type
+                    for type_name, keywords in [
+                        ("town", ["town", "village", "city", "settlement"]),
+                        ("forest", ["forest", "woods", "grove"]),
+                        ("mountain", ["mountain", "peak", "hill"]),
+                        ("water", ["lake", "river", "ocean", "sea"]),
+                        ("dungeon", ["dungeon", "prison"]),
+                        ("castle", ["castle", "fort", "fortress"]),
+                        ("cave", ["cave", "cavern"]),
+                        ("temple", ["temple", "shrine", "sanctuary"]),
+                        ("ruins", ["ruin", "ruins", "ancient"]),
+                    ]:
+                        if any(keyword in object_.lower() for keyword in keywords):
+                            location_types[subject] = type_name
+                            break
 
         return location_types
 
@@ -300,7 +303,7 @@ class MapGenerator:
         )
 
         # Determine which locations to show on the map
-        visited_locations = set(self.game_state.visited_locations)
+        visited_locations = set(self.game_state_data.visited_locations)
         connected_to_visited = set()
 
         # Add locations connected to visited locations
@@ -317,7 +320,16 @@ class MapGenerator:
             visited_locations.add(current_location)
 
         # Get a subgraph of the locations to show
-        graph = self.game_state.graph.copy()
+        graph = self.graph
+        if graph is None and hasattr(self.game_state_data, "graph"):
+            graph = self.game_state_data.graph
+        
+        if graph is None:
+            # If we don't have a graph, create a simple one
+            import networkx as nx
+            graph = nx.Graph()
+        else:
+            graph = graph.copy()
 
         # Get positions for nodes
         pos = self.get_node_positions(graph, current_location, map_locations)
@@ -436,17 +448,23 @@ class MapGenerator:
 
     def _get_location_info(self, location: str) -> Dict[str, Any]:
         """Get information about a location."""
-        if hasattr(self.game_state, "_get_location_info"):
-            return self.game_state._get_location_info(location)
-
-        # Fallback implementation if game_state doesn't have the method
+        # Use the graph provided during initialization or try to get it from game_state_data
+        graph = self.graph
+        if graph is None and hasattr(self.game_state_data, "graph"):
+            graph = self.game_state_data.graph
+            
+        # If we still don't have a graph, return basic info
+        if graph is None:
+            return {"name": location, "connected_locations": []}
+            
+        # Get location ID
         location_id = location.lower().replace(" ", "_")
 
         # Get connected locations
         connected_locations = []
-        if location_id in self.game_state.graph.nodes:
-            for neighbor in self.game_state.graph.neighbors(location_id):
-                node_data = self.game_state.graph.nodes[neighbor]
+        if location_id in graph.nodes:
+            for neighbor in graph.neighbors(location_id):
+                node_data = graph.nodes[neighbor]
                 if "label" in node_data:
                     connected_locations.append(node_data["label"])
 

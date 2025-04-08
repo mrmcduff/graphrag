@@ -25,10 +25,11 @@ class TextAdventureGame:
         # Initialize RAG engine
         self.rag_engine = GraphRAGEngine(game_data_dir, self.llm_manager)
 
-        # Initialize map generator
-        self.map_generator = MapGenerator(self.game_state)
+        # Initialize map generator with GameStateData and graph
+        self.map_generator = MapGenerator(self.game_state.data, self.game_state.graph)
 
-        # Initialize combat system
+        # Initialize combat system with full GameState object
+        # Note: This could be refactored in the future to use GameStateData
         self.combat_system = CombatSystem(self.game_state)
 
         self.running = False
