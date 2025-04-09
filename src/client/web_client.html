@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GraphRAG Text Adventure</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+        }
+        #game-container {
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        #game-output {
+            height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            background-color: #fafafa;
+            white-space: pre-wrap;
+        }
+        .input-container {
+            display: flex;
+            margin-bottom: 15px;
+        }
+        #command-input {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px 0 0 4px;
+            font-size: 16px;
+        }
+        #send-button {
+            padding: 10px 15px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 0 4px 4px 0;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        #send-button:hover {
+            background-color: #2980b9;
+        }
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+        .control-button {
+            padding: 8px 12px;
+            background-color: #2c3e50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .control-button:hover {
+            background-color: #1a252f;
+        }
+        .welcome {
+            color: #9933ff;
+            font-weight: bold;
+        }
+        .location {
+            color: #33a1ff;
+            font-style: italic;
+        }
+        .combat {
+            color: #ff5733;
+            font-weight: bold;
+        }
+        .inventory {
+            color: #33ff57;
+        }
+        .metadata {
+            font-size: 14px;
+            color: #777;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+        }
+        #session-id {
+            font-family: monospace;
+            color: #666;
+        }
+        #suggestions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 15px;
+        }
+        .suggestion {
+            background-color: #eee;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .suggestion:hover {
+            background-color: #ddd;
+        }
+        
+        /* LLM Configuration Styles */
+        .llm-config {
+            margin-bottom: 15px;
+            border: 1px solid #eee;
+            padding: 10px;
+            border-radius: 4px;
+            background-color: #fafafa;
+        }
+        .provider-selection {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .provider-selection label {
+            margin-right: 10px;
+        }
+        .model-config {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+            display: none; /* Hide by default */
+        }
+        .model-config.active {
+            display: block; /* Show when active class is applied */
+        }
+        .model-config label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        .model-config input, .model-config select, #llm-provider {
+            width: 100%;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <h1>GraphRAG Text Adventure</h1>
+    
+    <div id="game-container">
+        <div class="controls">
+            <button id="new-game" class="control-button">New Game</button>
+            <span id="session-id"></span>
+            <button id="save-game" class="control-button" disabled>Save Game</button>
+            <button id="load-game" class="control-button" disabled>Load Game</button>
+        </div>
+        
+        <div class="llm-config">
+            <div class="provider-selection">
+                <label for="llm-provider">LLM Provider:</label>
+                <select id="llm-provider">
+                    <option value="1">Local API</option>
+                    <option value="2">Local Direct</option>
+                    <option value="3">OpenAI</option>
+                    <option value="4" selected>Anthropic Claude</option>
+                    <option value="5">Google Gemini</option>
+                    <option value="6">Rule-based (No LLM)</option>
+                </select>
+            </div>
+            
+            <!-- Model configuration fields -->
+            <div id="model-config-anthropic" class="model-config active">
+                <label for="anthropic-model">Anthropic Model:</label>
+                <select id="anthropic-model">
+                    <option value="claude-3-haiku-20240307" selected>Claude 3 Haiku</option>
+                    <option value="claude-3-sonnet-20240229">Claude 3 Sonnet</option>
+                    <option value="claude-3-opus-20240229">Claude 3 Opus</option>
+                    <option value="claude-2.1">Claude 2.1</option>
+                </select>
+            </div>
+            
+            <div id="model-config-openai" class="model-config">
+                <label for="openai-model">OpenAI Model:</label>
+                <select id="openai-model">
+                    <option value="gpt-3.5-turbo" selected>GPT-3.5 Turbo</option>
+                    <option value="gpt-4">GPT-4</option>
+                    <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                </select>
+            </div>
+            
+            <div id="model-config-google" class="model-config">
+                <label for="google-model">Google Model:</label>
+                <select id="google-model">
+                    <option value="gemini-pro" selected>Gemini Pro</option>
+                    <option value="gemini-ultra">Gemini Ultra</option>
+                </select>
+            </div>
+            
+            <div id="model-config-local-api" class="model-config">
+                <label for="local-api-host">Host:</label>
+                <input type="text" id="local-api-host" value="localhost">
+                <label for="local-api-port">Port:</label>
+                <input type="text" id="local-api-port" value="8000">
+            </div>
+            
+            <div id="model-config-local-direct" class="model-config">
+                <label for="local-model-path">Model Path:</label>
+                <input type="text" id="local-model-path" placeholder="Enter path to local model">
+            </div>
+        </div>
+        
+        <div id="game-output">Welcome to GraphRAG Text Adventure! Click "New Game" to start.</div>
+        
+        <div class="input-container">
+            <input type="text" id="command-input" placeholder="Enter your command..." disabled>
+            <button id="send-button" disabled>Send</button>
+        </div>
+        
+        <div id="suggestions"></div>
+        
+        <div class="metadata">
+            <div id="player-location"></div>
+            <div id="inventory-count"></div>
+            <div id="combat-status"></div>
+        </div>
+    </div>
+
+    <script>
+        // API Configuration
+        const API_URL = 'http://localhost:8000/api';
+        let sessionId = null;
+        
+        // DOM Elements
+        const gameOutput = document.getElementById('game-output');
+        const commandInput = document.getElementById('command-input');
+        const sendButton = document.getElementById('send-button');
+        const newGameButton = document.getElementById('new-game');
+        const saveGameButton = document.getElementById('save-game');
+        const loadGameButton = document.getElementById('load-game');
+        const sessionIdElement = document.getElementById('session-id');
+        const playerLocationElement = document.getElementById('player-location');
+        const inventoryCountElement = document.getElementById('inventory-count');
+        const combatStatusElement = document.getElementById('combat-status');
+        const suggestionsElement = document.getElementById('suggestions');
+        
+        // Event Listeners
+        newGameButton.addEventListener('click', createNewGame);
+        sendButton.addEventListener('click', sendCommand);
+        saveGameButton.addEventListener('click', saveGame);
+        loadGameButton.addEventListener('click', loadGame);
+        commandInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendCommand();
+            }
+        });
+        
+        // Initialize the model config divs when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Hide all model config divs by default
+            const modelConfigs = document.querySelectorAll('.model-config');
+            modelConfigs.forEach(div => {
+                div.style.display = 'none';
+            });
+            
+            // Show Anthropic by default
+            document.getElementById('model-config-anthropic').style.display = 'block';
+            
+            // Set default provider to Anthropic (4)
+            document.getElementById('llm-provider').value = '4';
+        });
+        
+        // LLM Provider selection event listener
+        const llmProviderSelect = document.getElementById('llm-provider');
+        llmProviderSelect.addEventListener('change', function() {
+            // Hide all model config divs
+            const modelConfigs = document.querySelectorAll('.model-config');
+            modelConfigs.forEach(div => {
+                div.classList.remove('active');
+            });
+            
+            // Show the appropriate config div based on selection
+            const providerId = parseInt(this.value);
+            let configDiv = null;
+            
+            switch(providerId) {
+                case 1: // Local API
+                    configDiv = document.getElementById('model-config-local-api');
+                    break;
+                case 2: // Local Direct
+                    configDiv = document.getElementById('model-config-local-direct');
+                    break;
+                case 3: // OpenAI
+                    configDiv = document.getElementById('model-config-openai');
+                    break;
+                case 4: // Anthropic
+                    configDiv = document.getElementById('model-config-anthropic');
+                    break;
+                case 5: // Google
+                    configDiv = document.getElementById('model-config-google');
+                    break;
+                // No config needed for Rule-based
+            }
+            
+            if (configDiv) {
+                configDiv.classList.add('active');
+            }
+        });
+        
+        // Functions
+        async function createNewGame() {
+            try {
+                clearOutput();
+                
+                // Get the selected LLM provider
+                const llmProviderSelect = document.getElementById('llm-provider');
+                const providerId = parseInt(llmProviderSelect.value);
+                const providerName = llmProviderSelect.options[llmProviderSelect.selectedIndex].text;
+                
+                // Get provider configuration based on selection
+                const providerConfig = {};
+                
+                switch(providerId) {
+                    case 1: // Local API
+                        providerConfig.host = document.getElementById('local-api-host').value;
+                        providerConfig.port = document.getElementById('local-api-port').value;
+                        break;
+                    case 2: // Local Direct
+                        const modelPath = document.getElementById('local-model-path').value;
+                        if (modelPath) {
+                            providerConfig.model_path = modelPath;
+                        }
+                        break;
+                    case 3: // OpenAI
+                        providerConfig.model = document.getElementById('openai-model').value;
+                        break;
+                    case 4: // Anthropic
+                        providerConfig.model = document.getElementById('anthropic-model').value;
+                        break;
+                    case 5: // Google
+                        providerConfig.model = document.getElementById('google-model').value;
+                        break;
+                }
+                
+                // Show selected model in output if applicable
+                let modelInfo = '';
+                if (providerConfig.model) {
+                    modelInfo = ` (${providerConfig.model})`;
+                }
+                
+                // Log the configuration for debugging
+                console.log('Provider ID:', providerId);
+                console.log('Provider Config:', JSON.stringify(providerConfig));
+                
+                appendToOutput(`Creating new game session with ${providerName}${modelInfo}...`);
+                
+                const response = await fetch(`${API_URL}/game/new`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        game_data_dir: 'data/output',
+                        provider_id: providerId,
+                        provider_config: providerConfig
+                    })
+                });
+                
+                const data = await response.json();
+                sessionId = data.session_id;
+                
+                // Enable controls
+                commandInput.disabled = false;
+                sendButton.disabled = false;
+                saveGameButton.disabled = false;
+                loadGameButton.disabled = false;
+                
+                // Display session ID
+                sessionIdElement.textContent = `Session: ${sessionId.substring(0, 8)}...`;
+                
+                // Display welcome message
+                clearOutput();
+                displayResponse(data);
+                
+                // Update metadata
+                updateMetadata(data.metadata);
+                
+            } catch (error) {
+                appendToOutput(`Error: ${error.message}`);
+            }
+        }
+        
+        async function sendCommand() {
+            const command = commandInput.value.trim();
+            if (!command || !sessionId) return;
+            
+            try {
+                appendToOutput(`> ${command}`, 'user-command');
+                commandInput.value = '';
+                
+                const response = await fetch(`${API_URL}/game/${sessionId}/command`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        command: command
+                    })
+                });
+                
+                const data = await response.json();
+                displayResponse(data);
+                
+                // Update metadata
+                updateMetadata(data.metadata);
+                
+            } catch (error) {
+                appendToOutput(`Error: ${error.message}`);
+            }
+        }
+        
+        async function saveGame() {
+            if (!sessionId) return;
+            
+            const filename = prompt('Enter save file name:', `save_${sessionId.substring(0, 8)}.json`);
+            if (!filename) return;
+            
+            try {
+                appendToOutput('Saving game...');
+                
+                const response = await fetch(`${API_URL}/game/${sessionId}/save`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        filename: filename
+                    })
+                });
+                
+                const data = await response.json();
+                appendToOutput(data.message);
+                
+            } catch (error) {
+                appendToOutput(`Error: ${error.message}`);
+            }
+        }
+        
+        async function loadGame() {
+            if (!sessionId) return;
+            
+            const filename = prompt('Enter save file name to load:');
+            if (!filename) return;
+            
+            try {
+                appendToOutput('Loading game...');
+                
+                const response = await fetch(`${API_URL}/game/${sessionId}/load`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        filename: filename
+                    })
+                });
+                
+                const data = await response.json();
+                appendToOutput(data.message);
+                
+                // Update player location
+                if (data.player_location) {
+                    playerLocationElement.textContent = `Location: ${data.player_location}`;
+                }
+                
+                // Get full game state after loading
+                await getGameState();
+                
+            } catch (error) {
+                appendToOutput(`Error: ${error.message}`);
+            }
+        }
+        
+        async function getGameState() {
+            if (!sessionId) return;
+            
+            try {
+                const response = await fetch(`${API_URL}/game/${sessionId}/state`);
+                const data = await response.json();
+                
+                // Update metadata
+                updateMetadata(data.metadata);
+                
+                // Display NPCs and items
+                let stateInfo = '';
+                if (data.npcs_present && data.npcs_present.length > 0) {
+                    stateInfo += `NPCs present: ${data.npcs_present.join(', ')}\n`;
+                }
+                if (data.items_present && data.items_present.length > 0) {
+                    stateInfo += `Items present: ${data.items_present.join(', ')}`;
+                }
+                
+                if (stateInfo) {
+                    appendToOutput(stateInfo, 'state-info');
+                }
+                
+                // Generate command suggestions
+                generateSuggestions(data);
+                
+            } catch (error) {
+                console.error(`Error getting game state: ${error.message}`);
+            }
+        }
+        
+        function displayResponse(data) {
+            // Display content with formatting
+            if (data.content && data.content.length > 0) {
+                for (const content of data.content) {
+                    appendToOutput(content.text, content.format);
+                }
+            } else if (data.message) {
+                appendToOutput(data.message);
+            }
+            
+            // Generate command suggestions
+            if (data.metadata) {
+                generateSuggestions(data);
+            }
+        }
+        
+        function updateMetadata(metadata) {
+            if (!metadata) return;
+            
+            if (metadata.player_location) {
+                playerLocationElement.textContent = `Location: ${metadata.player_location}`;
+            }
+            
+            if (metadata.inventory_count !== undefined) {
+                inventoryCountElement.textContent = `Inventory: ${metadata.inventory_count} items`;
+            }
+            
+            if (metadata.combat_active !== undefined) {
+                combatStatusElement.textContent = metadata.combat_active ? 
+                    'Combat: Active ⚔️' : 'Combat: Inactive';
+            }
+        }
+        
+        function generateSuggestions(data) {
+            suggestionsElement.innerHTML = '';
+            
+            // Default suggestions
+            const suggestions = [
+                'look around',
+                'inventory',
+                'help'
+            ];
+            
+            // Add location-based suggestions
+            if (data.npcs_present) {
+                for (const npc of data.npcs_present) {
+                    suggestions.push(`talk to ${npc}`);
+                    suggestions.push(`examine ${npc}`);
+                }
+            }
+            
+            if (data.items_present) {
+                for (const item of data.items_present) {
+                    suggestions.push(`take ${item}`);
+                    suggestions.push(`examine ${item}`);
+                }
+            }
+            
+            // Add available commands if provided
+            if (data.metadata && data.metadata.available_commands) {
+                suggestions.push(...data.metadata.available_commands);
+            }
+            
+            // Create suggestion buttons
+            const uniqueSuggestions = [...new Set(suggestions)];
+            for (const suggestion of uniqueSuggestions.slice(0, 8)) {
+                const suggestionElement = document.createElement('div');
+                suggestionElement.className = 'suggestion';
+                suggestionElement.textContent = suggestion;
+                suggestionElement.addEventListener('click', () => {
+                    commandInput.value = suggestion;
+                    sendCommand();
+                });
+                suggestionsElement.appendChild(suggestionElement);
+            }
+        }
+        
+        function appendToOutput(text, format = 'normal') {
+            const element = document.createElement('div');
+            element.textContent = text;
+            
+            // Apply formatting
+            if (format === 'welcome') {
+                element.className = 'welcome';
+            } else if (format === 'location') {
+                element.className = 'location';
+            } else if (format === 'combat') {
+                element.className = 'combat';
+            } else if (format === 'inventory') {
+                element.className = 'inventory';
+            } else if (format === 'user-command') {
+                element.style.color = '#666';
+                element.style.fontStyle = 'italic';
+            }
+            
+            gameOutput.appendChild(element);
+            gameOutput.scrollTop = gameOutput.scrollHeight;
+        }
+        
+        function clearOutput() {
+            gameOutput.innerHTML = '';
+        }
+    </script>
+</body>
+</html>

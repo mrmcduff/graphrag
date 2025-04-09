@@ -1,0 +1,166 @@
+{
+  "info": {
+    "_postman_id": "e8f5a2d3-6b9c-4f5d-9b0e-d8f2c7e5a6b4",
+    "name": "GraphRAG Text Adventure API",
+    "description": "API collection for testing the GraphRAG Text Adventure Game API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create New Game",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"game_data_dir\": \"data/output\",\n    \"config\": {}\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/game/new",
+          "host": ["{{baseUrl}}"],
+          "path": ["game", "new"]
+        },
+        "description": "Create a new game session"
+      },
+      "response": []
+    },
+    {
+      "name": "Process Command",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"command\": \"look around\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/game/{{sessionId}}/command",
+          "host": ["{{baseUrl}}"],
+          "path": ["game", "{{sessionId}}", "command"]
+        },
+        "description": "Process a game command"
+      },
+      "response": []
+    },
+    {
+      "name": "Get Game State",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/game/{{sessionId}}/state",
+          "host": ["{{baseUrl}}"],
+          "path": ["game", "{{sessionId}}", "state"]
+        },
+        "description": "Get the current game state"
+      },
+      "response": []
+    },
+    {
+      "name": "Save Game",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"filename\": \"save_game.json\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/game/{{sessionId}}/save",
+          "host": ["{{baseUrl}}"],
+          "path": ["game", "{{sessionId}}", "save"]
+        },
+        "description": "Save the current game state"
+      },
+      "response": []
+    },
+    {
+      "name": "Load Game",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"filename\": \"save_game.json\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/game/{{sessionId}}/load",
+          "host": ["{{baseUrl}}"],
+          "path": ["game", "{{sessionId}}", "load"]
+        },
+        "description": "Load a saved game state"
+      },
+      "response": []
+    },
+    {
+      "name": "Set LLM Provider",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"provider_id\": 3\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/game/{{sessionId}}/llm",
+          "host": ["{{baseUrl}}"],
+          "path": ["game", "{{sessionId}}", "llm"]
+        },
+        "description": "Set the LLM provider for the game session"
+      },
+      "response": []
+    },
+    {
+      "name": "End Game Session",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/game/{{sessionId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["game", "{{sessionId}}"]
+        },
+        "description": "End the current game session"
+      },
+      "response": []
+    }
+  ],
+  "event": [],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000/api",
+      "type": "string"
+    },
+    {
+      "key": "sessionId",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}
