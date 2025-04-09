@@ -47,8 +47,8 @@ class IntentResolver:
                 "save game",
                 "load game",
                 "help",
-                "show map",
-                "display local map",
+                "map",
+                "local map",
                 "llm info",
                 "llm change"
             ]
@@ -122,6 +122,15 @@ class IntentResolver:
         Returns:
             A valid game command string
         """
+        # Special case for map commands - preserve them exactly
+        lower_input = user_input.lower().strip()
+        if lower_input == "map" or lower_input == "m":
+            print("DEBUG: Preserving exact map command")
+            return "map"
+        if lower_input == "local map" or lower_input == "detailed map":
+            print("DEBUG: Preserving exact local map command")
+            return "local map"
+            
         prompt = self._build_prompt(user_input, game_state)
         
         try:
@@ -144,6 +153,14 @@ class IntentResolver:
             while '  ' in resolved_command:
                 resolved_command = resolved_command.replace('  ', ' ')
             
+            # Fix map commands that might have been resolved incorrectly
+            if resolved_command.startswith("show map") or resolved_command.startswith("display map"):
+                print("DEBUG: Fixing resolved map command")
+                return "map"
+            if "local map" in resolved_command or "detailed map" in resolved_command:
+                print("DEBUG: Fixing resolved local map command")
+                return "local map"
+                
             return resolved_command
         except Exception as e:
             print(f"Error resolving intent: {e}")

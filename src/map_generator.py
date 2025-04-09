@@ -294,7 +294,10 @@ class MapGenerator:
 
         # Add a title
         title = "Map of the Realm"
-        title_width, title_height = draw.textsize(title, font=self.title_font)
+        # Use textbbox instead of deprecated textsize
+        left, top, right, bottom = draw.textbbox((0, 0), title, font=self.title_font)
+        title_width = right - left
+        title_height = bottom - top
         draw.text(
             ((width - title_width) // 2, 20),
             title,
@@ -415,9 +418,12 @@ class MapGenerator:
                     )
 
                 # Add location label
-                label_width, label_height = draw.textsize(
-                    location, font=self.location_font
+                # Use textbbox instead of deprecated textsize
+                left, top, right, bottom = draw.textbbox(
+                    (0, 0), location, font=self.location_font
                 )
+                label_width = right - left
+                label_height = bottom - top
                 label_position = (x - label_width / 2, y + radius + 5)
                 draw.text(
                     label_position,
@@ -746,7 +752,10 @@ class MapGenerator:
 
         # Add a title
         title = f"{current_location} and Surroundings"
-        title_width, title_height = draw.textsize(title, font=self.title_font)
+        # Use textbbox instead of deprecated textsize
+        left, top, right, bottom = draw.textbbox((0, 0), title, font=self.title_font)
+        title_width = right - left
+        title_height = bottom - top
         draw.text(
             ((width - title_width) // 2, 20),
             title,
@@ -879,7 +888,10 @@ class MapGenerator:
 
         # Add a label for the town center
         center_label = "Town Square"
-        label_width, label_height = draw.textsize(center_label, font=self.location_font)
+        # Use textbbox instead of deprecated textsize
+        left, top, right, bottom = draw.textbbox((0, 0), center_label, font=self.location_font)
+        label_width = right - left
+        label_height = bottom - top
         draw.text(
             (center_x - label_width // 2, center_y + special_size // 2 + 5),
             center_label,
