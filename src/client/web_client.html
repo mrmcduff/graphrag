@@ -4,168 +4,49 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GraphRAG Text Adventure</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f5f5;
-            color: #333;
-        }
-        h1 {
-            color: #2c3e50;
-            text-align: center;
-        }
-        #game-container {
-            background-color: #fff;
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        #game-output {
-            height: 400px;
-            overflow-y: auto;
-            border: 1px solid #ddd;
-            padding: 15px;
-            margin-bottom: 15px;
-            border-radius: 4px;
-            background-color: #fafafa;
-            white-space: pre-wrap;
-        }
-        .input-container {
-            display: flex;
-            margin-bottom: 15px;
-        }
-        #command-input {
-            flex-grow: 1;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px 0 0 4px;
-            font-size: 16px;
-        }
-        #send-button {
-            padding: 10px 15px;
-            background-color: #3498db;
-            color: white;
-            border: none;
-            border-radius: 0 4px 4px 0;
-            cursor: pointer;
-            font-size: 16px;
-        }
-        #send-button:hover {
-            background-color: #2980b9;
-        }
-        .controls {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 15px;
-        }
-        .control-button {
-            padding: 8px 12px;
-            background-color: #2c3e50;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .control-button:hover {
-            background-color: #1a252f;
-        }
-        .welcome {
-            color: #9933ff;
-            font-weight: bold;
-        }
-        .location {
-            color: #33a1ff;
-            font-style: italic;
-        }
-        .combat {
-            color: #ff5733;
-            font-weight: bold;
-        }
-        .inventory {
-            color: #33ff57;
-        }
-        .metadata {
-            font-size: 14px;
-            color: #777;
-            margin-top: 10px;
-            padding-top: 10px;
-            border-top: 1px solid #eee;
-        }
-        #session-id {
-            font-family: monospace;
-            color: #666;
-        }
-        #suggestions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 15px;
-        }
-        .suggestion {
-            background-color: #eee;
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-size: 14px;
-            cursor: pointer;
-        }
-        .suggestion:hover {
-            background-color: #ddd;
-        }
-        
-        /* LLM Configuration Styles */
-        .llm-config {
-            margin-bottom: 15px;
-            border: 1px solid #eee;
-            padding: 10px;
-            border-radius: 4px;
-            background-color: #fafafa;
-        }
-        .provider-selection {
-            display: flex;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-        .provider-selection label {
-            margin-right: 10px;
-        }
-        .model-config {
-            margin-top: 10px;
-            padding-top: 10px;
-            border-top: 1px solid #eee;
-            display: none; /* Hide by default */
-        }
-        .model-config.active {
-            display: block; /* Show when active class is applied */
-        }
-        .model-config label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 500;
-        }
-        .model-config input, .model-config select, #llm-provider {
-            width: 100%;
-            padding: 8px;
-            border-radius: 4px;
-            border: 1px solid #ddd;
-            margin-bottom: 10px;
-            font-size: 14px;
-        }
-    </style>
+    <!-- Google OAuth Library -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <!-- External CSS -->
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <h1>GraphRAG Text Adventure</h1>
-    
-    <div id="game-container">
+
+    <!-- Login Container -->
+    <div id="login-container">
+        <h2>Authentication Required</h2>
+        <p>Please sign in with your Google account to access the game.</p>
+        <div id="login-status">Not logged in</div>
+
+        <!-- Google Sign-In Button -->
+        <div id="g_id_onload"
+             data-client_id="911441509904-gigqvoc05jc5vilbtp5ba1td3ktc5h17.apps.googleusercontent.com"
+             data-context="signin"
+             data-ux_mode="popup"
+             data-callback="handleCredentialResponse"
+             data-auto_prompt="false">
+        </div>
+
+        <div class="g_id_signin"
+             data-type="standard"
+             data-shape="rectangular"
+             data-theme="outline"
+             data-text="signin_with"
+             data-size="large"
+             data-logo_alignment="left">
+        </div>
+
+        <button id="logout-button" class="hidden">Sign Out</button>
+    </div>
+
+    <div id="game-container" class="hidden">
         <div class="controls">
             <button id="new-game" class="control-button">New Game</button>
             <span id="session-id"></span>
             <button id="save-game" class="control-button" disabled>Save Game</button>
             <button id="load-game" class="control-button" disabled>Load Game</button>
         </div>
-        
+
         <div class="llm-config">
             <div class="provider-selection">
                 <label for="llm-provider">LLM Provider:</label>
@@ -178,7 +59,7 @@
                     <option value="6">Rule-based (No LLM)</option>
                 </select>
             </div>
-            
+
             <!-- Model configuration fields -->
             <div id="model-config-anthropic" class="model-config active">
                 <label for="anthropic-model">Anthropic Model:</label>
@@ -189,7 +70,7 @@
                     <option value="claude-2.1">Claude 2.1</option>
                 </select>
             </div>
-            
+
             <div id="model-config-openai" class="model-config">
                 <label for="openai-model">OpenAI Model:</label>
                 <select id="openai-model">
@@ -198,7 +79,7 @@
                     <option value="gpt-4-turbo">GPT-4 Turbo</option>
                 </select>
             </div>
-            
+
             <div id="model-config-google" class="model-config">
                 <label for="google-model">Google Model:</label>
                 <select id="google-model">
@@ -206,29 +87,29 @@
                     <option value="gemini-ultra">Gemini Ultra</option>
                 </select>
             </div>
-            
+
             <div id="model-config-local-api" class="model-config">
                 <label for="local-api-host">Host:</label>
                 <input type="text" id="local-api-host" value="localhost">
                 <label for="local-api-port">Port:</label>
                 <input type="text" id="local-api-port" value="8000">
             </div>
-            
+
             <div id="model-config-local-direct" class="model-config">
                 <label for="local-model-path">Model Path:</label>
                 <input type="text" id="local-model-path" placeholder="Enter path to local model">
             </div>
         </div>
-        
+
         <div id="game-output">Welcome to GraphRAG Text Adventure! Click "New Game" to start.</div>
-        
+
         <div class="input-container">
             <input type="text" id="command-input" placeholder="Enter your command..." disabled>
             <button id="send-button" disabled>Send</button>
         </div>
-        
+
         <div id="suggestions"></div>
-        
+
         <div class="metadata">
             <div id="player-location"></div>
             <div id="inventory-count"></div>
@@ -240,7 +121,10 @@
         // API Configuration
         const API_URL = 'http://localhost:8000/api';
         let sessionId = null;
-        
+        let userToken = null;
+        let userEmail = null;
+        let isAuthorized = false;
+
         // DOM Elements
         const gameOutput = document.getElementById('game-output');
         const commandInput = document.getElementById('command-input');
@@ -254,6 +138,12 @@
         const combatStatusElement = document.getElementById('combat-status');
         const suggestionsElement = document.getElementById('suggestions');
         
+        // Login Elements
+        const loginStatus = document.getElementById('login-status');
+        const logoutButton = document.getElementById('logout-button');
+        const gameContainer = document.getElementById('game-container');
+        const loginContainer = document.getElementById('login-container');
+
         // Event Listeners
         newGameButton.addEventListener('click', createNewGame);
         sendButton.addEventListener('click', sendCommand);
@@ -264,7 +154,91 @@
                 sendCommand();
             }
         });
-        
+
+        // Google OAuth Callback
+        function handleCredentialResponse(response) {
+            // This function is called when the user successfully signs in with Google
+            const credential = response.credential;
+            const payload = parseJwt(credential);
+
+            userEmail = payload.email;
+            userToken = credential;
+
+            // Check if user is authorized
+            checkUserAuthorization(userEmail);
+        }
+
+        // Parse JWT token
+        function parseJwt(token) {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            return JSON.parse(jsonPayload);
+        }
+
+        // Check if user is authorized to access the game
+        async function checkUserAuthorization(email) {
+            try {
+                console.log('Checking authorization for email:', email);
+                // Fix the API URL to include the correct endpoint
+                const authUrl = `${API_URL}/users/authorize`;
+                console.log('Auth URL:', authUrl);
+                const response = await fetch(authUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email: email })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Authorization response:', data);
+                    isAuthorized = data.authorized;
+
+                    if (isAuthorized) {
+                        // User is authorized
+                        loginStatus.textContent = `Logged in as: ${email}`;
+                        loginStatus.style.color = 'green';
+                        logoutButton.classList.remove('hidden');
+                        gameContainer.classList.remove('hidden');
+                    } else {
+                        // User is not authorized
+                        loginStatus.textContent = `Access denied for: ${email}`;
+                        loginStatus.style.color = 'red';
+                        logoutButton.classList.remove('hidden');
+                        gameContainer.classList.add('hidden');
+                    }
+                } else {
+                    // Error checking authorization
+                    console.error('Authorization response not OK:', response.status);
+                    loginStatus.textContent = 'Error checking authorization: ' + response.status;
+                    loginStatus.style.color = 'red';
+                }
+            } catch (error) {
+                console.error('Error checking authorization:', error);
+                loginStatus.textContent = 'Error checking authorization';
+                loginStatus.style.color = 'red';
+            }
+        }
+
+        // Handle logout
+        logoutButton.addEventListener('click', function() {
+            userToken = null;
+            userEmail = null;
+            isAuthorized = false;
+            loginStatus.textContent = 'Not logged in';
+            loginStatus.style.color = 'black';
+            logoutButton.classList.add('hidden');
+            gameContainer.classList.add('hidden');
+
+            // Google sign out
+            google.accounts.id.disableAutoSelect();
+            console.log('User logged out');
+        });
+
         // Initialize the model config divs when the page loads
         document.addEventListener('DOMContentLoaded', function() {
             // Hide all model config divs by default
@@ -272,14 +246,14 @@
             modelConfigs.forEach(div => {
                 div.style.display = 'none';
             });
-            
+
             // Show Anthropic by default
             document.getElementById('model-config-anthropic').style.display = 'block';
-            
+
             // Set default provider to Anthropic (4)
             document.getElementById('llm-provider').value = '4';
         });
-        
+
         // LLM Provider selection event listener
         const llmProviderSelect = document.getElementById('llm-provider');
         llmProviderSelect.addEventListener('change', function() {
@@ -287,12 +261,13 @@
             const modelConfigs = document.querySelectorAll('.model-config');
             modelConfigs.forEach(div => {
                 div.classList.remove('active');
+                div.style.display = 'none';
             });
-            
+
             // Show the appropriate config div based on selection
             const providerId = parseInt(this.value);
             let configDiv = null;
-            
+
             switch(providerId) {
                 case 1: // Local API
                     configDiv = document.getElementById('model-config-local-api');
@@ -311,25 +286,26 @@
                     break;
                 // No config needed for Rule-based
             }
-            
+
             if (configDiv) {
                 configDiv.classList.add('active');
+                configDiv.style.display = 'block';
             }
         });
-        
+
         // Functions
         async function createNewGame() {
             try {
                 clearOutput();
-                
+
                 // Get the selected LLM provider
                 const llmProviderSelect = document.getElementById('llm-provider');
                 const providerId = parseInt(llmProviderSelect.value);
                 const providerName = llmProviderSelect.options[llmProviderSelect.selectedIndex].text;
-                
+
                 // Get provider configuration based on selection
                 const providerConfig = {};
-                
+
                 switch(providerId) {
                     case 1: // Local API
                         providerConfig.host = document.getElementById('local-api-host').value;
@@ -351,23 +327,24 @@
                         providerConfig.model = document.getElementById('google-model').value;
                         break;
                 }
-                
+
                 // Show selected model in output if applicable
                 let modelInfo = '';
                 if (providerConfig.model) {
                     modelInfo = ` (${providerConfig.model})`;
                 }
-                
+
                 // Log the configuration for debugging
                 console.log('Provider ID:', providerId);
                 console.log('Provider Config:', JSON.stringify(providerConfig));
-                
+
                 appendToOutput(`Creating new game session with ${providerName}${modelInfo}...`);
-                
+
                 const response = await fetch(`${API_URL}/game/new`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Authorization': userToken ? `Bearer ${userToken}` : ''
                     },
                     body: JSON.stringify({
                         game_data_dir: 'data/output',
@@ -376,131 +353,178 @@
                     })
                 });
                 
-                const data = await response.json();
-                sessionId = data.session_id;
+                console.log('New game response status:', response.status);
+
+                let gameData;
+                if (response.ok) {
+                    gameData = await response.json();
+                    console.log('New game response data:', gameData);
+                    sessionId = gameData.session_id;
+                    
+                    // Enable controls
+                    commandInput.disabled = false;
+                    sendButton.disabled = false;
+                    saveGameButton.disabled = false;
+                    loadGameButton.disabled = false;
+
+                    // Display session ID
+                    if (sessionId) {
+                        sessionIdElement.textContent = `Session: ${sessionId.substring(0, 8)}...`;
+                    } else {
+                        sessionIdElement.textContent = '';
+                    }
+                    
+                    // Display welcome message
+                    clearOutput();
+                } else {
+                    const errorText = await response.text();
+                    console.error('Error creating new game:', response.status, errorText);
+                    appendToOutput(`Error creating new game: ${response.status}`);
+                    return;
+                }
                 
-                // Enable controls
-                commandInput.disabled = false;
-                sendButton.disabled = false;
-                saveGameButton.disabled = false;
-                loadGameButton.disabled = false;
-                
-                // Display session ID
-                sessionIdElement.textContent = `Session: ${sessionId.substring(0, 8)}...`;
-                
-                // Display welcome message
-                clearOutput();
-                displayResponse(data);
-                
-                // Update metadata
-                updateMetadata(data.metadata);
-                
+                // Check what kind of response we got and handle it appropriately
+                if (gameData && gameData.content) {
+                    // New format with content array
+                    displayResponse(gameData);
+                } else if (gameData && gameData.message) {
+                    // Simple message format
+                    appendToOutput(gameData.message);
+                } else {
+                    // Default message
+                    appendToOutput('Game session created successfully.');
+                }
+
+                // Update metadata if available
+                if (gameData && gameData.metadata) {
+                    updateMetadata(gameData.metadata);
+                }
+
             } catch (error) {
                 appendToOutput(`Error: ${error.message}`);
             }
         }
-        
+
         async function sendCommand() {
             const command = commandInput.value.trim();
             if (!command || !sessionId) return;
-            
+
             try {
                 appendToOutput(`> ${command}`, 'user-command');
                 commandInput.value = '';
-                
+
                 const response = await fetch(`${API_URL}/game/${sessionId}/command`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Authorization': userToken ? `Bearer ${userToken}` : ''
                     },
                     body: JSON.stringify({
                         command: command
                     })
                 });
-                
-                const data = await response.json();
-                displayResponse(data);
-                
-                // Update metadata
-                updateMetadata(data.metadata);
-                
+
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Command response data:', data);
+                    displayResponse(data);
+
+                    // Update metadata if available
+                    if (data && data.metadata) {
+                        updateMetadata(data.metadata);
+                    }
+                    
+                    // Update game state after command
+                    getGameState();
+                } else {
+                    const errorText = await response.text();
+                    console.error('Error processing command:', response.status, errorText);
+                    appendToOutput(`Error processing command: ${response.status}`);
+                }
+
             } catch (error) {
                 appendToOutput(`Error: ${error.message}`);
             }
         }
-        
+
         async function saveGame() {
             if (!sessionId) return;
-            
+
             const filename = prompt('Enter save file name:', `save_${sessionId.substring(0, 8)}.json`);
             if (!filename) return;
-            
+
             try {
                 appendToOutput('Saving game...');
-                
+
                 const response = await fetch(`${API_URL}/game/${sessionId}/save`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Authorization': userToken ? `Bearer ${userToken}` : ''
                     },
                     body: JSON.stringify({
                         filename: filename
                     })
                 });
-                
+
                 const data = await response.json();
                 appendToOutput(data.message);
-                
+
             } catch (error) {
                 appendToOutput(`Error: ${error.message}`);
             }
         }
-        
+
         async function loadGame() {
             if (!sessionId) return;
-            
+
             const filename = prompt('Enter save file name to load:');
             if (!filename) return;
-            
+
             try {
                 appendToOutput('Loading game...');
-                
+
                 const response = await fetch(`${API_URL}/game/${sessionId}/load`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Authorization': userToken ? `Bearer ${userToken}` : ''
                     },
                     body: JSON.stringify({
                         filename: filename
                     })
                 });
-                
+
                 const data = await response.json();
                 appendToOutput(data.message);
-                
+
                 // Update player location
                 if (data.player_location) {
                     playerLocationElement.textContent = `Location: ${data.player_location}`;
                 }
-                
+
                 // Get full game state after loading
                 await getGameState();
-                
+
             } catch (error) {
                 appendToOutput(`Error: ${error.message}`);
             }
         }
-        
+
         async function getGameState() {
             if (!sessionId) return;
-            
+
             try {
-                const response = await fetch(`${API_URL}/game/${sessionId}/state`);
+                const response = await fetch(`${API_URL}/game/${sessionId}/state`, {
+                    headers: {
+                        'Authorization': userToken ? `Bearer ${userToken}` : ''
+                    }
+                });
                 const data = await response.json();
-                
+
                 // Update metadata
                 updateMetadata(data.metadata);
-                
+
                 // Display NPCs and items
                 let stateInfo = '';
                 if (data.npcs_present && data.npcs_present.length > 0) {
@@ -509,62 +533,80 @@
                 if (data.items_present && data.items_present.length > 0) {
                     stateInfo += `Items present: ${data.items_present.join(', ')}`;
                 }
-                
+
                 if (stateInfo) {
                     appendToOutput(stateInfo, 'state-info');
                 }
-                
+
                 // Generate command suggestions
                 generateSuggestions(data);
-                
+
             } catch (error) {
                 console.error(`Error getting game state: ${error.message}`);
             }
         }
-        
+
         function displayResponse(data) {
-            // Display content with formatting
-            if (data.content && data.content.length > 0) {
-                for (const content of data.content) {
-                    appendToOutput(content.text, content.format);
-                }
-            } else if (data.message) {
-                appendToOutput(data.message);
-            }
+            // Log the data structure for debugging
+            console.log('Displaying response data:', data);
             
+            // Display content with formatting
+            if (data && data.content && data.content.length > 0) {
+                for (const content of data.content) {
+                    appendToOutput(content.text, content.format || 'normal');
+                }
+            } else if (data && data.message) {
+                appendToOutput(data.message);
+            } else if (data && data.response) {
+                appendToOutput(data.response);
+            } else if (data && typeof data === 'object') {
+                // If we have an object but none of the expected fields, show a summary
+                const keys = Object.keys(data);
+                if (keys.length > 0) {
+                    appendToOutput(`Game session created with ID: ${sessionId}`);
+                    if (data.session_id) {
+                        appendToOutput(`Ready to play! Type a command to begin.`);
+                    }
+                } else {
+                    appendToOutput('Game session created successfully.');
+                }
+            } else {
+                appendToOutput('Game session created successfully.');
+            }
+
             // Generate command suggestions
-            if (data.metadata) {
+            if (data && data.metadata) {
                 generateSuggestions(data);
             }
         }
-        
+
         function updateMetadata(metadata) {
             if (!metadata) return;
-            
+
             if (metadata.player_location) {
                 playerLocationElement.textContent = `Location: ${metadata.player_location}`;
             }
-            
+
             if (metadata.inventory_count !== undefined) {
                 inventoryCountElement.textContent = `Inventory: ${metadata.inventory_count} items`;
             }
-            
+
             if (metadata.combat_active !== undefined) {
-                combatStatusElement.textContent = metadata.combat_active ? 
+                combatStatusElement.textContent = metadata.combat_active ?
                     'Combat: Active ⚔️' : 'Combat: Inactive';
             }
         }
-        
+
         function generateSuggestions(data) {
             suggestionsElement.innerHTML = '';
-            
+
             // Default suggestions
             const suggestions = [
                 'look around',
                 'inventory',
                 'help'
             ];
-            
+
             // Add location-based suggestions
             if (data.npcs_present) {
                 for (const npc of data.npcs_present) {
@@ -572,19 +614,19 @@
                     suggestions.push(`examine ${npc}`);
                 }
             }
-            
+
             if (data.items_present) {
                 for (const item of data.items_present) {
                     suggestions.push(`take ${item}`);
                     suggestions.push(`examine ${item}`);
                 }
             }
-            
+
             // Add available commands if provided
             if (data.metadata && data.metadata.available_commands) {
                 suggestions.push(...data.metadata.available_commands);
             }
-            
+
             // Create suggestion buttons
             const uniqueSuggestions = [...new Set(suggestions)];
             for (const suggestion of uniqueSuggestions.slice(0, 8)) {
@@ -598,11 +640,11 @@
                 suggestionsElement.appendChild(suggestionElement);
             }
         }
-        
+
         function appendToOutput(text, format = 'normal') {
             const element = document.createElement('div');
             element.textContent = text;
-            
+
             // Apply formatting
             if (format === 'welcome') {
                 element.className = 'welcome';
@@ -616,11 +658,11 @@
                 element.style.color = '#666';
                 element.style.fontStyle = 'italic';
             }
-            
+
             gameOutput.appendChild(element);
             gameOutput.scrollTop = gameOutput.scrollHeight;
         }
-        
+
         function clearOutput() {
             gameOutput.innerHTML = '';
         }

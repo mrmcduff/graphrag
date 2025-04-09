@@ -8,6 +8,7 @@ from typing import Dict, Any
 
 from .game_session import GameSession
 from .utils import format_error_response, log_api_request, validate_session_id, sanitize_input
+from .auth import require_auth
 
 # Create a blueprint for the API routes
 api_bp = Blueprint('api', __name__, url_prefix='/api')
@@ -17,6 +18,7 @@ game_sessions: Dict[str, GameSession] = {}
 
 
 @api_bp.route('/game/new', methods=['POST'])
+@require_auth
 def new_game():
     """
     Create a new game session.
@@ -58,6 +60,7 @@ def new_game():
 
 
 @api_bp.route('/game/<session_id>/command', methods=['POST'])
+@require_auth
 def process_command(session_id):
     """
     Process a command for an existing game session.
@@ -93,6 +96,7 @@ def process_command(session_id):
 
 
 @api_bp.route('/game/<session_id>/save', methods=['POST'])
+@require_auth
 def save_game(session_id):
     """
     Save the current game state.
@@ -127,6 +131,7 @@ def save_game(session_id):
 
 
 @api_bp.route('/game/<session_id>/load', methods=['POST'])
+@require_auth
 def load_game(session_id):
     """
     Load a saved game state.
@@ -173,6 +178,7 @@ def load_game(session_id):
 
 
 @api_bp.route('/game/<session_id>/state', methods=['GET'])
+@require_auth
 def get_game_state(session_id):
     """
     Get the current game state.
@@ -210,6 +216,7 @@ def get_game_state(session_id):
 
 
 @api_bp.route('/game/<session_id>/llm', methods=['POST'])
+@require_auth
 def set_llm_provider(session_id):
     """
     Set the LLM provider for a game session.
@@ -257,6 +264,7 @@ def set_llm_provider(session_id):
 
 
 @api_bp.route('/game/<session_id>', methods=['DELETE'])
+@require_auth
 def end_game_session(session_id):
     """
     End a game session and clean up resources.
