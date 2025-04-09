@@ -1,0 +1,4 @@
+{"timestamp": "2025-04-08 20:01:13", "endpoint": "/game/69452bbf-8b00-4c00-9035-82ca8669d7f7/command", "request": {"command": "talk to Talyss Wavecaller"}}
+{"timestamp": "2025-04-08 20:01:26", "endpoint": "/game/69452bbf-8b00-4c00-9035-82ca8669d7f7/command", "request": {"command": "help"}}
+{"timestamp": "2025-04-08 20:01:32", "endpoint": "/game/69452bbf-8b00-4c00-9035-82ca8669d7f7/command", "request": {"command": "local map"}}
+{"timestamp": "2025-04-08 20:01:39", "endpoint": "/game/69452bbf-8b00-4c00-9035-82ca8669d7f7/command", "request": {"command": "map"}}

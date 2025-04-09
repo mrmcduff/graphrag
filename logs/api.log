@@ -1,0 +1,136 @@
+2025-04-08 18:21:55,487 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8000
+ * Running on http://10.0.0.37:8000
+2025-04-08 18:21:55,487 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-04-08 18:21:55,489 - werkzeug - INFO -  * Restarting with stat
+2025-04-08 18:21:55,682 - werkzeug - WARNING -  * Debugger is active!
+2025-04-08 18:21:55,687 - werkzeug - INFO -  * Debugger PIN: 104-338-032
+2025-04-08 18:22:06,599 - werkzeug - INFO - 127.0.0.1 - - [08/Apr/2025 18:22:06] "OPTIONS /api/game/new HTTP/1.1" 200 -
+2025-04-08 18:22:24,236 - werkzeug - INFO - 127.0.0.1 - - [08/Apr/2025 18:22:24] "POST /api/game/new HTTP/1.1" 200 -
+2025-04-08 18:24:51,273 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8000
+ * Running on http://10.0.0.37:8000
+2025-04-08 18:24:51,273 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-04-08 18:24:51,273 - werkzeug - INFO -  * Restarting with stat
+2025-04-08 18:24:51,465 - werkzeug - WARNING -  * Debugger is active!
+2025-04-08 18:24:51,469 - werkzeug - INFO -  * Debugger PIN: 513-008-563
+2025-04-08 18:24:58,563 - werkzeug - INFO - 127.0.0.1 - - [08/Apr/2025 18:24:58] "OPTIONS /api/game/new HTTP/1.1" 200 -
+2025-04-08 18:25:14,598 - werkzeug - INFO - 127.0.0.1 - - [08/Apr/2025 18:25:14] "POST /api/game/new HTTP/1.1" 200 -
+2025-04-08 18:25:25,945 - werkzeug - INFO - 127.0.0.1 - - [08/Apr/2025 18:25:25] "OPTIONS /api/game/a4395d40-e881-43e9-91b1-8edacaa093fb/command HTTP/1.1" 200 -
+2025-04-08 18:25:26,484 - werkzeug - INFO - 127.0.0.1 - - [08/Apr/2025 18:25:26] "POST /api/game/a4395d40-e881-43e9-91b1-8edacaa093fb/command HTTP/1.1" 200 -
+2025-04-08 18:25:31,228 - werkzeug - INFO - 127.0.0.1 - - [08/Apr/2025 18:25:31] "OPTIONS /api/game/a4395d40-e881-43e9-91b1-8edacaa093fb/command HTTP/1.1" 200 -
+2025-04-08 18:25:35,108 - werkzeug - INFO - 127.0.0.1 - - [08/Apr/2025 18:25:35] "POST /api/game/a4395d40-e881-43e9-91b1-8edacaa093fb/command HTTP/1.1" 200 -
+2025-04-08 18:25:52,575 - werkzeug - INFO - 127.0.0.1 - - [08/Apr/2025 18:25:52] "OPTIONS /api/game/a4395d40-e881-43e9-91b1-8edacaa093fb/command HTTP/1.1" 200 -
+2025-04-08 18:25:53,014 - werkzeug - INFO - 127.0.0.1 - - [08/Apr/2025 18:25:53] "POST /api/game/a4395d40-e881-43e9-91b1-8edacaa093fb/command HTTP/1.1" 200 -
+2025-04-08 18:26:01,075 - werkzeug - INFO - 127.0.0.1 - - [08/Apr/2025 18:26:01] "OPTIONS /api/game/a4395d40-e881-43e9-91b1-8edacaa093fb/command HTTP/1.1" 200 -
+2025-04-08 18:26:03,881 - werkzeug - INFO - 127.0.0.1 - - [08/Apr/2025 18:26:03] "POST /api/game/a4395d40-e881-43e9-91b1-8edacaa093fb/command HTTP/1.1" 200 -
+2025-04-08 18:26:10,982 - werkzeug - INFO - 127.0.0.1 - - [08/Apr/2025 18:26:10] "OPTIONS /api/game/a4395d40-e881-43e9-91b1-8edacaa093fb/command HTTP/1.1" 200 -
+2025-04-08 18:26:11,424 - werkzeug - INFO - 127.0.0.1 - - [08/Apr/2025 18:26:11] "POST /api/game/a4395d40-e881-43e9-91b1-8edacaa093fb/command HTTP/1.1" 200 -
+2025-04-08 18:27:27,816 - werkzeug - INFO -  * Detected change in '/Users/mrmcduff/code/graphrag/src/engine/command_processor.py', reloading
+2025-04-08 18:27:27,881 - werkzeug - INFO -  * Restarting with stat
+2025-04-08 18:27:28,091 - werkzeug - WARNING -  * Debugger is active!
+2025-04-08 18:27:28,095 - werkzeug - INFO -  * Debugger PIN: 417-464-311
+2025-04-08 18:27:39,489 - werkzeug - INFO -  * Detected change in '/Users/mrmcduff/code/graphrag/src/engine/command_processor.py', reloading
+2025-04-08 18:27:39,558 - werkzeug - INFO -  * Restarting with stat
+2025-04-08 18:27:39,771 - werkzeug - WARNING -  * Debugger is active!
+2025-04-08 18:27:39,775 - werkzeug - INFO -  * Debugger PIN: 605-441-106
+2025-04-08 18:28:01,544 - werkzeug - INFO -  * Detected change in '/Users/mrmcduff/code/graphrag/src/engine/command_processor.py', reloading
+2025-04-08 18:28:01,610 - werkzeug - INFO -  * Restarting with stat
+2025-04-08 18:28:01,810 - werkzeug - WARNING -  * Debugger is active!
+2025-04-08 18:28:01,814 - werkzeug - INFO -  * Debugger PIN: 619-006-374
+2025-04-08 18:28:11,152 - werkzeug - INFO -  * Detected change in '/Users/mrmcduff/code/graphrag/src/api/routes.py', reloading
+2025-04-08 18:28:11,223 - werkzeug - INFO -  * Restarting with stat
+2025-04-08 18:28:11,434 - werkzeug - WARNING -  * Debugger is active!
+2025-04-08 18:28:11,438 - werkzeug - INFO -  * Debugger PIN: 161-658-183
+2025-04-08 18:28:20,777 - werkzeug - INFO -  * Detected change in '/Users/mrmcduff/code/graphrag/src/api/routes.py', reloading
+2025-04-08 18:28:20,848 - werkzeug - INFO -  * Restarting with stat
+2025-04-08 18:28:21,046 - werkzeug - WARNING -  * Debugger is active!
+2025-04-08 18:28:21,051 - werkzeug - INFO -  * Debugger PIN: 558-793-050
+2025-04-08 18:28:32,441 - werkzeug - INFO -  * Detected change in '/Users/mrmcduff/code/graphrag/src/client/api_client.py', reloading
+2025-04-08 18:28:32,498 - werkzeug - INFO -  * Restarting with stat
+2025-04-08 18:28:32,699 - werkzeug - WARNING -  * Debugger is active!
+2025-04-08 18:28:32,703 - werkzeug - INFO -  * Debugger PIN: 139-180-348
+2025-04-08 18:28:52,408 - werkzeug - INFO -  * Detected change in '/Users/mrmcduff/code/graphrag/src/client/api_client.py', reloading
+2025-04-08 18:28:52,474 - werkzeug - INFO -  * Restarting with stat
+2025-04-08 18:28:52,673 - werkzeug - WARNING -  * Debugger is active!
+2025-04-08 18:28:52,677 - werkzeug - INFO -  * Debugger PIN: 754-107-393
+2025-04-08 19:47:23,920 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8000
+ * Running on http://10.0.0.37:8000
+2025-04-08 19:47:23,920 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-04-08 19:47:23,921 - werkzeug - INFO -  * Restarting with stat
+2025-04-08 19:47:24,112 - werkzeug - WARNING -  * Debugger is active!
+2025-04-08 19:47:24,117 - werkzeug - INFO -  * Debugger PIN: 104-778-004
+2025-04-08 19:47:38,537 - werkzeug - INFO - 127.0.0.1 - - [08/Apr/2025 19:47:38] "OPTIONS /api/game/new HTTP/1.1" 200 -
+2025-04-08 19:49:25,132 - werkzeug - INFO -  * Detected change in '/Users/mrmcduff/code/graphrag/src/engine/command_processor.py', reloading
+2025-04-08 19:49:25,204 - werkzeug - INFO -  * Restarting with stat
+2025-04-08 19:49:25,407 - werkzeug - WARNING -  * Debugger is active!
+2025-04-08 19:49:25,411 - werkzeug - INFO -  * Debugger PIN: 344-668-271
+2025-04-08 19:49:33,700 - werkzeug - INFO -  * Detected change in '/Users/mrmcduff/code/graphrag/src/engine/command_processor.py', reloading
+2025-04-08 19:49:33,766 - werkzeug - INFO -  * Restarting with stat
+2025-04-08 19:49:33,966 - werkzeug - WARNING -  * Debugger is active!
+2025-04-08 19:49:33,970 - werkzeug - INFO -  * Debugger PIN: 561-106-863
+2025-04-08 19:49:41,203 - werkzeug - INFO -  * Detected change in '/Users/mrmcduff/code/graphrag/src/engine/command_processor.py', reloading
+2025-04-08 19:49:41,276 - werkzeug - INFO -  * Restarting with stat
+2025-04-08 19:49:41,486 - werkzeug - WARNING -  * Debugger is active!
+2025-04-08 19:49:41,490 - werkzeug - INFO -  * Debugger PIN: 937-777-126
+2025-04-08 19:49:43,893 - werkzeug - INFO - 127.0.0.1 - - [08/Apr/2025 19:49:43] "OPTIONS /api/game/new HTTP/1.1" 200 -
+2025-04-08 19:49:48,458 - werkzeug - INFO - 127.0.0.1 - - [08/Apr/2025 19:49:48] "POST /api/game/new HTTP/1.1" 200 -
+2025-04-08 19:49:50,807 - werkzeug - INFO -  * Detected change in '/Users/mrmcduff/code/graphrag/src/engine/command_processor.py', reloading
+2025-04-08 19:49:50,873 - werkzeug - INFO -  * Restarting with stat
+2025-04-08 19:49:51,085 - werkzeug - WARNING -  * Debugger is active!
+2025-04-08 19:49:51,089 - werkzeug - INFO -  * Debugger PIN: 348-656-219
+2025-04-08 19:49:55,787 - werkzeug - INFO - 127.0.0.1 - - [08/Apr/2025 19:49:55] "OPTIONS /api/game/05ad2601-e333-4abd-be52-7fe0a6dbd044/command HTTP/1.1" 200 -
+2025-04-08 19:49:55,792 - werkzeug - INFO - 127.0.0.1 - - [08/Apr/2025 19:49:55] "[33mPOST /api/game/05ad2601-e333-4abd-be52-7fe0a6dbd044/command HTTP/1.1[0m" 404 -
+2025-04-08 19:49:57,325 - werkzeug - INFO -  * Detected change in '/Users/mrmcduff/code/graphrag/src/engine/command_processor.py', reloading
+2025-04-08 19:49:57,392 - werkzeug - INFO -  * Restarting with stat
+2025-04-08 19:49:57,599 - werkzeug - WARNING -  * Debugger is active!
+2025-04-08 19:49:57,603 - werkzeug - INFO -  * Debugger PIN: 137-480-070
+2025-04-08 19:49:59,138 - werkzeug - INFO - 127.0.0.1 - - [08/Apr/2025 19:49:59] "OPTIONS /api/game/05ad2601-e333-4abd-be52-7fe0a6dbd044/command HTTP/1.1" 200 -
+2025-04-08 19:49:59,141 - werkzeug - INFO - 127.0.0.1 - - [08/Apr/2025 19:49:59] "[33mPOST /api/game/05ad2601-e333-4abd-be52-7fe0a6dbd044/command HTTP/1.1[0m" 404 -
+2025-04-08 19:50:33,997 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8000
+ * Running on http://10.0.0.37:8000
+2025-04-08 19:50:33,997 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-04-08 19:50:33,998 - werkzeug - INFO -  * Restarting with stat
+2025-04-08 19:50:34,194 - werkzeug - WARNING -  * Debugger is active!
+2025-04-08 19:50:34,198 - werkzeug - INFO -  * Debugger PIN: 824-835-631
+2025-04-08 19:50:41,713 - werkzeug - INFO - 127.0.0.1 - - [08/Apr/2025 19:50:41] "OPTIONS /api/game/new HTTP/1.1" 200 -
+2025-04-08 19:51:01,400 - werkzeug - INFO - 127.0.0.1 - - [08/Apr/2025 19:51:01] "POST /api/game/new HTTP/1.1" 200 -
+2025-04-08 19:51:04,789 - werkzeug - INFO - 127.0.0.1 - - [08/Apr/2025 19:51:04] "OPTIONS /api/game/519c9ff9-775e-4fdf-8816-b5208a35bb8b/command HTTP/1.1" 200 -
+2025-04-08 19:51:05,166 - werkzeug - INFO - 127.0.0.1 - - [08/Apr/2025 19:51:05] "POST /api/game/519c9ff9-775e-4fdf-8816-b5208a35bb8b/command HTTP/1.1" 200 -
+2025-04-08 19:51:08,110 - werkzeug - INFO - 127.0.0.1 - - [08/Apr/2025 19:51:08] "OPTIONS /api/game/519c9ff9-775e-4fdf-8816-b5208a35bb8b/command HTTP/1.1" 200 -
+2025-04-08 19:51:11,088 - werkzeug - INFO - 127.0.0.1 - - [08/Apr/2025 19:51:11] "POST /api/game/519c9ff9-775e-4fdf-8816-b5208a35bb8b/command HTTP/1.1" 200 -
+2025-04-08 19:51:21,041 - werkzeug - INFO - 127.0.0.1 - - [08/Apr/2025 19:51:21] "OPTIONS /api/game/519c9ff9-775e-4fdf-8816-b5208a35bb8b/command HTTP/1.1" 200 -
+2025-04-08 19:51:21,478 - werkzeug - INFO - 127.0.0.1 - - [08/Apr/2025 19:51:21] "POST /api/game/519c9ff9-775e-4fdf-8816-b5208a35bb8b/command HTTP/1.1" 200 -
+2025-04-08 19:52:10,089 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8000
+ * Running on http://10.0.0.37:8000
+2025-04-08 19:52:10,089 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-04-08 19:52:10,090 - werkzeug - INFO -  * Restarting with stat
+2025-04-08 19:52:10,280 - werkzeug - WARNING -  * Debugger is active!
+2025-04-08 19:52:10,284 - werkzeug - INFO -  * Debugger PIN: 104-985-347
+2025-04-08 19:52:24,664 - werkzeug - INFO - 127.0.0.1 - - [08/Apr/2025 19:52:24] "OPTIONS /api/game/new HTTP/1.1" 200 -
+2025-04-08 20:00:49,386 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8000
+ * Running on http://10.0.0.37:8000
+2025-04-08 20:00:49,386 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-04-08 20:00:49,386 - werkzeug - INFO -  * Restarting with stat
+2025-04-08 20:00:49,586 - werkzeug - WARNING -  * Debugger is active!
+2025-04-08 20:00:49,590 - werkzeug - INFO -  * Debugger PIN: 654-013-862
+2025-04-08 20:01:03,270 - werkzeug - INFO - 127.0.0.1 - - [08/Apr/2025 20:01:03] "OPTIONS /api/game/new HTTP/1.1" 200 -
+2025-04-08 20:01:04,478 - werkzeug - INFO - 127.0.0.1 - - [08/Apr/2025 20:01:04] "POST /api/game/new HTTP/1.1" 200 -
+2025-04-08 20:01:13,600 - werkzeug - INFO - 127.0.0.1 - - [08/Apr/2025 20:01:13] "OPTIONS /api/game/69452bbf-8b00-4c00-9035-82ca8669d7f7/command HTTP/1.1" 200 -
+2025-04-08 20:01:16,423 - werkzeug - INFO - 127.0.0.1 - - [08/Apr/2025 20:01:16] "POST /api/game/69452bbf-8b00-4c00-9035-82ca8669d7f7/command HTTP/1.1" 200 -
+2025-04-08 20:01:26,394 - werkzeug - INFO - 127.0.0.1 - - [08/Apr/2025 20:01:26] "OPTIONS /api/game/69452bbf-8b00-4c00-9035-82ca8669d7f7/command HTTP/1.1" 200 -
+2025-04-08 20:01:26,952 - werkzeug - INFO - 127.0.0.1 - - [08/Apr/2025 20:01:26] "POST /api/game/69452bbf-8b00-4c00-9035-82ca8669d7f7/command HTTP/1.1" 200 -
+2025-04-08 20:01:32,589 - werkzeug - INFO - 127.0.0.1 - - [08/Apr/2025 20:01:32] "OPTIONS /api/game/69452bbf-8b00-4c00-9035-82ca8669d7f7/command HTTP/1.1" 200 -
+2025-04-08 20:01:35,435 - werkzeug - INFO - 127.0.0.1 - - [08/Apr/2025 20:01:35] "POST /api/game/69452bbf-8b00-4c00-9035-82ca8669d7f7/command HTTP/1.1" 200 -
+2025-04-08 20:01:39,912 - werkzeug - INFO - 127.0.0.1 - - [08/Apr/2025 20:01:39] "OPTIONS /api/game/69452bbf-8b00-4c00-9035-82ca8669d7f7/command HTTP/1.1" 200 -
+2025-04-08 20:01:42,691 - werkzeug - INFO - 127.0.0.1 - - [08/Apr/2025 20:01:42] "POST /api/game/69452bbf-8b00-4c00-9035-82ca8669d7f7/command HTTP/1.1" 200 -

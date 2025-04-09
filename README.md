@@ -262,6 +262,85 @@ The architecture uses several design patterns:
 - **Command Pattern**: The CommandProcessor encapsulates commands as objects
 - **Observer Pattern (implicit)**: State changes trigger appropriate responses in other components
 
+## API Server
+
+The game can also be run as an API server, allowing you to interact with it programmatically or build custom frontends.
+
+### Setup
+
+1. **Install additional dependencies**:
+   ```bash
+   pip install flask flask-cors
+   ```
+   Or update using the provided requirements.txt:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+2. **Start the API server**:
+   ```bash
+   python -m src.api.server --host 0.0.0.0 --port 8000 --debug
+   ```
+
+   Command-line options:
+   - `--host`: Host to bind the server to (default: 0.0.0.0)
+   - `--port`: Port to run the server on (default: 8000)
+   - `--debug`: Run in debug mode (not recommended for production)
+   - `--log-level`: Set logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+
+3. **Test the API**:
+   - Use the included command-line client:
+     ```bash
+     python -m src.client.api_client
+     ```
+   - Open the web client in a browser:
+     ```bash
+     open src/client/web_client.html
+     ```
+   - Use the automated test suite:
+     ```bash
+     python -m src.api.test_api
+     ```
+
+### API Endpoints
+
+- `POST /api/game/new`: Create a new game session
+- `POST /api/game/<session_id>/command`: Process a command
+- `POST /api/game/<session_id>/save`: Save game state
+- `POST /api/game/<session_id>/load`: Load game state
+- `GET /api/game/<session_id>/state`: Get current game state
+- `POST /api/game/<session_id>/llm`: Set LLM provider
+- `DELETE /api/game/<session_id>`: End game session
+
+### Response Format
+
+API responses include formatted content with metadata for display:
+
+```json
+{
+  "success": true,
+  "message": "Command processed successfully",
+  "content": [
+    {
+      "text": "You find yourself in a dark forest.",
+      "format": "location",
+      "color": "#33a1ff"
+    },
+    {
+      "text": "You see a mysterious figure in the distance.",
+      "format": "normal"
+    }
+  ],
+  "metadata": {
+    "action_type": "movement",
+    "combat_active": false,
+    "player_location": "Dark Forest",
+    "inventory_count": 3,
+    "session_id": "550e8400-e29b-41d4-a716-446655440000"
+  }
+}
+```
+
 ## Extension Points
 
 The system is designed to be extensible in several ways:
@@ -271,6 +350,7 @@ The system is designed to be extensible in several ways:
 - Expand map generation with more location types and features
 - Add quest and dialogue systems building on the existing NPC state tracking
 - Implement additional command types in the CommandProcessor
+- Create custom frontends using the API server
 
 ## Development History
 

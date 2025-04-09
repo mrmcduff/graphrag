@@ -55,13 +55,18 @@ class CommandProcessor:
             ),
         }
 
-    def setup_llm_provider(self, choice: int) -> None:
+    def setup_llm_provider(self, choice: int, config: dict = None, interactive: bool = True) -> None:
         """
         Set up the LLM provider based on user choice.
 
         Args:
             choice: Integer representing the LLM provider choice (1-6)
+            config: Optional dictionary with configuration parameters for the provider
+            interactive: Whether to prompt for input if configuration is missing
         """
+        # Initialize config if not provided
+        if config is None:
+            config = {}
         from llm.providers.base import LLMType
         from util.config import get_api_key, load_environment_variables
 
@@ -70,19 +75,40 @@ class CommandProcessor:
 
         if choice == 1:
             # Local API
-            host = input("Enter host (default: localhost): ") or "localhost"
-            port = input("Enter port (default: 8000): ") or "8000"
+            # Use the host from config if provided, otherwise use default or prompt if interactive
+            if 'host' in config:
+                host = config['host']
+            elif interactive:
+                host = input("Enter host (default: localhost): ") or "localhost"
+            else:
+                host = "localhost"
+                
+            # Use the port from config if provided, otherwise use default or prompt if interactive
+            if 'port' in config:
+                port_str = config['port']
+            elif interactive:
+                port_str = input("Enter port (default: 8000): ") or "8000"
+            else:
+                port_str = "8000"
+                
+            port = int(port_str) if isinstance(port_str, str) else port_str
             self.llm_manager.add_provider(
                 LLMType.LOCAL_API,
                 self.llm_manager.create_provider(
-                    LLMType.LOCAL_API, host=host, port=int(port)
+                    LLMType.LOCAL_API, host=host, port=port
                 ),
             )
             self.llm_manager.set_active_provider(LLMType.LOCAL_API)
 
         elif choice == 2:
             # Local direct
-            model_path = input("Enter model path: ")
+            # Use the model path from config if provided, otherwise prompt for input if interactive
+            if 'model_path' in config:
+                model_path = config['model_path']
+            elif interactive:
+                model_path = input("Enter model path: ")
+            else:
+                model_path = ""  # Default empty path
             self.llm_manager.add_provider(
                 LLMType.LOCAL_DIRECT,
                 self.llm_manager.create_provider(
@@ -93,12 +119,19 @@ class CommandProcessor:
 
         elif choice == 3:
             # OpenAI
-            api_key = get_api_key("openai")
+            api_key = config.get('api_key')
             if not api_key:
-                api_key = input("Enter OpenAI API key: ")
-            model = (
-                input("Enter model name (default: gpt-3.5-turbo): ") or "gpt-3.5-turbo"
-            )
+                api_key = get_api_key("openai")
+                if not api_key and interactive:
+                    api_key = input("Enter OpenAI API key: ")
+            
+            # Use the model from config if provided, otherwise use default or prompt if interactive
+            if 'model' in config:
+                model = config['model']
+            elif interactive:
+                model = input("Enter model name (default: gpt-3.5-turbo): ") or "gpt-3.5-turbo"
+            else:
+                model = "gpt-3.5-turbo"
             self.llm_manager.add_provider(
                 LLMType.OPENAI,
                 self.llm_manager.create_provider(
@@ -109,13 +142,19 @@ class CommandProcessor:
 
         elif choice == 4:
             # Anthropic
-            api_key = get_api_key("anthropic")
+            api_key = config.get('api_key')
             if not api_key:
-                api_key = input("Enter Anthropic API key: ")
-            model = (
-                input("Enter model name (default: claude-3-haiku-20240307): ")
-                or "claude-3-haiku-20240307"
-            )
+                api_key = get_api_key("anthropic")
+                if not api_key and interactive:
+                    api_key = input("Enter Anthropic API key: ")
+            
+            # Use the model from config if provided, otherwise use default or prompt if interactive
+            if 'model' in config:
+                model = config['model']
+            elif interactive:
+                model = input("Enter model name (default: claude-3-haiku-20240307): ") or "claude-3-haiku-20240307"
+            else:
+                model = "claude-3-haiku-20240307"
             self.llm_manager.add_provider(
                 LLMType.ANTHROPIC,
                 self.llm_manager.create_provider(
@@ -126,10 +165,19 @@ class CommandProcessor:
 
         elif choice == 5:
             # Google
-            api_key = get_api_key("google")
+            api_key = config.get('api_key')
             if not api_key:
-                api_key = input("Enter Google API key: ")
-            model = input("Enter model name (default: gemini-pro): ") or "gemini-pro"
+                api_key = get_api_key("google")
+                if not api_key and interactive:
+                    api_key = input("Enter Google API key: ")
+            
+            # Use the model from config if provided, otherwise use default or prompt if interactive
+            if 'model' in config:
+                model = config['model']
+            elif interactive:
+                model = input("Enter model name (default: gemini-pro): ") or "gemini-pro"
+            else:
+                model = "gemini-pro"
             self.llm_manager.add_provider(
                 LLMType.GOOGLE,
                 self.llm_manager.create_provider(
@@ -766,7 +814,8 @@ quit - Exit the game
 
         elif action == "llm" and target == "change":
             # Change LLM provider
-            self.setup_llm_provider(int(input("Enter new LLM provider (1-6): ")))
+            provider_id = int(input("Enter new LLM provider (1-6): "))
+            self.setup_llm_provider(provider_id, interactive=True)
             provider = self.llm_manager.active_provider
             provider_name = provider.name if provider else "None"
 
