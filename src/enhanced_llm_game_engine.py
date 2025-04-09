@@ -250,7 +250,7 @@ class AnthropicProvider(LLMProvider):
 class GoogleProvider(LLMProvider):
     """Provider for Google Gemini API."""
 
-    def __init__(self, api_key: str, model: str = "gemini-pro"):
+    def __init__(self, api_key: str, model: str = "gemini-1.5-flash"):
         super().__init__()
         self.name = "Google Gemini"
         self.api_key = api_key

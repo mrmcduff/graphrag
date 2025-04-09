@@ -231,7 +231,8 @@ class OutputManager:
         self.display_text("The map will be opened in your default image viewer.", "system")
         
         # Add debug output to help diagnose issues
-        print(f"DEBUG: OutputManager.display_map called with result: {result}")
+        from util.debug import debug_print
+        debug_print(f"DEBUG: OutputManager.display_map called with result: {result}")
             
     def open_image(self, image_path: str) -> None:
         """

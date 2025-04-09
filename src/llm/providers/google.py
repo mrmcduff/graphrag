@@ -6,19 +6,21 @@ from .base import LLMProvider
 class GoogleProvider(LLMProvider):
     """Provider for Google Gemini API."""
 
-    def __init__(self, api_key: str, model: str = "gemini-pro"):
+    def __init__(self, api_key: str, model: str = "gemini-1.5-flash"):
         """
         Initialize the Google provider.
 
         Args:
             api_key: Google API key
-            model: Model to use (default: gemini-pro)
+            model: Model to use (default: gemini-1.5-flash)
         """
         super().__init__()
         self.name = "Google Gemini"
         self.api_key = api_key
         self.model = model
-        self.api_url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+        # Add 'models/' prefix if not already present
+        model_path = model if model.startswith("models/") else f"models/{model}"
+        self.api_url = f"https://generativelanguage.googleapis.com/v1/{model_path}:generateContent"
 
     def generate_text(
         self, prompt: str, max_tokens: int = 500, temperature: float = 0.7

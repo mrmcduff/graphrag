@@ -253,7 +253,7 @@ def interactive_mode(client: GraphRAGApiClient) -> None:
             model = input(f"Enter model name [default: {default_model}]: ").strip() or default_model
             provider_config['model'] = model
         elif provider_id == 5:  # Google
-            default_model = "gemini-pro"
+            default_model = "gemini-1.5-flash"
             model = input(f"Enter model name [default: {default_model}]: ").strip() or default_model
             provider_config['model'] = model
         elif provider_id == 1:  # Local API

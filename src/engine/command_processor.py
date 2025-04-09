@@ -175,9 +175,9 @@ class CommandProcessor:
             if 'model' in config:
                 model = config['model']
             elif interactive:
-                model = input("Enter model name (default: gemini-pro): ") or "gemini-pro"
+                model = input("Enter model name (default: gemini-1.5-flash): ") or "gemini-1.5-flash"
             else:
-                model = "gemini-pro"
+                model = "gemini-1.5-flash"
             self.llm_manager.add_provider(
                 LLMType.GOOGLE,
                 self.llm_manager.create_provider(
@@ -203,14 +203,15 @@ class CommandProcessor:
         Returns:
             Dictionary with the results of the command
         """
-        print(f"DEBUG: Processing command: '{command}'")
+        from util.debug import debug_print
+        debug_print(f"DEBUG: Processing command: '{command}'")
         
         # Special handling for map commands
         if command.lower().strip() == "map":
-            print("DEBUG: Detected map command directly")
+            debug_print("DEBUG: Detected map command directly")
             return self._process_system_command("map", "")
         elif command.lower().strip() == "local map":
-            print("DEBUG: Detected local map command directly")
+            debug_print("DEBUG: Detected local map command directly")
             return self._process_system_command("map", "local")
             
         # Default result
@@ -222,7 +223,8 @@ class CommandProcessor:
 
         # Check if we're in combat
         if self.combat_system.active_combat:
-            print("DEBUG: In combat mode, processing as combat command")
+            from util.debug import debug_print
+            debug_print("DEBUG: In combat mode, processing as combat command")
             return self._process_combat_command(command)
             
         # First, try to resolve the natural language intent
@@ -795,7 +797,8 @@ quit - Exit the game
 
         elif action == "map":
             # Show map
-            print("DEBUG: Map command detected in command processor")
+            from util.debug import debug_print
+            debug_print("DEBUG: Map command detected in command processor")
             if target and target.lower() == "local":
                 result = {
                     "success": True,
@@ -805,7 +808,7 @@ quit - Exit the game
                     "location": self.game_state.player_location,
                     "display_map": True,
                 }
-                print(f"DEBUG: Returning local map result: {result}")
+                debug_print(f"DEBUG: Returning local map result: {result}")
                 return result
             else:
                 result = {
@@ -816,7 +819,7 @@ quit - Exit the game
                     "locations": list(self.game_state.visited_locations),
                     "display_map": True,
                 }
-                print(f"DEBUG: Returning world map result: {result}")
+                debug_print(f"DEBUG: Returning world map result: {result}")
                 return result
 
         elif action == "llm" and target == "info":

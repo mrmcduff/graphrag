@@ -64,7 +64,7 @@ class LLMManager:
 
             return GoogleProvider(
                 api_key=kwargs.get("api_key", ""),
-                model=kwargs.get("model", "gemini-pro"),
+                model=kwargs.get("model", "gemini-1.5-flash"),
             )
 
         elif provider_type.value == "rule_based":
