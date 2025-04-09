@@ -203,6 +203,16 @@ class CommandProcessor:
         Returns:
             Dictionary with the results of the command
         """
+        print(f"DEBUG: Processing command: '{command}'")
+        
+        # Special handling for map commands
+        if command.lower().strip() == "map":
+            print("DEBUG: Detected map command directly")
+            return self._process_system_command("map", "")
+        elif command.lower().strip() == "local map":
+            print("DEBUG: Detected local map command directly")
+            return self._process_system_command("map", "local")
+            
         # Default result
         result = {
             "success": False,
@@ -212,6 +222,7 @@ class CommandProcessor:
 
         # Check if we're in combat
         if self.combat_system.active_combat:
+            print("DEBUG: In combat mode, processing as combat command")
             return self._process_combat_command(command)
             
         # First, try to resolve the natural language intent
@@ -289,6 +300,9 @@ class CommandProcessor:
 
         if simple_command in ["help", "h", "?"]:
             return CommandType.SYSTEM, "help", ""
+            
+        if simple_command in ["map", "m"]:
+            return CommandType.SYSTEM, "map", ""
 
         # No match found - treat as unknown
         words = simple_command.split()
@@ -781,8 +795,9 @@ quit - Exit the game
 
         elif action == "map":
             # Show map
+            print("DEBUG: Map command detected in command processor")
             if target and target.lower() == "local":
-                return {
+                result = {
                     "success": True,
                     "message": f"Displaying local map of {self.game_state.player_location}...",
                     "action_type": CommandType.SYSTEM.value,
@@ -790,8 +805,10 @@ quit - Exit the game
                     "location": self.game_state.player_location,
                     "display_map": True,
                 }
+                print(f"DEBUG: Returning local map result: {result}")
+                return result
             else:
-                return {
+                result = {
                     "success": True,
                     "message": "Displaying world map...",
                     "action_type": CommandType.SYSTEM.value,
@@ -799,6 +816,8 @@ quit - Exit the game
                     "locations": list(self.game_state.visited_locations),
                     "display_map": True,
                 }
+                print(f"DEBUG: Returning world map result: {result}")
+                return result
 
         elif action == "llm" and target == "info":
             # Display LLM information

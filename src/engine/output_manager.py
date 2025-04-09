@@ -1,6 +1,10 @@
 import os
 import textwrap
 import time
+import subprocess
+import platform
+import tempfile
+import gc
 from typing import Dict, Any, Optional
 
 
@@ -23,6 +27,7 @@ class OutputManager:
         )  # Delay between characters for typing effect
         self.use_color = self.config.get("use_color", True)
         self.wrap_text = self.config.get("wrap_text", True)
+        self.quick_mode = self.config.get("quick_mode", False)  # No animation in quick mode
 
         # Set color codes if color is enabled
         if self.use_color:
@@ -109,8 +114,8 @@ class OutputManager:
         else:
             wrapped_text = styled_text
 
-        # Display text with typing effect if delay is > 0
-        if self.delay > 0 and style != "system":
+        # Display text with typing effect if delay is > 0 and not in quick mode
+        if self.delay > 0 and style != "system" and not self.quick_mode:
             for char in wrapped_text:
                 print(char, end="", flush=True)
                 time.sleep(self.delay)
@@ -161,6 +166,12 @@ class OutputManager:
             if result.get("help_displayed", False):
                 # Help text gets special formatting
                 self.display_text(message, "system")
+            elif result.get("display_map", False):
+                # Display map
+                self.display_text(message, "system")
+                
+                # Generate and display the map
+                self.display_map(result)
             elif not success:
                 # Failed system command
                 self.display_text(message, "error")
@@ -197,3 +208,53 @@ class OutputManager:
     def clear_screen(self) -> None:
         """Clear the terminal screen."""
         os.system("cls" if os.name == "nt" else "clear")
+        
+    def display_map(self, result: Dict[str, Any]) -> None:
+        """
+        Generate and display a map image.
+        
+        Args:
+            result: Dictionary with map information
+        """
+        # This method is now called from the game loop where game_state is available
+        # The game loop should handle the actual map generation and display
+        
+        # Display a message to indicate that the map is being generated
+        map_type = result.get("map_type", "world")
+        if map_type == "local":
+            location = result.get("location", "current location")
+            self.display_text(f"\nGenerating detailed map of {location}...", "system")
+        else:
+            self.display_text("\nGenerating world map...", "system")
+            
+        # The actual map generation and display is handled in the game_loop._display_map method
+        self.display_text("The map will be opened in your default image viewer.", "system")
+        
+        # Add debug output to help diagnose issues
+        print(f"DEBUG: OutputManager.display_map called with result: {result}")
+            
+    def open_image(self, image_path: str) -> None:
+        """
+        Open an image file with the default image viewer.
+        
+        Args:
+            image_path: Path to the image file
+        """
+        try:
+            # Check if the file exists
+            if not os.path.exists(image_path):
+                self.display_text(f"Map file not found: {image_path}", "error")
+                return
+                
+            # Open the image with the default viewer based on the OS
+            if platform.system() == "Darwin":  # macOS
+                subprocess.call(["open", image_path])
+            elif platform.system() == "Windows":
+                os.startfile(image_path)
+            else:  # Linux
+                subprocess.call(["xdg-open", image_path])
+                
+            self.display_text(f"Map opened in image viewer: {image_path}", "system")
+            
+        except Exception as e:
+            self.display_text(f"Error opening map image: {e}", "error")

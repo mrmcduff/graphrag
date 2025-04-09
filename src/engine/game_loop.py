@@ -2,6 +2,8 @@ import time
 from typing import Dict, Any, Optional
 import os
 import sys
+import subprocess
+import platform
 
 
 class GameLoop:
@@ -175,6 +177,13 @@ The message should be 3-4 sentences long.
                 self.output_manager.display_text("\nYou have been defeated!")
                 # Handle player defeat (could be game over or respawn)
                 self._handle_player_defeat()
+                
+        # Handle map display
+        if result.get("action_type") == "system":
+            print(f"DEBUG: System action detected in game loop: {result}")
+            if result.get("display_map", False):
+                print("DEBUG: Display map flag detected, calling _display_map")
+                self._display_map(result)
 
     def _handle_player_defeat(self) -> None:
         """Handle player defeat in combat."""
@@ -203,3 +212,83 @@ The message should be 3-4 sentences long.
 
         self.running = False
         print("\nThanks for playing!")
+        
+    def _display_map(self, result: Dict[str, Any]) -> None:
+        """Generate and display a map image.
+        
+        Args:
+            result: Dictionary with map information
+        """
+        print(f"DEBUG: Inside _display_map with result: {result}")
+        try:
+            # Import the map generator
+            from map_generator import MapGenerator
+            print("DEBUG: Successfully imported MapGenerator")
+            
+            # Create a map generator with the current game state
+            print(f"DEBUG: Creating MapGenerator with game_state.data: {self.game_state.data} and graph: {self.game_state.graph}")
+            map_generator = MapGenerator(self.game_state.data, self.game_state.graph)
+            print("DEBUG: Successfully created MapGenerator")
+            
+            # Generate the map based on the map type
+            map_type = result.get("map_type", "world")
+            current_location = result.get("location", self.game_state.player_location)
+            print(f"DEBUG: Map type: {map_type}, Current location: {current_location}")
+            
+            # Generate the appropriate map
+            if map_type == "local":
+                self.output_manager.display_text(f"Generating detailed map of {current_location}...", "system")
+                print(f"DEBUG: Generating zoomed map for {current_location}")
+                map_path = map_generator.generate_zoomed_map(current_location)
+                print(f"DEBUG: Generated zoomed map at {map_path}")
+            else:
+                self.output_manager.display_text("Generating world map...", "system")
+                print(f"DEBUG: Generating world map centered on {current_location}")
+                map_path = map_generator.generate_map(current_location)
+                print(f"DEBUG: Generated world map at {map_path}")
+                
+            # Display the map
+            print(f"DEBUG: Opening image at {map_path}")
+            self._open_image(map_path)
+            
+        except Exception as e:
+            import traceback
+            print(f"DEBUG: Error in _display_map: {e}")
+            traceback.print_exc()
+            self.output_manager.display_text(f"Error generating map: {e}", "error")
+            
+    def _open_image(self, image_path: str) -> None:
+        """Open an image file with the default image viewer.
+        
+        Args:
+            image_path: Path to the image file
+        """
+        try:
+            # Check if the file exists
+            print(f"DEBUG: Checking if image exists at {image_path}")
+            if not os.path.exists(image_path):
+                print(f"DEBUG: Image file not found at {image_path}")
+                self.output_manager.display_text(f"Map file not found: {image_path}", "error")
+                return
+            
+            print(f"DEBUG: Image file exists at {image_path}")
+            # Open the image with the default viewer based on the OS
+            system = platform.system()
+            print(f"DEBUG: Operating system: {system}")
+            if system == "Darwin":  # macOS
+                print(f"DEBUG: Opening image with 'open' command on macOS")
+                subprocess.call(["open", image_path])
+            elif system == "Windows":
+                print(f"DEBUG: Opening image with os.startfile on Windows")
+                os.startfile(image_path)
+            else:  # Linux
+                print(f"DEBUG: Opening image with 'xdg-open' command on Linux")
+                subprocess.call(["xdg-open", image_path])
+                
+            self.output_manager.display_text(f"Map opened in image viewer: {image_path}", "system")
+            
+        except Exception as e:
+            import traceback
+            print(f"DEBUG: Error in _open_image: {e}")
+            traceback.print_exc()
+            self.output_manager.display_text(f"Error opening map image: {e}", "error")

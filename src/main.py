@@ -30,6 +30,11 @@ def parse_arguments():
         help="Disable typing effect for text display",
     )
     parser.add_argument(
+        "--quick",
+        action="store_true",
+        help="Quick mode: disables text animation for faster debugging",
+    )
+    parser.add_argument(
         "--width", type=int, default=80, help="Width of the text display"
     )
 
@@ -90,6 +95,7 @@ def create_config(args) -> Dict[str, Any]:
             "use_color": not args.no_color,
             "delay": 0 if args.no_typing_effect else 0.02,
             "width": args.width,
+            "quick_mode": args.quick,
         },
         "save_file": args.load_save,
     }
@@ -102,6 +108,9 @@ def main():
 
     # Load environment variables from .env file
     from util.config import load_environment_variables
+    
+    # Apply Pillow patch for textsize method
+    from util import pillow_patch
 
     load_environment_variables()
 
