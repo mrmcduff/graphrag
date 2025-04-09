@@ -59,7 +59,7 @@ def get_non_interactive_llm_config(provider_id: int, provider_config: Optional[D
             api_key = get_api_key("google")
             config['api_key'] = api_key if api_key else ''
         if 'model' not in config:
-            config['model'] = os.environ.get('GOOGLE_MODEL', 'gemini-pro')
+            config['model'] = os.environ.get('GOOGLE_MODEL', 'gemini-1.5-flash')
             
     # No additional config needed for rule-based (provider_id == 6)
     

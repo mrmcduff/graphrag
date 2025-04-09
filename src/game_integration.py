@@ -108,8 +108,8 @@ class TextAdventureGame:
         elif choice == "5":
             api_key = input("Enter Google API key: ").strip()
             model = (
-                input("Enter model name (default: gemini-pro): ").strip()
-                or "gemini-pro"
+                input("Enter model name (default: gemini-1.5-flash): ").strip()
+                or "gemini-1.5-flash"
             )
 
             if api_key:
