@@ -1,5 +1,0 @@
-{"timestamp": "2025-04-08 18:25:25", "endpoint": "/game/a4395d40-e881-43e9-91b1-8edacaa093fb/command", "request": {"command": "help"}}
-{"timestamp": "2025-04-08 18:25:31", "endpoint": "/game/a4395d40-e881-43e9-91b1-8edacaa093fb/command", "request": {"command": "look around"}}
-{"timestamp": "2025-04-08 18:25:52", "endpoint": "/game/a4395d40-e881-43e9-91b1-8edacaa093fb/command", "request": {"command": "talk to the towering muscular figure with horns"}}
-{"timestamp": "2025-04-08 18:26:01", "endpoint": "/game/a4395d40-e881-43e9-91b1-8edacaa093fb/command", "request": {"command": "talk to the deepkin"}}
-{"timestamp": "2025-04-08 18:26:10", "endpoint": "/game/a4395d40-e881-43e9-91b1-8edacaa093fb/command", "request": {"command": "exit"}}

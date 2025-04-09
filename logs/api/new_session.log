@@ -1,7 +1,0 @@
-{"timestamp": "2025-04-08 18:22:06", "endpoint": "/game/new", "request": {"game_data_dir": "data/output"}}
-{"timestamp": "2025-04-08 18:24:58", "endpoint": "/game/new", "request": {"game_data_dir": "data/output", "provider_id": 4}}
-{"timestamp": "2025-04-08 19:47:38", "endpoint": "/game/new", "request": {"game_data_dir": "data/output", "provider_id": 4, "provider_config": {"model": "claude-3-haiku-20240307"}}}
-{"timestamp": "2025-04-08 19:49:43", "endpoint": "/game/new", "request": {"game_data_dir": "data/output", "provider_id": 4, "provider_config": {"model": "claude-3-haiku-20240307"}}}
-{"timestamp": "2025-04-08 19:50:41", "endpoint": "/game/new", "request": {"game_data_dir": "data/output", "provider_id": 4, "provider_config": {"model": "claude-3-haiku-20240307"}}}
-{"timestamp": "2025-04-08 19:52:24", "endpoint": "/game/new", "request": {"game_data_dir": "data/output", "provider_id": 4, "provider_config": {"model": "claude-3-haiku-20240307"}}}
-{"timestamp": "2025-04-08 20:01:03", "endpoint": "/game/new", "request": {"game_data_dir": "data/output", "provider_id": 4, "provider_config": {"model": "claude-3-haiku-20240307"}}}
