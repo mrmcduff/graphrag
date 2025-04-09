@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GraphRAG Admin - User Management</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Admin-specific styles */
+        h1, h2 {
+            color: #2c3e50;
+        }
+        .container {
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        .email-list {
+            margin: 20px 0;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 10px;
+        }
+        .email-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+        }
+        .email-item:last-child {
+            border-bottom: none;
+        }
+        .email-text {
+            flex-grow: 1;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        input[type="email"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        .btn {
+            padding: 10px 15px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .btn:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <h1>GraphRAG Admin - User Management</h1>
+    
+    <div class="container">
+        <h2>Authorized Emails</h2>
+        <p>Manage the list of email addresses that are allowed to access the GraphRAG API.</p>
+        
+        <div class="email-list" id="email-list">
+            <div class="email-item">
+                <span class="email-text">Loading...</span>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="new-email">Add New Email:</label>
+            <input type="email" id="new-email" placeholder="Enter email address">
+        </div>
+        
+        <button id="add-email" class="btn">Add Email</button>
+        
+        <div id="status" class="status hidden"></div>
+    </div>
+    
+    <script>
+        // API Configuration
+        const API_URL = 'http://localhost:8000/api';
+        
+        // DOM Elements
+        const emailList = document.getElementById('email-list');
+        const newEmailInput = document.getElementById('new-email');
+        const addEmailButton = document.getElementById('add-email');
+        const statusElement = document.getElementById('status');
+        
+        // Load authorized emails when the page loads
+        document.addEventListener('DOMContentLoaded', loadAuthorizedEmails);
+        
+        // Add event listeners
+        addEmailButton.addEventListener('click', addEmail);
+        
+        // Load authorized emails from the API
+        async function loadAuthorizedEmails() {
+            try {
+                const response = await fetch(`${API_URL}/users/authorized-emails`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    displayEmails(data.emails);
+                } else {
+                    showStatus('Error loading emails', false);
+                }
+            } catch (error) {
+                console.error('Error loading emails:', error);
+                showStatus('Error loading emails', false);
+            }
+        }
+        
+        // Display emails in the list
+        function displayEmails(emails) {
+            emailList.innerHTML = '';
+            
+            if (emails.length === 0) {
+                emailList.innerHTML = '<div class="email-item"><span class="email-text">No authorized emails</span></div>';
+                return;
+            }
+            
+            emails.forEach(email => {
+                const emailItem = document.createElement('div');
+                emailItem.className = 'email-item';
+                
+                const emailText = document.createElement('span');
+                emailText.className = 'email-text';
+                emailText.textContent = email;
+                
+                const removeButton = document.createElement('button');
+                removeButton.className = 'remove-btn';
+                removeButton.textContent = 'Remove';
+                removeButton.addEventListener('click', () => removeEmail(email));
+                
+                emailItem.appendChild(emailText);
+                emailItem.appendChild(removeButton);
+                emailList.appendChild(emailItem);
+            });
+        }
+        
+        // Add a new email
+        async function addEmail() {
+            const email = newEmailInput.value.trim();
+            
+            if (!email) {
+                showStatus('Please enter an email address', false);
+                return;
+            }
+            
+            if (!isValidEmail(email)) {
+                showStatus('Please enter a valid email address', false);
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/users/authorized-emails`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    displayEmails(data.emails);
+                    newEmailInput.value = '';
+                    showStatus(`Email ${email} added successfully`, true);
+                } else {
+                    showStatus('Error adding email', false);
+                }
+            } catch (error) {
+                console.error('Error adding email:', error);
+                showStatus('Error adding email', false);
+            }
+        }
+        
+        // Remove an email
+        async function removeEmail(email) {
+            try {
+                const response = await fetch(`${API_URL}/users/authorized-emails`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    displayEmails(data.emails);
+                    showStatus(`Email ${email} removed successfully`, true);
+                } else {
+                    showStatus('Error removing email', false);
+                }
+            } catch (error) {
+                console.error('Error removing email:', error);
+                showStatus('Error removing email', false);
+            }
+        }
+        
+        // Show status message
+        function showStatus(message, isSuccess) {
+            statusElement.textContent = message;
+            statusElement.className = isSuccess ? 'status success' : 'status error';
+            statusElement.style.display = 'block';
+            
+            // Hide status after 3 seconds
+            setTimeout(() => {
+                statusElement.style.display = 'none';
+            }, 3000);
+        }
+        
+        // Validate email format
+        function isValidEmail(email) {
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return re.test(email);
+        }
+    </script>
+</body>
+</html>
