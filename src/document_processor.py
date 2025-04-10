@@ -8,6 +8,7 @@ from tqdm import tqdm
 from concurrent.futures import ProcessPoolExecutor
 import matplotlib.pyplot as plt
 from typing import List, Dict, Tuple, Set
+import time
 
 
 # Step 1: Read text from Word documents
@@ -402,6 +403,7 @@ def main(
     output_dir: str = "output",
     chunk_size: int = 512,
     overlap: int = 50,
+    output_name: str = None,
 ):
     """
     Run the complete pipeline from document processing to game element extraction.
@@ -411,13 +413,23 @@ def main(
         output_dir: Directory to save output files
         chunk_size: Maximum size of each chunk in tokens
         overlap: Number of tokens to overlap between chunks
+        output_name: Optional name for the output subfolder (defaults to input directory name if not provided)
     """
-    # Create output directory if it doesn't exist
-    os.makedirs(output_dir, exist_ok=True)
+    # Create a named output directory based on input directory if not specified
+    if not output_name:
+        # Extract the last directory name from the documents_dir path
+        output_name = os.path.basename(os.path.normpath(documents_dir))
+        # If the extracted name is 'documents' (the default root), use a timestamp instead
+        if output_name == "documents":
+            timestamp = time.strftime("%Y%m%d_%H%M%S")
+            output_name = f"world_{timestamp}"
+    
+    world_output_dir = os.path.join(output_dir, output_name)
+    os.makedirs(world_output_dir, exist_ok=True)
 
     print("Step 1: Processing documents...")
     df_chunks = process_documents_with_chunking(documents_dir, chunk_size, overlap)
-    df_chunks.to_csv(os.path.join(output_dir, "document_chunks.csv"), index=False)
+    df_chunks.to_csv(os.path.join(world_output_dir, "document_chunks.csv"), index=False)
     print(
         f"Created {len(df_chunks)} chunks from {df_chunks['filename'].nunique()} documents"
     )
@@ -427,37 +439,40 @@ def main(
     print(f"Built knowledge graph with {len(G.nodes)} nodes and {len(G.edges)} edges")
 
     # Save results
-    df_entities.to_csv(os.path.join(output_dir, "entities.csv"), index=False)
-    df_relations.to_csv(os.path.join(output_dir, "relations.csv"), index=False)
+    df_entities.to_csv(os.path.join(world_output_dir, "entities.csv"), index=False)
+    df_relations.to_csv(os.path.join(world_output_dir, "relations.csv"), index=False)
 
     # Save graph
-    nx.write_gexf(G, os.path.join(output_dir, "knowledge_graph.gexf"))
+    nx.write_gexf(G, os.path.join(world_output_dir, "knowledge_graph.gexf"))
 
     print("\nStep 3: Visualizing graph...")
+    plt.figure(figsize=(12, 12))
     visualize_graph(G)
+    plt.savefig(os.path.join(world_output_dir, "graph_sample.png"))
+    plt.close()
 
     print("\nStep 4: Extracting game elements...")
     game_elements = extract_game_elements(G, df_entities, df_relations)
 
     # Save game elements as CSV files
     pd.DataFrame(game_elements["locations"], columns=["location"]).to_csv(
-        os.path.join(output_dir, "game_locations.csv"), index=False
+        os.path.join(world_output_dir, "game_locations.csv"), index=False
     )
 
     pd.DataFrame(game_elements["characters"], columns=["character"]).to_csv(
-        os.path.join(output_dir, "game_characters.csv"), index=False
+        os.path.join(world_output_dir, "game_characters.csv"), index=False
     )
 
     pd.DataFrame(game_elements["items"], columns=["item"]).to_csv(
-        os.path.join(output_dir, "game_items.csv"), index=False
+        os.path.join(world_output_dir, "game_items.csv"), index=False
     )
 
     pd.DataFrame(game_elements["actions"], columns=["action"]).to_csv(
-        os.path.join(output_dir, "game_actions.csv"), index=False
+        os.path.join(world_output_dir, "game_actions.csv"), index=False
     )
 
     pd.DataFrame(game_elements["character_relations"]).to_csv(
-        os.path.join(output_dir, "game_character_relations.csv"), index=False
+        os.path.join(world_output_dir, "game_character_relations.csv"), index=False
     )
 
     print(f"\nExtracted game elements:")
@@ -467,7 +482,43 @@ def main(
     print(f"- {len(game_elements['actions'])} actions")
     print(f"- {len(game_elements['character_relations'])} character relationships")
 
-    print(f"\nAll results saved to {output_dir}/")
+    print(f"\nAll results saved to {world_output_dir}/")
+    
+    return world_output_dir
+
+
+def list_document_folders(base_dir="data/documents"):
+    """List available document folders for processing."""
+    # Create the directory if it doesn't exist
+    os.makedirs(base_dir, exist_ok=True)
+    
+    print("\nAvailable document folders:")
+    print("-" * 80)
+    
+    # Get all subdirectories
+    folders = []
+    for item in os.listdir(base_dir):
+        item_path = os.path.join(base_dir, item)
+        if os.path.isdir(item_path):
+            docx_count = len([f for f in os.listdir(item_path) if f.endswith('.docx')])
+            folders.append((item, os.path.join(base_dir, item), docx_count))
+    
+    # Add the root documents directory
+    docx_count = len([f for f in os.listdir(base_dir) if f.endswith('.docx')])
+    if docx_count > 0:
+        folders.insert(0, ("root", base_dir, docx_count))
+    
+    if not folders:
+        print("No document folders found with .docx files.")
+        print(f"Create a subfolder in {base_dir} and add .docx files to it.")
+        return
+    
+    # Print folders
+    for name, path, count in folders:
+        print(f"Name: {name}")
+        print(f"Path: {path}")
+        print(f"Document count: {count} .docx files")
+        print("-" * 80)
 
 
 if __name__ == "__main__":
@@ -476,19 +527,51 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Process Word documents for a GraphRAG-based text adventure game"
     )
-    parser.add_argument(
-        "--documents_dir", required=True, help="Directory containing Word documents"
+    
+    # Create subparsers for different commands
+    subparsers = parser.add_subparsers(dest="command", help="Command to execute")
+    
+    # Create the 'list' command
+    list_parser = subparsers.add_parser("list", help="List available document folders")
+    
+    # Create the 'process' command
+    process_parser = subparsers.add_parser("process", help="Process documents into a world")
+    process_parser.add_argument(
+        "--documents_dir", help="Directory containing Word documents"
     )
-    parser.add_argument(
-        "--output_dir", default="output", help="Directory to save output files"
+    process_parser.add_argument(
+        "--folder", help="Name of the document folder to process (subfolder of data/documents)"
     )
-    parser.add_argument(
+    process_parser.add_argument(
+        "--output_dir", default="data/output", help="Directory to save output files"
+    )
+    process_parser.add_argument(
         "--chunk_size", type=int, default=512, help="Maximum chunk size in tokens"
     )
-    parser.add_argument(
+    process_parser.add_argument(
         "--overlap", type=int, default=50, help="Overlap between chunks in tokens"
+    )
+    process_parser.add_argument(
+        "--output_name", help="Optional name for the output world directory"
     )
 
     args = parser.parse_args()
-
-    main(args.documents_dir, args.output_dir, args.chunk_size, args.overlap)
+    
+    # Handle commands
+    if args.command == "list":
+        list_document_folders()
+    elif args.command == "process":
+        # Determine the documents directory
+        documents_dir = args.documents_dir
+        if args.folder and not documents_dir:
+            documents_dir = os.path.join("data/documents", args.folder)
+        
+        if not documents_dir:
+            print("Error: You must specify either --documents_dir or --folder")
+            sys.exit(1)
+        
+        # Process the documents
+        main(documents_dir, args.output_dir, args.chunk_size, args.overlap, args.output_name)
+    else:
+        # If no command is provided, show help
+        parser.print_help()

@@ -1,0 +1,60 @@
+id,text,label,start,end,source_file,chunk_id
+eryndor_leafshade,Eryndor Leafshade,PERSON,0,17,Eryndor_Leafshade.docx,0
+treefolk,Treefolk,WORK_OF_ART,37,45,Eryndor_Leafshade.docx,0
+goblins,Goblins,ORG,257,264,Eryndor_Leafshade.docx,0
+gorath,Gorath,PERSON,23,29,Gorath_the_Goblin_King.docx,0
+mt._dorn,Mt. Dorn,LOC,68,76,Gorath_the_Goblin_King.docx,0
+mt._dorn’s,Mt. Dorn’s,LOC,740,750,Gorath_the_Goblin_King.docx,0
+deepkin,Deepkin,PERSON,890,897,The_Abyssal_Realm.docx,0
+thalric_ironbeard,Thalric Ironbeard,PERSON,0,17,Thalric_Ironbeard.docx,0
+decades,decades,DATE,92,99,Thalric_Ironbeard.docx,0
+thalric,Thalric,ORG,194,201,Thalric_Ironbeard.docx,0
+talyss_wavecaller,Talyss Wavecaller,PERSON,0,17,Talyss_Wavecaller.docx,0
+korran_tidebreaker,Korran Tidebreaker,PERSON,588,606,Talyss_Wavecaller.docx,0
+"korrik_deepdelve
+korrik","Korrik Deepdelve
+Korrik",PERSON,0,23,Korrik_Deepdelve.docx,0
+the_ironroot_range,the Ironroot Range,LOC,108,126,Korrik_Deepdelve.docx,0
+lyssara_abyssglow,Lyssara Abyssglow,PERSON,0,17,Lyssara_Abyssglow.docx,0
+talyss,Talyss,PERSON,492,498,Lyssara_Abyssglow.docx,0
+korran,Korran,GPE,565,571,Lyssara_Abyssglow.docx,0
+the_brief_summer_months,the brief summer months,DATE,534,557,The_Ironroot_Range.docx,0
+mist,Mist,PERSON,559,563,The_Ironroot_Range.docx,0
+fed,fed,ORG,606,609,The_Ironroot_Range.docx,0
+winter,winter,DATE,717,723,The_Ironroot_Range.docx,0
+summer,summer,DATE,762,768,The_Ironroot_Range.docx,0
+the_abyssal_realm,the Abyssal Realm,WORK_OF_ART,336,353,Korran_Tidebreaker.docx,0
+barely_three_feet,barely three feet,QUANTITY,113,130,The_Gnomes.docx,0
+gnomish,Gnomish,NORP,528,535,The_Gnomes.docx,0
+krug_ironfang,Krug Ironfang,ORG,0,13,Krug_Ironfang.docx,0
+krug,Krug,PERSON,14,18,Krug_Ironfang.docx,0
+zrakka,Zrakka,ORG,418,424,Krug_Ironfang.docx,0
+brynna_gearwhistle,Brynna Gearwhistle,NORP,0,18,Brynna_Gearwhistle.docx,0
+brynna,Brynna,NORP,19,25,Brynna_Gearwhistle.docx,0
+"kael_thornstride
+kael","Kael Thornstride
+Kael",PERSON,0,21,Kael_Thornstride.docx,0
+sylvara,Sylvara,PERSON,156,163,Kael_Thornstride.docx,0
+kael,Kael,PERSON,165,169,Kael_Thornstride.docx,0
+gnomes,Gnomes,ORG,309,315,Kael_Thornstride.docx,0
+less_than_half,less than half,CARDINAL,159,173,The_Treefolk.docx,0
+veyron,Veyron,ORG,19,25,Veyron_Thunderhand.docx,0
+skyway,Skyway,ORG,154,160,Veyron_Thunderhand.docx,0
+aeryn,Aeryn,PERSON,526,531,Veyron_Thunderhand.docx,0
+stormriders,Stormriders,ORG,717,728,Veyron_Thunderhand.docx,0
+aeryn_cloudpiercer,Aeryn Cloudpiercer,PERSON,0,18,Aeryn_Cloudpiercer.docx,0
+skyways,Skyways,FAC,158,165,Aeryn_Cloudpiercer.docx,0
+moonlight,moonlight,TIME,211,220,Aeryn_Cloudpiercer.docx,0
+thunderhand,Thunderhand,PERSON,544,555,Aeryn_Cloudpiercer.docx,0
+one,one,CARDINAL,64,67,Zrakka_the_Shaman.docx,0
+gorath_the_goblin_king,Gorath the Goblin King,PERSON,119,141,The_Goblins.docx,0
+some_over_a_thousand_years_old,some over a thousand years old,CARDINAL,180,210,TreeHome.docx,0
+hundreds_of_feet,hundreds of feet,QUANTITY,242,258,TreeHome.docx,0
+night,night,TIME,844,849,TreeHome.docx,0
+sky_harbors,Sky Harbors,ORG,709,720,The_Skyways.docx,0
+kaelis_windweaver,Kaelis Windweaver,PERSON,0,17,Kaelis_Windweaver.docx,0
+kaelis,Kaelis,PERSON,18,24,Kaelis_Windweaver.docx,0
+the_breath_of_the_sky,the Breath of the Sky,WORK_OF_ART,379,400,Kaelis_Windweaver.docx,0
+sylvara_willowbark,Sylvara Willowbark,PERSON,0,18,Sylvara_Willowbark.docx,0
+centuries,centuries,DATE,103,112,Sylvara_Willowbark.docx,0
+zrakka_of_mt._dorn,Zrakka of Mt. Dorn,ORG,377,395,Sylvara_Willowbark.docx,0
