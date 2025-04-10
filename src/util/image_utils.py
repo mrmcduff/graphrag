@@ -2,18 +2,19 @@
 Utility functions for image processing.
 """
 
+
 def get_text_dimensions(draw, text, font):
     """
     Get text dimensions using textbbox instead of deprecated textsize.
-    
+
     This is a compatibility function to replace the deprecated textsize method
     in the Pillow library with the newer textbbox method.
-    
+
     Args:
         draw: ImageDraw object
         text: Text to measure
         font: Font to use
-        
+
     Returns:
         Tuple of (width, height)
     """

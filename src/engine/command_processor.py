@@ -31,9 +31,10 @@ class CommandProcessor:
         self.graph_rag_engine = graph_rag_engine
         self.combat_system = combat_system
         self.llm_manager = llm_manager
-        
+
         # Initialize the intent resolver for natural language processing
         from .intent_resolver import IntentResolver
+
         self.intent_resolver = IntentResolver(llm_manager)
 
         # Command patterns - regular expressions to match different command types
@@ -55,7 +56,9 @@ class CommandProcessor:
             ),
         }
 
-    def setup_llm_provider(self, choice: int, config: dict = None, interactive: bool = True) -> None:
+    def setup_llm_provider(
+        self, choice: int, config: dict = None, interactive: bool = True
+    ) -> None:
         """
         Set up the LLM provider based on user choice.
 
@@ -76,21 +79,21 @@ class CommandProcessor:
         if choice == 1:
             # Local API
             # Use the host from config if provided, otherwise use default or prompt if interactive
-            if 'host' in config:
-                host = config['host']
+            if "host" in config:
+                host = config["host"]
             elif interactive:
                 host = input("Enter host (default: localhost): ") or "localhost"
             else:
                 host = "localhost"
-                
+
             # Use the port from config if provided, otherwise use default or prompt if interactive
-            if 'port' in config:
-                port_str = config['port']
+            if "port" in config:
+                port_str = config["port"]
             elif interactive:
                 port_str = input("Enter port (default: 8000): ") or "8000"
             else:
                 port_str = "8000"
-                
+
             port = int(port_str) if isinstance(port_str, str) else port_str
             self.llm_manager.add_provider(
                 LLMType.LOCAL_API,
@@ -103,8 +106,8 @@ class CommandProcessor:
         elif choice == 2:
             # Local direct
             # Use the model path from config if provided, otherwise prompt for input if interactive
-            if 'model_path' in config:
-                model_path = config['model_path']
+            if "model_path" in config:
+                model_path = config["model_path"]
             elif interactive:
                 model_path = input("Enter model path: ")
             else:
@@ -119,17 +122,20 @@ class CommandProcessor:
 
         elif choice == 3:
             # OpenAI
-            api_key = config.get('api_key')
+            api_key = config.get("api_key")
             if not api_key:
                 api_key = get_api_key("openai")
                 if not api_key and interactive:
                     api_key = input("Enter OpenAI API key: ")
-            
+
             # Use the model from config if provided, otherwise use default or prompt if interactive
-            if 'model' in config:
-                model = config['model']
+            if "model" in config:
+                model = config["model"]
             elif interactive:
-                model = input("Enter model name (default: gpt-3.5-turbo): ") or "gpt-3.5-turbo"
+                model = (
+                    input("Enter model name (default: gpt-3.5-turbo): ")
+                    or "gpt-3.5-turbo"
+                )
             else:
                 model = "gpt-3.5-turbo"
             self.llm_manager.add_provider(
@@ -142,17 +148,20 @@ class CommandProcessor:
 
         elif choice == 4:
             # Anthropic
-            api_key = config.get('api_key')
+            api_key = config.get("api_key")
             if not api_key:
                 api_key = get_api_key("anthropic")
                 if not api_key and interactive:
                     api_key = input("Enter Anthropic API key: ")
-            
+
             # Use the model from config if provided, otherwise use default or prompt if interactive
-            if 'model' in config:
-                model = config['model']
+            if "model" in config:
+                model = config["model"]
             elif interactive:
-                model = input("Enter model name (default: claude-3-haiku-20240307): ") or "claude-3-haiku-20240307"
+                model = (
+                    input("Enter model name (default: claude-3-haiku-20240307): ")
+                    or "claude-3-haiku-20240307"
+                )
             else:
                 model = "claude-3-haiku-20240307"
             self.llm_manager.add_provider(
@@ -165,17 +174,20 @@ class CommandProcessor:
 
         elif choice == 5:
             # Google
-            api_key = config.get('api_key')
+            api_key = config.get("api_key")
             if not api_key:
                 api_key = get_api_key("google")
                 if not api_key and interactive:
                     api_key = input("Enter Google API key: ")
-            
+
             # Use the model from config if provided, otherwise use default or prompt if interactive
-            if 'model' in config:
-                model = config['model']
+            if "model" in config:
+                model = config["model"]
             elif interactive:
-                model = input("Enter model name (default: gemini-1.5-flash): ") or "gemini-1.5-flash"
+                model = (
+                    input("Enter model name (default: gemini-1.5-flash): ")
+                    or "gemini-1.5-flash"
+                )
             else:
                 model = "gemini-1.5-flash"
             self.llm_manager.add_provider(
@@ -204,8 +216,9 @@ class CommandProcessor:
             Dictionary with the results of the command
         """
         from util.debug import debug_print
+
         debug_print(f"DEBUG: Processing command: '{command}'")
-        
+
         # Special handling for map commands
         if command.lower().strip() == "map":
             debug_print("DEBUG: Detected map command directly")
@@ -213,7 +226,7 @@ class CommandProcessor:
         elif command.lower().strip() == "local map":
             debug_print("DEBUG: Detected local map command directly")
             return self._process_system_command("map", "local")
-            
+
         # Default result
         result = {
             "success": False,
@@ -224,22 +237,23 @@ class CommandProcessor:
         # Check if we're in combat
         if self.combat_system.active_combat:
             from util.debug import debug_print
+
             debug_print("DEBUG: In combat mode, processing as combat command")
             return self._process_combat_command(command)
-            
+
         # First, try to resolve the natural language intent
         original_command = command
         resolved_command = self.intent_resolver.resolve_intent(command, self.game_state)
-        
+
         # If the resolved command is different from the original, use it
         if resolved_command != original_command:
             print(f"Resolved '{original_command}' to '{resolved_command}'")
             command = resolved_command
-            
+
             # Store the original and resolved commands for reference
             result["original_input"] = original_command
             result["resolved_command"] = resolved_command
-            
+
             # Add a debug flag to help diagnose command parsing issues
             result["intent_resolved"] = True
 
@@ -302,7 +316,7 @@ class CommandProcessor:
 
         if simple_command in ["help", "h", "?"]:
             return CommandType.SYSTEM, "help", ""
-            
+
         if simple_command in ["map", "m"]:
             return CommandType.SYSTEM, "map", ""
 
@@ -404,7 +418,7 @@ class CommandProcessor:
                             "target": potential_name,
                             "original_target": target,
                         }
-                
+
                 return {
                     "success": False,
                     "message": f"There's no one named {target} here.",
@@ -798,6 +812,7 @@ quit - Exit the game
         elif action == "map":
             # Show map
             from util.debug import debug_print
+
             debug_print("DEBUG: Map command detected in command processor")
             if target and target.lower() == "local":
                 result = {

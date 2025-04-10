@@ -56,21 +56,21 @@ class CombatSystem:
         self.game_state = game_state  # Keep for backward compatibility
         self.graph = graph
         self.relations_df = relations_df
-        
+
         # If graph is not provided, try to get it from game_state_data or game_state
         if self.graph is None:
-            if hasattr(game_state_data, 'graph'):
+            if hasattr(game_state_data, "graph"):
                 self.graph = game_state_data.graph
-            elif game_state is not None and hasattr(game_state, 'graph'):
+            elif game_state is not None and hasattr(game_state, "graph"):
                 self.graph = game_state.graph
-                
+
         # If relations_df is not provided, try to get it from game_state_data or game_state
         if self.relations_df is None:
-            if hasattr(game_state_data, 'relations_df'):
+            if hasattr(game_state_data, "relations_df"):
                 self.relations_df = game_state_data.relations_df
-            elif game_state is not None and hasattr(game_state, 'relations_df'):
+            elif game_state is not None and hasattr(game_state, "relations_df"):
                 self.relations_df = game_state.relations_df
-                
+
         self.active_combat = None
         self.player_stats = self._initialize_player_stats()
         self.enemy_database = self._load_enemy_database()
@@ -107,14 +107,14 @@ class CombatSystem:
             "status_effects": [],
             "abilities": ["strike", "block", "dodge"],
         }
-        
+
         # Try to get player stats from game_state_data if available
-        if hasattr(self.game_state_data, 'player_stats'):
+        if hasattr(self.game_state_data, "player_stats"):
             # Update default stats with values from game_state_data
             for key, value in self.game_state_data.player_stats.items():
                 if key in default_stats:
                     default_stats[key] = value
-        
+
         return default_stats
 
     def _load_enemy_database(self) -> Dict[str, Dict[str, Any]]:
@@ -126,11 +126,11 @@ class CombatSystem:
         """
         # Get game_data_dir from game_state_data or game_state
         game_data_dir = None
-        if hasattr(self.game_state_data, 'game_data_dir'):
+        if hasattr(self.game_state_data, "game_data_dir"):
             game_data_dir = self.game_state_data.game_data_dir
-        elif self.game_state is not None and hasattr(self.game_state, 'game_data_dir'):
+        elif self.game_state is not None and hasattr(self.game_state, "game_data_dir"):
             game_data_dir = self.game_state.game_data_dir
-            
+
         # Try to load from file first
         if game_data_dir:
             try:
@@ -157,9 +157,7 @@ class CombatSystem:
             # Check relations in the graph
             if self.graph and character_id in self.graph.nodes:
                 for neighbor in self.graph.neighbors(character_id):
-                    edge_data = self.graph.get_edge_data(
-                        character_id, neighbor
-                    )
+                    edge_data = self.graph.get_edge_data(character_id, neighbor)
                     if edge_data and "relation" in edge_data:
                         if edge_data["relation"].lower() in aggressive_relations:
                             is_potential_enemy = True
@@ -225,11 +223,11 @@ class CombatSystem:
         """
         # Get game_data_dir from game_state_data or game_state
         game_data_dir = None
-        if hasattr(self.game_state_data, 'game_data_dir'):
+        if hasattr(self.game_state_data, "game_data_dir"):
             game_data_dir = self.game_state_data.game_data_dir
-        elif self.game_state is not None and hasattr(self.game_state, 'game_data_dir'):
+        elif self.game_state is not None and hasattr(self.game_state, "game_data_dir"):
             game_data_dir = self.game_state.game_data_dir
-            
+
         # Try to load from file first
         if game_data_dir:
             try:
@@ -260,11 +258,11 @@ class CombatSystem:
 
         # Get items from game_state_data or fall back to game_state
         items = []
-        if hasattr(self.game_state_data, 'items'):
+        if hasattr(self.game_state_data, "items"):
             items = self.game_state_data.items
-        elif self.game_state is not None and hasattr(self.game_state, 'items'):
+        elif self.game_state is not None and hasattr(self.game_state, "items"):
             items = self.game_state.items
-            
+
         for item in items:
             item_lower = item.lower()
 
@@ -362,11 +360,11 @@ class CombatSystem:
         """
         # Get game_data_dir from game_state_data or game_state
         game_data_dir = None
-        if hasattr(self.game_state_data, 'game_data_dir'):
+        if hasattr(self.game_state_data, "game_data_dir"):
             game_data_dir = self.game_state_data.game_data_dir
-        elif self.game_state is not None and hasattr(self.game_state, 'game_data_dir'):
+        elif self.game_state is not None and hasattr(self.game_state, "game_data_dir"):
             game_data_dir = self.game_state.game_data_dir
-            
+
         # Try to load from file first
         if game_data_dir:
             try:
@@ -397,11 +395,11 @@ class CombatSystem:
 
         # Get items from game_state_data or fall back to game_state
         items = []
-        if hasattr(self.game_state_data, 'items'):
+        if hasattr(self.game_state_data, "items"):
             items = self.game_state_data.items
-        elif self.game_state is not None and hasattr(self.game_state, 'items'):
+        elif self.game_state is not None and hasattr(self.game_state, "items"):
             items = self.game_state.items
-            
+
         for item in items:
             item_lower = item.lower()
 
@@ -569,11 +567,11 @@ class CombatSystem:
 
         # Get locations from game_state_data or fall back to game_state
         locations = []
-        if hasattr(self.game_state_data, 'locations'):
+        if hasattr(self.game_state_data, "locations"):
             locations = self.game_state_data.locations
-        elif self.game_state is not None and hasattr(self.game_state, 'locations'):
+        elif self.game_state is not None and hasattr(self.game_state, "locations"):
             locations = self.game_state.locations
-        
+
         # Apply default effects based on location name patterns
         for location in locations:
             location_lower = location.lower()
@@ -689,7 +687,7 @@ class CombatSystem:
             self.game_state.player_actions.append(
                 f"Started combat with {enemy_name} in {self.game_state_data.player_location}"
             )
-        elif hasattr(self.game_state_data, 'player_actions'):
+        elif hasattr(self.game_state_data, "player_actions"):
             self.game_state_data.player_actions.append(
                 f"Started combat with {enemy_name} in {self.game_state_data.player_location}"
             )
@@ -929,11 +927,11 @@ class CombatSystem:
             # Use an item in combat
             # Get inventory from game_state_data or fall back to game_state
             inventory = []
-            if hasattr(self.game_state_data, 'inventory'):
+            if hasattr(self.game_state_data, "inventory"):
                 inventory = self.game_state_data.inventory
-            elif self.game_state is not None and hasattr(self.game_state, 'inventory'):
+            elif self.game_state is not None and hasattr(self.game_state, "inventory"):
                 inventory = self.game_state.inventory
-                
+
             if not target or target not in inventory:
                 result = {
                     "success": False,

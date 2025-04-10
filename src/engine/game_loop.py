@@ -43,7 +43,7 @@ class GameLoop:
             game_state_data=self.game_state.data,
             game_state=self.game_state,
             graph=self.game_state.graph,
-            relations_df=self.game_state.relations_df
+            relations_df=self.game_state.relations_df,
         )
 
         print("Initializing Command Processor...")
@@ -177,10 +177,11 @@ The message should be 3-4 sentences long.
                 self.output_manager.display_text("\nYou have been defeated!")
                 # Handle player defeat (could be game over or respawn)
                 self._handle_player_defeat()
-                
+
         # Handle map display
         if result.get("action_type") == "system":
             from util.debug import debug_print
+
             debug_print(f"DEBUG: System action detected in game loop: {result}")
             if result.get("display_map", False):
                 debug_print("DEBUG: Display map flag detected, calling _display_map")
@@ -213,69 +214,83 @@ The message should be 3-4 sentences long.
 
         self.running = False
         print("\nThanks for playing!")
-        
+
     def _display_map(self, result: Dict[str, Any]) -> None:
         """Generate and display a map image.
-        
+
         Args:
             result: Dictionary with map information
         """
         from util.debug import debug_print
+
         debug_print(f"DEBUG: Inside _display_map with result: {result}")
         try:
             # Import the map generator
             from map_generator import MapGenerator
+
             debug_print("DEBUG: Successfully imported MapGenerator")
-            
+
             # Create a map generator with the current game state
-            debug_print(f"DEBUG: Creating MapGenerator with game_state.data: {self.game_state.data} and graph: {self.game_state.graph}")
+            debug_print(
+                f"DEBUG: Creating MapGenerator with game_state.data: {self.game_state.data} and graph: {self.game_state.graph}"
+            )
             map_generator = MapGenerator(self.game_state.data, self.game_state.graph)
             debug_print("DEBUG: Successfully created MapGenerator")
-            
+
             # Generate the map based on the map type
             map_type = result.get("map_type", "world")
             current_location = result.get("location", self.game_state.player_location)
-            debug_print(f"DEBUG: Map type: {map_type}, Current location: {current_location}")
-            
+            debug_print(
+                f"DEBUG: Map type: {map_type}, Current location: {current_location}"
+            )
+
             # Generate the appropriate map
             if map_type == "local":
-                self.output_manager.display_text(f"Generating detailed map of {current_location}...", "system")
+                self.output_manager.display_text(
+                    f"Generating detailed map of {current_location}...", "system"
+                )
                 debug_print(f"DEBUG: Generating zoomed map for {current_location}")
                 map_path = map_generator.generate_zoomed_map(current_location)
                 debug_print(f"DEBUG: Generated zoomed map at {map_path}")
             else:
                 self.output_manager.display_text("Generating world map...", "system")
-                debug_print(f"DEBUG: Generating world map centered on {current_location}")
+                debug_print(
+                    f"DEBUG: Generating world map centered on {current_location}"
+                )
                 map_path = map_generator.generate_map(current_location)
                 debug_print(f"DEBUG: Generated world map at {map_path}")
-                
+
             # Display the map
             debug_print(f"DEBUG: Opening image at {map_path}")
             self._open_image(map_path)
-            
+
         except Exception as e:
             import traceback
             from util.debug import debug_print
+
             debug_print(f"DEBUG: Error in _display_map: {e}")
-            if debug_print(""): # Only print traceback in debug mode
+            if debug_print(""):  # Only print traceback in debug mode
                 traceback.print_exc()
             self.output_manager.display_text(f"Error generating map: {e}", "error")
-            
+
     def _open_image(self, image_path: str) -> None:
         """Open an image file with the default image viewer.
-        
+
         Args:
             image_path: Path to the image file
         """
         try:
             # Check if the file exists
             from util.debug import debug_print
+
             debug_print(f"DEBUG: Checking if image exists at {image_path}")
             if not os.path.exists(image_path):
                 debug_print(f"DEBUG: Image file not found at {image_path}")
-                self.output_manager.display_text(f"Map file not found: {image_path}", "error")
+                self.output_manager.display_text(
+                    f"Map file not found: {image_path}", "error"
+                )
                 return
-            
+
             debug_print(f"DEBUG: Image file exists at {image_path}")
             # Open the image with the default viewer based on the OS
             system = platform.system()
@@ -289,13 +304,16 @@ The message should be 3-4 sentences long.
             else:  # Linux
                 debug_print(f"DEBUG: Opening image with 'xdg-open' command on Linux")
                 subprocess.call(["xdg-open", image_path])
-                
-            self.output_manager.display_text(f"Map opened in image viewer: {image_path}", "system")
-            
+
+            self.output_manager.display_text(
+                f"Map opened in image viewer: {image_path}", "system"
+            )
+
         except Exception as e:
             import traceback
             from util.debug import debug_print
+
             debug_print(f"DEBUG: Error in _open_image: {e}")
-            if debug_print(""): # Only print traceback in debug mode
+            if debug_print(""):  # Only print traceback in debug mode
                 traceback.print_exc()
             self.output_manager.display_text(f"Error opening map image: {e}", "error")

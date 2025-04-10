@@ -2,6 +2,7 @@ from typing import Dict, List, Any, Optional, Tuple
 from enum import Enum
 from .command_processor import CommandType
 
+
 class IntentResolver:
     """Resolve natural language intents to game commands using LLM."""
 
@@ -18,7 +19,7 @@ class IntentResolver:
                 "go forest",
                 "walk north",
                 "travel castle",
-                "move village"
+                "move village",
             ],
             CommandType.INTERACTION: [
                 "look",
@@ -27,13 +28,13 @@ class IntentResolver:
                 "speak guard",
                 "take sword",
                 "get potion",
-                "use key"
+                "use key",
             ],
             CommandType.INVENTORY: [
                 "check inventory",
                 "show items",
                 "equip sword",
-                "i"
+                "i",
             ],
             CommandType.COMBAT: [
                 "attack the goblin",
@@ -41,7 +42,7 @@ class IntentResolver:
                 "check stats",
                 "block",
                 "dodge",
-                "flee from battle"
+                "flee from battle",
             ],
             CommandType.SYSTEM: [
                 "save game",
@@ -50,8 +51,8 @@ class IntentResolver:
                 "map",
                 "local map",
                 "llm info",
-                "llm change"
-            ]
+                "llm change",
+            ],
         }
 
     def _build_prompt(self, user_input: str, game_state=None) -> str:
@@ -69,28 +70,26 @@ class IntentResolver:
             "You are an intent resolver for a text adventure game. "
             "Convert the user's natural language input into a valid game command.\n\n"
         )
-        
+
         # Add game context if available
         if game_state:
             try:
-                prompt += (
-                    f"CURRENT LOCATION: {game_state.player_location}\n"
-                )
-                
+                prompt += f"CURRENT LOCATION: {game_state.player_location}\n"
+
                 # Only add these if the methods exist
-                if hasattr(game_state, 'get_characters_in_location'):
+                if hasattr(game_state, "get_characters_in_location"):
                     prompt += f"NEARBY CHARACTERS: {', '.join(game_state.get_characters_in_location())}\n"
-                
-                if hasattr(game_state, 'get_items_in_location'):
+
+                if hasattr(game_state, "get_items_in_location"):
                     prompt += f"NEARBY ITEMS: {', '.join(game_state.get_items_in_location())}\n"
-                
+
                 prompt += "\n"
             except Exception as e:
                 # Silently handle any errors with game state
                 print(f"Error adding game state to prompt: {e}")
-        
+
         prompt += "Valid command formats:\n"
-        
+
         for cmd_type, examples in self.command_examples.items():
             prompt += f"# {cmd_type.value.upper()} COMMANDS:\n"
             for example in examples:
@@ -126,48 +125,57 @@ class IntentResolver:
         lower_input = user_input.lower().strip()
         if lower_input == "map" or lower_input == "m":
             from util.debug import debug_print
+
             debug_print("DEBUG: Preserving exact map command")
             return "map"
         if lower_input == "local map" or lower_input == "detailed map":
             from util.debug import debug_print
+
             debug_print("DEBUG: Preserving exact local map command")
             return "local map"
-            
+
         prompt = self._build_prompt(user_input, game_state)
-        
+
         try:
             # Use the LLM to resolve the intent
             resolved_command = self.llm_manager.generate_text(
-                prompt, 
+                prompt,
                 max_tokens=50,  # Short response is all we need
-                temperature=0.2  # Low temperature for more deterministic responses
+                temperature=0.2,  # Low temperature for more deterministic responses
             ).strip()
-            
+
             # Clean up any potential formatting issues
-            resolved_command = resolved_command.replace('"', '').replace("'", "").strip()
-            
+            resolved_command = (
+                resolved_command.replace('"', "").replace("'", "").strip()
+            )
+
             # Remove common prepositions that might cause parsing issues
-            for preposition in [' to ', ' with ', ' at ', ' on ', ' in ']:
+            for preposition in [" to ", " with ", " at ", " on ", " in "]:
                 # Only replace prepositions with spaces around them to avoid affecting names
-                resolved_command = resolved_command.replace(preposition, ' ')
-            
+                resolved_command = resolved_command.replace(preposition, " ")
+
             # Clean up any double spaces that might have been created
-            while '  ' in resolved_command:
-                resolved_command = resolved_command.replace('  ', ' ')
-            
+            while "  " in resolved_command:
+                resolved_command = resolved_command.replace("  ", " ")
+
             # Fix map commands that might have been resolved incorrectly
-            if resolved_command.startswith("show map") or resolved_command.startswith("display map"):
+            if resolved_command.startswith("show map") or resolved_command.startswith(
+                "display map"
+            ):
                 from util.debug import debug_print
+
                 debug_print("DEBUG: Fixing resolved map command")
                 return "map"
             if "local map" in resolved_command or "detailed map" in resolved_command:
                 from util.debug import debug_print
+
                 debug_print("DEBUG: Fixing resolved local map command")
                 return "local map"
-                
+
             return resolved_command
         except Exception as e:
             from util.debug import debug_print
+
             debug_print(f"Error resolving intent: {e}")
             # Return the original input if there's an error
             return user_input

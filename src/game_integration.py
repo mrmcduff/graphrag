@@ -34,7 +34,7 @@ class TextAdventureGame:
             game_state_data=self.game_state.data,
             game_state=self.game_state,
             graph=self.game_state.graph,
-            relations_df=self.game_state.relations_df
+            relations_df=self.game_state.relations_df,
         )
 
         self.running = False
