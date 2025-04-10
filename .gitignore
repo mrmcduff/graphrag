@@ -7,6 +7,9 @@
 # Project-specific directories
 /comms/*
 
+# LLM model files (too large for git)
+/models/
+
 # Python
 __pycache__/
 *.py[cod]
