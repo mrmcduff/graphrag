@@ -1,5 +1,5 @@
 import time
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 import os
 import sys
 import subprocess
@@ -27,7 +27,18 @@ class GameLoop:
 
         # Set defaults for config if not provided
         self.config = config or {}
-
+        
+        # Initialize output manager first so we can use it for world selection
+        print("Initializing Output Manager...")
+        self.output_manager = OutputManager(self.config.get("output_config", {}))
+        
+        # Check if a specific world was provided via command line
+        # If not, let the user select a world
+        if not self._is_specific_world_path(game_data_dir):
+            selected_world = self._select_world(game_data_dir)
+            if selected_world:
+                game_data_dir = selected_world
+                
         # Initialize components
         print("Initializing LLM Manager...")
         self.llm_manager = LLMManager()
@@ -51,9 +62,6 @@ class GameLoop:
             self.game_state, self.graph_rag_engine, self.combat_system, self.llm_manager
         )
 
-        print("Initializing Output Manager...")
-        self.output_manager = OutputManager(self.config.get("output_config", {}))
-
         # Game control flags
         self.running = False
         self.game_data_dir = game_data_dir
@@ -62,6 +70,127 @@ class GameLoop:
         print("Setting up LLM provider...")
         self._setup_llm_provider()
 
+    def _is_specific_world_path(self, path: str) -> bool:
+        """
+        Check if the provided path is a specific world path rather than the default output directory.
+        
+        Args:
+            path: Path to check
+            
+        Returns:
+            True if this is a specific world path, False otherwise
+        """
+        # If it's the default output directory, it's not a specific world
+        if path == "data/output":
+            return False
+            
+        # If it's a subdirectory of the output directory, it's a specific world
+        if os.path.dirname(path) == "data/output" or \
+           os.path.normpath(os.path.dirname(path)) == os.path.normpath("data/output"):
+            return True
+            
+        # If it contains a knowledge graph file, it's a specific world
+        if os.path.exists(os.path.join(path, "knowledge_graph.gexf")):
+            return True
+            
+        return False
+        
+    def _list_available_worlds(self, base_dir: str = "data/output") -> List[Dict[str, any]]:
+        """
+        List all available worlds in the output directory.
+        
+        Args:
+            base_dir: Base directory containing world data
+            
+        Returns:
+            List of world information dictionaries
+        """
+        worlds = []
+        base_path = os.path.abspath(base_dir)
+        
+        # Check if the base directory exists
+        if not os.path.isdir(base_path):
+            print(f"Warning: Output directory '{base_dir}' does not exist.")
+            return worlds
+        
+        # Check if the root output directory has a knowledge graph
+        if os.path.exists(os.path.join(base_path, "knowledge_graph.gexf")):
+            worlds.append({
+                "name": "default",
+                "path": base_dir,
+                "created": time.ctime(os.path.getmtime(os.path.join(base_path, "knowledge_graph.gexf"))),
+                "entity_count": len(os.listdir(base_path))
+            })
+        
+        # Check subdirectories
+        for item in os.listdir(base_path):
+            item_path = os.path.join(base_path, item)
+            if os.path.isdir(item_path) and os.path.exists(os.path.join(item_path, "knowledge_graph.gexf")):
+                worlds.append({
+                    "name": item,
+                    "path": os.path.join(base_dir, item),
+                    "created": time.ctime(os.path.getmtime(os.path.join(item_path, "knowledge_graph.gexf"))),
+                    "entity_count": len(os.listdir(item_path))
+                })
+        
+        return worlds
+    
+    def _select_world(self, default_dir: str) -> Optional[str]:
+        """
+        Display a list of available worlds and let the user select one.
+        
+        Args:
+            default_dir: Default directory to use if no world is selected
+            
+        Returns:
+            Path to the selected world or None to use the default
+        """
+        worlds = self._list_available_worlds()
+        
+        if not worlds:
+            self.output_manager.display_text(
+                "\nNo worlds found. Using default game data directory.\n"
+                "Run the document processor to create a world:\n"
+                "python src/document_processor.py process --folder <folder_name>\n", 
+                "system"
+            )
+            return None
+        
+        self.output_manager.display_text("\n=== Available Game Worlds ===\n", "header")
+        
+        for i, world in enumerate(worlds, 1):
+            self.output_manager.display_text(
+                f"{i}. {world['name']} - Created: {world['created']}", 
+                "system"
+            )
+        
+        self.output_manager.display_text(
+            f"{len(worlds) + 1}. Use default ({default_dir})", 
+            "system"
+        )
+        
+        while True:
+            choice = input("\nSelect a world to load (enter number): ")
+            try:
+                choice = int(choice)
+                if 1 <= choice <= len(worlds):
+                    selected_world = worlds[choice - 1]
+                    self.output_manager.display_text(
+                        f"\nLoading world: {selected_world['name']}\n", 
+                        "system"
+                    )
+                    return selected_world["path"]
+                elif choice == len(worlds) + 1:
+                    self.output_manager.display_text(
+                        f"\nUsing default game data directory: {default_dir}\n", 
+                        "system"
+                    )
+                    return None
+                else:
+                    self.output_manager.display_text("Invalid choice. Please try again.", "error")
+            except ValueError:
+                self.output_manager.display_text("Invalid input. Please enter a number.", "error")
+    
     def _setup_llm_provider(self) -> None:
         """Set up the LLM provider based on user choice."""
         print("\nSelect an LLM provider:")
