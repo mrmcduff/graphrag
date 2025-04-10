@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 @dataclass
 class GameStateData:
     """Class to store the game state data."""
-    
+
     # Basic game data
     game_data_dir: str
     player_location: Optional[str] = None
@@ -17,20 +17,22 @@ class GameStateData:
     quests: Dict[str, Dict] = field(default_factory=dict)
     game_turn: int = 0
     player_actions: List[str] = field(default_factory=list)
-    
+
     # Game elements loaded from files
     locations: List[str] = field(default_factory=list)
     characters: List[str] = field(default_factory=list)
     items: List[str] = field(default_factory=list)
     actions: List[str] = field(default_factory=list)
-    
+
     # World state
-    world_state: Dict[str, Dict] = field(default_factory=lambda: {
-        "faction_relationships": {},  # Relationships between factions
-        "player_faction_standing": {},  # Player's standing with each faction
-        "world_events": {},  # Major world events that have occurred
-    })
-    
+    world_state: Dict[str, Dict] = field(
+        default_factory=lambda: {
+            "faction_relationships": {},  # Relationships between factions
+            "player_faction_standing": {},  # Player's standing with each faction
+            "world_events": {},  # Major world events that have occurred
+        }
+    )
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert the state data to a dictionary for saving."""
         return {
@@ -43,7 +45,7 @@ class GameStateData:
             "player_actions": self.player_actions,
             "world_state": self.world_state,
         }
-    
+
     def from_dict(self, save_data: Dict[str, Any]) -> None:
         """Load state data from a dictionary."""
         self.player_location = save_data["player_location"]

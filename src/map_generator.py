@@ -60,14 +60,17 @@ class MapStyle:
 class MapGenerator:
     """Class to generate maps for the text adventure game."""
 
-    def __init__(self, game_state_data, graph=None):
+    def __init__(self, game_state_data, graph=None, debug=False):
         """
         Initialize the map generator.
 
         Args:
             game_state_data: The current game state data
             graph: The knowledge graph (optional, if not provided in game_state_data)
+            debug: Whether to print debug information (default: False)
         """
+        # Debug mode flag
+        self.debug = debug
         self.game_state_data = game_state_data
         self.graph = graph  # Optional external graph
         self.map_style = MapStyle()
@@ -110,7 +113,8 @@ class MapGenerator:
             return ImageFont.load_default()
 
         except Exception as e:
-            print(f"Error loading font: {e}")
+            if self.debug:
+                print(f"Error loading font: {e}")
             return ImageFont.load_default()
 
     def _derive_location_types(self) -> Dict[str, str]:
@@ -169,11 +173,9 @@ class MapGenerator:
                 location_types[location] = "default"
 
         # Enhance with data from relations if available
-        if hasattr(self, 'relations_df') and self.relations_df is not None:
+        if hasattr(self, "relations_df") and self.relations_df is not None:
             location_relations = self.relations_df.loc[
-                self.relations_df["predicate"].isin(
-                    ["is_a", "type_of", "contains"]
-                )
+                self.relations_df["predicate"].isin(["is_a", "type_of", "contains"])
             ]
 
             for _, relation in location_relations.iterrows():
@@ -243,8 +245,26 @@ class MapGenerator:
         if cache_key in self.cached_layouts:
             return self.cached_layouts[cache_key]
 
+        # Convert available_nodes to node IDs (lowercase with underscores)
+        available_node_ids = set()
+        node_id_to_name = {}
+
+        for node in available_nodes:
+            node_id = node.lower().replace(" ", "_")
+            available_node_ids.add(node_id)
+            node_id_to_name[node_id] = node
+
+        # Convert focus_node to node ID
+        focus_node_id = focus_node.lower().replace(" ", "_")
+
         # Create a subgraph of available nodes
-        subgraph = graph.subgraph(available_nodes)
+        # Only include nodes that actually exist in the graph
+        valid_node_ids = set(graph.nodes()).intersection(available_node_ids)
+
+        if not valid_node_ids:
+            return {}
+
+        subgraph = graph.subgraph(valid_node_ids)
 
         # Get a spring layout centered on the focus node
         pos = nx.spring_layout(
@@ -254,16 +274,28 @@ class MapGenerator:
             seed=42,  # Consistent layout between runs
         )
 
+        # Convert the positions dict to use the original node names
+        named_pos = {}
+        for node_id, position in pos.items():
+            if node_id in node_id_to_name:
+                named_pos[node_id_to_name[node_id]] = position
+            else:
+                # If we don't have a mapping, use the node ID as is
+                named_pos[node_id] = position
+
         # If focus node exists, center the layout on it
-        if focus_node in pos:
-            focus_pos = pos[focus_node]
+        if focus_node in named_pos:
+            focus_pos = named_pos[focus_node]
             # Shift all positions so focus_node is at (0, 0)
-            for node in pos:
-                pos[node] = (pos[node][0] - focus_pos[0], pos[node][1] - focus_pos[1])
+            for node in named_pos:
+                named_pos[node] = (
+                    named_pos[node][0] - focus_pos[0],
+                    named_pos[node][1] - focus_pos[1],
+                )
 
         # Cache the layout
-        self.cached_layouts[cache_key] = pos
-        return pos
+        self.cached_layouts[cache_key] = named_pos
+        return named_pos
 
     def generate_map(
         self,
@@ -326,10 +358,11 @@ class MapGenerator:
         graph = self.graph
         if graph is None and hasattr(self.game_state_data, "graph"):
             graph = self.game_state_data.graph
-        
+
         if graph is None:
             # If we don't have a graph, create a simple one
             import networkx as nx
+
             graph = nx.Graph()
         else:
             graph = graph.copy()
@@ -341,7 +374,19 @@ class MapGenerator:
         margin = 50  # Margin in pixels
         scaled_pos = {}
 
-        if pos:
+        # If we don't have positions, create a simple circular layout
+        if not pos or len(pos) == 0:
+            # Create a simple circular layout
+            center_x, center_y = width // 2, height // 2
+            radius = min(width, height) // 3  # Use 1/3 of the smallest dimension
+
+            # Place nodes in a circle
+            for i, location in enumerate(map_locations):
+                angle = 2 * math.pi * i / len(map_locations)
+                x = center_x + radius * math.cos(angle)
+                y = center_y + radius * math.sin(angle)
+                scaled_pos[location] = (x, y)
+        else:
             # Find min and max positions
             min_x = min(p[0] for p in pos.values())
             max_x = max(p[0] for p in pos.values())
@@ -360,20 +405,37 @@ class MapGenerator:
                 scaled_pos[node] = (x, y)
 
         # Draw edges between locations
+        edge_count = 0
+
+        # Draw edges BEFORE nodes to ensure they're not hidden underneath
         for source in map_locations:
             source_id = source.lower().replace(" ", "_")
+
             if source_id in graph.nodes:
-                for target in graph.neighbors(source_id):
+                neighbors = list(graph.neighbors(source_id))
+
+                for target in neighbors:
                     target_name = graph.nodes[target].get("label", target)
+
                     if target_name in map_locations:
                         # Only draw if both nodes are in our map view
                         if source in scaled_pos and target_name in scaled_pos:
                             start = scaled_pos[source]
                             end = scaled_pos[target_name]
-                            # Draw the edge
-                            draw.line(
-                                [start, end], fill=self.map_style.path_color, width=2
+
+                            # Draw the edge with moderate width and the standard path color
+                            edge_color = (
+                                self.map_style.path_color
+                            )  # Use the standard path color
+                            draw.line([start, end], fill=edge_color, width=3)
+                            edge_count += 1
+
+                            # Add a directional arrow to show path direction
+                            self._draw_arrow(
+                                draw, start, end, edge_color, arrow_size=10
                             )
+
+        # Edge drawing complete
 
         # Draw nodes for each location
         for location in map_locations:
@@ -400,7 +462,9 @@ class MapGenerator:
                 color = self._get_location_color(location, is_current, is_visited)
 
                 # Draw the node
-                draw.ellipse(bbox, fill=color, outline=self.map_style.border_color)
+                draw.ellipse(
+                    bbox, fill=color, outline=self.map_style.border_color, width=2
+                )
 
                 # Add a special marker for current location
                 if is_current:
@@ -415,9 +479,10 @@ class MapGenerator:
                         inner_bbox,
                         fill=(255, 255, 255),
                         outline=self.map_style.border_color,
+                        width=2,
                     )
 
-                # Add location label
+                # Add location label with background for better visibility
                 # Use textbbox instead of deprecated textsize
                 left, top, right, bottom = draw.textbbox(
                     (0, 0), location, font=self.location_font
@@ -425,6 +490,20 @@ class MapGenerator:
                 label_width = right - left
                 label_height = bottom - top
                 label_position = (x - label_width / 2, y + radius + 5)
+
+                # Draw text background for better readability
+                padding = 3
+                draw.rectangle(
+                    (
+                        label_position[0] - padding,
+                        label_position[1] - padding,
+                        label_position[0] + label_width + padding,
+                        label_position[1] + label_height + padding,
+                    ),
+                    fill=(255, 255, 255, 200),  # Semi-transparent white background
+                    outline=self.map_style.border_color,
+                )
+
                 draw.text(
                     label_position,
                     location,
@@ -436,9 +515,9 @@ class MapGenerator:
         if self.map_style.show_compass:
             self._add_compass_rose(draw, width - 80, 80, 30)
 
-        # Add a legend
+        # Add a legend in the top left corner
         if self.map_style.show_legend:
-            self._add_legend(draw, 50, height - 150)
+            self._add_legend(draw, 30, 80)
 
         # Add a decorative border
         if self.map_style.add_map_border:
@@ -458,11 +537,11 @@ class MapGenerator:
         graph = self.graph
         if graph is None and hasattr(self.game_state_data, "graph"):
             graph = self.game_state_data.graph
-            
+
         # If we still don't have a graph, return basic info
         if graph is None:
             return {"name": location, "connected_locations": []}
-            
+
         # Get location ID
         location_id = location.lower().replace(" ", "_")
 
@@ -572,42 +651,98 @@ class MapGenerator:
 
     def _add_legend(self, draw, x, y):
         """Add a legend to the map."""
+        # Use a more compact set of legend items
         legend_items = [
             ("Current Location", (255, 255, 255)),  # White center dot
             ("Visited Location", self.map_style.location_colors["default"]),
-            ("Unexplored Location", self.map_style.unexplored_color),
+            ("Path/Route", self.map_style.path_color),  # Add path to legend
             ("Town", self.map_style.location_colors["town"]),
             ("Forest", self.map_style.location_colors["forest"]),
             ("Mountain", self.map_style.location_colors["mountain"]),
             ("Water", self.map_style.location_colors["water"]),
             ("Castle", self.map_style.location_colors["castle"]),
-            ("Temple", self.map_style.location_colors["temple"]),
-            ("Dungeon", self.map_style.location_colors["dungeon"]),
         ]
 
-        # Draw legend title
-        draw.text(
-            (x, y), "Legend", fill=self.map_style.text_color, font=self.legend_font
+        # Calculate the total height and width of the legend
+        title = "Legend"
+        left, top, right, bottom = draw.textbbox((0, 0), title, font=self.legend_font)
+        title_width = right - left
+        title_height = bottom - top
+
+        # Calculate the total height of the legend
+        legend_height = (
+            title_height + len(legend_items) * 18 + 10
+        )  # 18px per item, 10px padding
+
+        # Calculate the maximum width needed for legend items
+        max_item_width = 0
+        for label, _ in legend_items:
+            left, top, right, bottom = draw.textbbox(
+                (0, 0), label, font=self.location_font
+            )
+            item_width = right - left
+            max_item_width = max(max_item_width, item_width)
+
+        legend_width = (
+            max(title_width, max_item_width + 30) + 20
+        )  # 30px for color box and spacing, 20px padding
+
+        # Draw background for entire legend
+        draw.rectangle(
+            (x - 5, y - 5, x + legend_width, y + legend_height),
+            fill=(255, 255, 255, 200),  # Semi-transparent white
+            outline=self.map_style.border_color,
+            width=1,
         )
 
-        # Draw legend items
-        for i, (label, color) in enumerate(legend_items):
-            y_pos = y + 25 + i * 20
+        # Draw the title
+        draw.text(
+            (x + 5, y), title, fill=self.map_style.text_color, font=self.legend_font
+        )
 
-            # Draw color sample
+        # Draw legend items with more compact spacing
+        for i, (label, color) in enumerate(legend_items):
+            y_pos = y + 22 + i * 18  # Reduced vertical spacing
+
+            # Draw smaller color sample
             draw.rectangle(
-                (x, y_pos, x + 15, y_pos + 15),
+                (x + 5, y_pos, x + 15, y_pos + 10),  # Smaller color box
                 fill=color,
                 outline=self.map_style.border_color,
+                width=1,
             )
+
+            # Add text without individual backgrounds (since we have a background for the whole legend)
+            left, top, right, bottom = draw.textbbox(
+                (0, 0), label, font=self.location_font
+            )
+            label_width = right - left
+            label_height = bottom - top
 
             # Draw label
             draw.text(
                 (x + 25, y_pos),
                 label,
                 fill=self.map_style.text_color,
-                font=self.legend_font,
+                font=self.location_font,  # Use location_font for consistency
             )
+
+            # If this is a path item, draw a small line example with arrow inside the legend
+            if label == "Path/Route":
+                line_start = (x + 90, y_pos + 5)
+                line_end = (x + 110, y_pos + 5)
+                draw.line(
+                    [line_start, line_end], fill=self.map_style.path_color, width=2
+                )
+                # Add a small arrow
+                arrow_size = 4
+                self._draw_arrow(
+                    draw,
+                    line_start,
+                    line_end,
+                    self.map_style.path_color,
+                    arrow_size=arrow_size,
+                )
 
     def _add_map_border(self, draw, width, height):
         """Add a decorative border to the map."""
@@ -889,7 +1024,9 @@ class MapGenerator:
         # Add a label for the town center
         center_label = "Town Square"
         # Use textbbox instead of deprecated textsize
-        left, top, right, bottom = draw.textbbox((0, 0), center_label, font=self.location_font)
+        left, top, right, bottom = draw.textbbox(
+            (0, 0), center_label, font=self.location_font
+        )
         label_width = right - left
         label_height = bottom - top
         draw.text(
@@ -1618,6 +1755,39 @@ class MapGenerator:
             start_from_edge=True,
         )
 
+    def _draw_arrow(self, draw, start, end, color, arrow_size=10):
+        """Draw an arrow on a line to indicate direction."""
+        # Calculate direction vector
+        dx = end[0] - start[0]
+        dy = end[1] - start[1]
+        length = math.sqrt(dx * dx + dy * dy)
+
+        if length == 0:
+            return  # Avoid division by zero
+
+        # Normalize direction vector
+        dx, dy = dx / length, dy / length
+
+        # Calculate arrow position (70% along the path)
+        pos_x = start[0] + 0.7 * (end[0] - start[0])
+        pos_y = start[1] + 0.7 * (end[1] - start[1])
+
+        # Calculate perpendicular vector
+        perp_x, perp_y = -dy, dx
+
+        # Calculate arrow points
+        arrow_point1 = (
+            pos_x - arrow_size * dx + arrow_size / 2 * perp_x,
+            pos_y - arrow_size * dy + arrow_size / 2 * perp_y,
+        )
+        arrow_point2 = (
+            pos_x - arrow_size * dx - arrow_size / 2 * perp_x,
+            pos_y - arrow_size * dy - arrow_size / 2 * perp_y,
+        )
+
+        # Draw the arrow
+        draw.polygon([end, arrow_point1, arrow_point2], fill=color)
+
     def _draw_location_connections(
         self,
         draw,
@@ -1659,6 +1829,18 @@ class MapGenerator:
                 fill=path_color,
                 width=path_width,
             )
+
+            # Add arrow to show direction
+            path_length = math.sqrt(
+                (border_x - start_x) ** 2 + (border_y - start_y) ** 2
+            )
+            if path_length > 0:
+                # Calculate a point 70% along the path for the arrow
+                arrow_x = start_x + 0.3 * (border_x - start_x)
+                arrow_y = start_y + 0.3 * (border_y - start_y)
+                self._draw_arrow(
+                    draw, (start_x, start_y), (arrow_x, arrow_y), path_color
+                )
 
             # Add a label for the connected location
             label_dist = radius * 1.2 if radius > 0 else 50

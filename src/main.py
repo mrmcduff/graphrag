@@ -38,9 +38,7 @@ def parse_arguments():
         "--width", type=int, default=80, help="Width of the text display"
     )
     parser.add_argument(
-        "--debug",
-        action="store_true",
-        help="Enable debug mode with verbose logging"
+        "--debug", action="store_true", help="Enable debug mode with verbose logging"
     )
 
     return parser.parse_args()
@@ -110,14 +108,15 @@ def main():
     """Main entry point for the game."""
     # Parse command line arguments
     args = parse_arguments()
-    
+
     # Set debug mode based on command line flag
     from util.debug import set_debug_mode
+
     set_debug_mode(args.debug)
-    
+
     # Load environment variables from .env file
     from util.config import load_environment_variables
-    
+
     # Apply Pillow patch for textsize method
     from util import pillow_patch
 

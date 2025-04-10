@@ -20,7 +20,9 @@ class GoogleProvider(LLMProvider):
         self.model = model
         # Add 'models/' prefix if not already present
         model_path = model if model.startswith("models/") else f"models/{model}"
-        self.api_url = f"https://generativelanguage.googleapis.com/v1/{model_path}:generateContent"
+        self.api_url = (
+            f"https://generativelanguage.googleapis.com/v1/{model_path}:generateContent"
+        )
 
     def generate_text(
         self, prompt: str, max_tokens: int = 500, temperature: float = 0.7

@@ -1,19 +1,21 @@
 """
 Monkey patch for Pillow's ImageDraw to handle the deprecated textsize method.
 """
+
 from PIL import ImageDraw
 
 # Store the original textsize method if it exists
 original_textsize = getattr(ImageDraw.ImageDraw, "textsize", None)
 
+
 def patched_textsize(self, text, font=None):
     """
     Replacement for the deprecated textsize method using textbbox.
-    
+
     Args:
         text: Text to measure
         font: Font to use
-        
+
     Returns:
         Tuple of (width, height)
     """
@@ -28,6 +30,7 @@ def patched_textsize(self, text, font=None):
         else:
             font_size = 10  # Default size
         return len(text) * font_size // 2, font_size
+
 
 # Apply the monkey patch only if textsize is missing
 if not hasattr(ImageDraw.ImageDraw, "textsize"):

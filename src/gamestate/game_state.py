@@ -22,15 +22,15 @@ class GameState:
         """
         # Store game_data_dir for backward compatibility
         self.game_data_dir = game_data_dir
-        
+
         # Initialize the data container
         self.data = GameStateData(game_data_dir=game_data_dir)
-        
+
         # Graph and dataframes for knowledge representation
         self.graph = None
         self.entities_df = None
         self.relations_df = None
-        
+
         # Load the knowledge graph and game elements
         self.load_game_data()
 
@@ -40,96 +40,96 @@ class GameState:
         else:
             if self.data.locations:
                 self.data.player_location = self.data.locations[0]
-                
+
     # Property accessors for backward compatibility
     @property
     def player_location(self):
         return self.data.player_location
-        
+
     @player_location.setter
     def player_location(self, value):
         self.data.player_location = value
-        
+
     @property
     def inventory(self):
         return self.data.inventory
-        
+
     @inventory.setter
     def inventory(self, value):
         self.data.inventory = value
-        
+
     @property
     def visited_locations(self):
         return self.data.visited_locations
-        
+
     @visited_locations.setter
     def visited_locations(self, value):
         self.data.visited_locations = value
-        
+
     @property
     def npc_states(self):
         return self.data.npc_states
-        
+
     @npc_states.setter
     def npc_states(self, value):
         self.data.npc_states = value
-        
+
     @property
     def quests(self):
         return self.data.quests
-        
+
     @quests.setter
     def quests(self, value):
         self.data.quests = value
-        
+
     @property
     def game_turn(self):
         return self.data.game_turn
-        
+
     @game_turn.setter
     def game_turn(self, value):
         self.data.game_turn = value
-        
+
     @property
     def player_actions(self):
         return self.data.player_actions
-        
+
     @player_actions.setter
     def player_actions(self, value):
         self.data.player_actions = value
-        
+
     @property
     def world_state(self):
         return self.data.world_state
-        
+
     @world_state.setter
     def world_state(self, value):
         self.data.world_state = value
-        
+
     @property
     def characters(self):
         return self.data.characters
-        
+
     @characters.setter
     def characters(self, value):
         self.data.characters = value
-        
+
     @property
     def locations(self):
         return self.data.locations
-        
+
     @locations.setter
     def locations(self, value):
         self.data.locations = value
-        
+
     @property
     def items(self):
         return self.data.items
-        
+
     @items.setter
     def items(self, value):
         self.data.items = value
-        
+
     def add_to_visited_locations(self):
         """Add the current player location to visited locations."""
         self.data.visited_locations.add(self.data.player_location)
@@ -153,7 +153,8 @@ class GameState:
                 os.path.join(self.data.game_data_dir, "game_locations.csv"), "location"
             )
             self.data.characters = self._load_csv_column(
-                os.path.join(self.data.game_data_dir, "game_characters.csv"), "character"
+                os.path.join(self.data.game_data_dir, "game_characters.csv"),
+                "character",
             )
             self.data.items = self._load_csv_column(
                 os.path.join(self.data.game_data_dir, "game_items.csv"), "item"
@@ -221,7 +222,9 @@ class GameState:
                         row["faction_1"]
                         not in self.data.world_state["faction_relationships"]
                     ):
-                        self.data.world_state["faction_relationships"][row["faction_1"]] = {}
+                        self.data.world_state["faction_relationships"][
+                            row["faction_1"]
+                        ] = {}
 
                     self.data.world_state["faction_relationships"][row["faction_1"]][
                         row["faction_2"]
@@ -386,7 +389,13 @@ class GameState:
 
         # Get the character's state
         state = self.data.npc_states.get(
-            character, {"state": "neutral", "disposition": 50, "met_player": False, "conversations": []}
+            character,
+            {
+                "state": "neutral",
+                "disposition": 50,
+                "met_player": False,
+                "conversations": [],
+            },
         )
 
         # Get character's faction if any
@@ -426,8 +435,10 @@ class GameState:
         # Handle movement
         if action in ["go", "move", "travel", "walk"]:
             # Use fuzzy matching for location names
-            matched_location, confidence = self.find_best_match(target, "location") if target else (None, 0.0)
-            
+            matched_location, confidence = (
+                self.find_best_match(target, "location") if target else (None, 0.0)
+            )
+
             if matched_location and confidence >= 0.6:
                 # Check if location is connected to current location
                 location_info = self._get_location_info(self.data.player_location)
@@ -437,7 +448,10 @@ class GameState:
 
                     # Update NPCs who see the player arrive
                     for npc, data in self.data.npc_states.items():
-                        if data["location"] == matched_location and not data["met_player"]:
+                        if (
+                            data["location"] == matched_location
+                            and not data["met_player"]
+                        ):
                             self.data.npc_states[npc]["met_player"] = True
 
                     return True
@@ -449,8 +463,10 @@ class GameState:
         # Handle taking items
         elif action in ["take", "get", "pick"]:
             # Use fuzzy matching for item names
-            matched_item, confidence = self.find_best_match(target, "item") if target else (None, 0.0)
-            
+            matched_item, confidence = (
+                self.find_best_match(target, "item") if target else (None, 0.0)
+            )
+
             if matched_item and confidence >= 0.6:
                 location_info = self._get_location_info(self.data.player_location)
                 if matched_item in location_info["items"]:
@@ -473,7 +489,7 @@ class GameState:
                 for npc, data in self.data.npc_states.items()
                 if data["location"] == self.data.player_location
             ]
-            
+
             # Use fuzzy matching for character names
             matched_npc, confidence = None, 0.0
             if target:
@@ -481,17 +497,21 @@ class GameState:
                 for npc in npcs_here:
                     # Check if target matches the first name or full name (case insensitive)
                     npc_parts = npc.lower().split()
-                    if npc.lower() == target.lower() or (npc_parts and npc_parts[0] == target.lower()):
+                    if npc.lower() == target.lower() or (
+                        npc_parts and npc_parts[0] == target.lower()
+                    ):
                         matched_npc, confidence = npc, 1.0
                         break
-                
+
                 # If no direct match, try fuzzy matching among NPCs in the current location
                 if not matched_npc:
                     for npc in npcs_here:
-                        similarity = difflib.SequenceMatcher(None, target.lower(), npc.lower()).ratio()
+                        similarity = difflib.SequenceMatcher(
+                            None, target.lower(), npc.lower()
+                        ).ratio()
                         if similarity > confidence and similarity >= 0.6:
                             matched_npc, confidence = npc, similarity
-            
+
             if matched_npc:
                 # Record that the player has met this NPC
                 self.data.npc_states[matched_npc]["met_player"] = True
@@ -511,9 +531,12 @@ class GameState:
                         npc_faction = faction
                         # NPC's initial reaction is influenced by faction standing
                         faction_modifier = standing / 10
-                        self.data.npc_states[matched_npc]["disposition"] += faction_modifier
+                        self.data.npc_states[matched_npc]["disposition"] += (
+                            faction_modifier
+                        )
                         self.data.npc_states[matched_npc]["disposition"] = max(
-                            0, min(100, self.data.npc_states[matched_npc]["disposition"])
+                            0,
+                            min(100, self.data.npc_states[matched_npc]["disposition"]),
                         )
 
                 return True
@@ -526,13 +549,17 @@ class GameState:
             matched_item, confidence = None, 0.0
             if target:
                 for item in self.data.inventory:
-                    similarity = difflib.SequenceMatcher(None, target.lower(), item.lower()).ratio()
+                    similarity = difflib.SequenceMatcher(
+                        None, target.lower(), item.lower()
+                    ).ratio()
                     if similarity > confidence and similarity >= 0.6:
                         matched_item, confidence = item, similarity
-            
+
             if matched_item:
                 # Record the action
-                self.data.player_actions.append(f"Used {matched_item} in {self.data.player_location}")
+                self.data.player_actions.append(
+                    f"Used {matched_item} in {self.data.player_location}"
+                )
                 return True
             else:
                 return False  # Item not in inventory
@@ -544,9 +571,11 @@ class GameState:
                 for npc, data in self.data.npc_states.items()
                 if data["location"] == self.data.player_location
             ]
-            
+
             # Use fuzzy matching for character names
-            matched_npc, confidence = self.find_best_match(target, "character") if target else (None, 0.0)
+            matched_npc, confidence = (
+                self.find_best_match(target, "character") if target else (None, 0.0)
+            )
             if matched_npc and matched_npc in npcs_here:
                 # Record the action - this is a major action that impacts relationships
                 self.data.player_actions.append(
@@ -574,11 +603,13 @@ class GameState:
                                 if relation > 50:  # Allied faction
                                     if (
                                         other_faction
-                                        in self.data.world_state["player_faction_standing"]
+                                        in self.data.world_state[
+                                            "player_faction_standing"
+                                        ]
                                     ):
-                                        self.data.world_state["player_faction_standing"][
-                                            other_faction
-                                        ] -= 10
+                                        self.data.world_state[
+                                            "player_faction_standing"
+                                        ][other_faction] -= 10
 
                 return True
             else:
@@ -699,7 +730,10 @@ class GameState:
                     "faction_relationships"
                 ][faction].items():
                     if relation < -50:  # Enemy factions
-                        if other_faction in self.data.world_state["player_faction_standing"]:
+                        if (
+                            other_faction
+                            in self.data.world_state["player_faction_standing"]
+                        ):
                             inverse_change = (
                                 -change * 0.5
                             )  # Inverse effect, but not as strong
@@ -710,7 +744,10 @@ class GameState:
                                 other_faction
                             ] = max(-100, min(100, current + inverse_change))
                     elif relation > 50:  # Allied factions
-                        if other_faction in self.data.world_state["player_faction_standing"]:
+                        if (
+                            other_faction
+                            in self.data.world_state["player_faction_standing"]
+                        ):
                             reduced_change = (
                                 change * 0.5
                             )  # Same direction, but not as strong
@@ -728,19 +765,19 @@ class GameState:
     def find_best_match(self, name: str, category: str = None) -> Tuple[str, float]:
         """
         Find the best match for a name using fuzzy matching.
-        
+
         Args:
             name: The name to match
             category: Optional category to limit search ("character", "location", "item")
-            
+
         Returns:
             Tuple of (best_match, confidence_score)
         """
         import difflib
-        
+
         # Normalize the input name
         name = name.lower().strip()
-        
+
         # Determine which list to search
         if category == "character":
             search_list = self.data.characters
@@ -751,37 +788,41 @@ class GameState:
         else:
             # Search all entities if no category specified
             search_list = self.data.characters + self.data.locations + self.data.items
-        
+
         # If the name is empty, return no match
         if not name:
             return (None, 0.0)
-        
+
         # First check for exact matches (case-insensitive)
         for item in search_list:
             if name.lower() == item.lower():
                 return (item, 1.0)
-        
+
         # Check for first name matches for characters with multi-word names
         if category == "character" or category is None:
             for character in self.data.characters:
                 parts = character.lower().split()
                 if parts and name == parts[0]:
                     return (character, 0.9)
-        
+
         # Use difflib to find the closest match
-        matches = difflib.get_close_matches(name, [item.lower() for item in search_list], n=1, cutoff=0.6)
-        
+        matches = difflib.get_close_matches(
+            name, [item.lower() for item in search_list], n=1, cutoff=0.6
+        )
+
         if matches:
             # Find the original case version
             for item in search_list:
                 if item.lower() == matches[0]:
                     # Calculate similarity score
-                    similarity = difflib.SequenceMatcher(None, name, item.lower()).ratio()
+                    similarity = difflib.SequenceMatcher(
+                        None, name, item.lower()
+                    ).ratio()
                     return (item, similarity)
-        
+
         # No good match found
         return (None, 0.0)
-    
+
     def record_world_event(self, event_name: str, event_data: Any = None) -> None:
         """
         Record that a world event has occurred.
