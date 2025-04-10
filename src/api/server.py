@@ -15,6 +15,7 @@ import datetime
 from .routes import api_bp
 from .user_routes import user_bp
 from .auth_routes import auth_bp
+from .world_routes import world_bp
 from .models import db
 from .auth import jwt
 
@@ -70,6 +71,7 @@ def create_app(config: Dict[str, Any] = None) -> Flask:
     app.register_blueprint(api_bp)
     app.register_blueprint(user_bp)
     app.register_blueprint(auth_bp)
+    app.register_blueprint(world_bp)
 
     # Serve static files from client directory
     @app.route("/client/<path:filename>")
@@ -109,6 +111,10 @@ def create_app(config: Dict[str, Any] = None) -> Flask:
                     "/api/users/register",
                     "/api/users/login",
                     "/api/users/me",
+                    "/api/worlds/list",
+                    "/api/worlds/create",
+                    "/api/worlds/upload",
+                    "/api/worlds/generate",
                 ],
             }
         )

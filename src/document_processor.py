@@ -423,7 +423,7 @@ def main(
         if output_name == "documents":
             timestamp = time.strftime("%Y%m%d_%H%M%S")
             output_name = f"world_{timestamp}"
-    
+
     world_output_dir = os.path.join(output_dir, output_name)
     os.makedirs(world_output_dir, exist_ok=True)
 
@@ -483,7 +483,7 @@ def main(
     print(f"- {len(game_elements['character_relations'])} character relationships")
 
     print(f"\nAll results saved to {world_output_dir}/")
-    
+
     return world_output_dir
 
 
@@ -491,28 +491,28 @@ def list_document_folders(base_dir="data/documents"):
     """List available document folders for processing."""
     # Create the directory if it doesn't exist
     os.makedirs(base_dir, exist_ok=True)
-    
+
     print("\nAvailable document folders:")
     print("-" * 80)
-    
+
     # Get all subdirectories
     folders = []
     for item in os.listdir(base_dir):
         item_path = os.path.join(base_dir, item)
         if os.path.isdir(item_path):
-            docx_count = len([f for f in os.listdir(item_path) if f.endswith('.docx')])
+            docx_count = len([f for f in os.listdir(item_path) if f.endswith(".docx")])
             folders.append((item, os.path.join(base_dir, item), docx_count))
-    
+
     # Add the root documents directory
-    docx_count = len([f for f in os.listdir(base_dir) if f.endswith('.docx')])
+    docx_count = len([f for f in os.listdir(base_dir) if f.endswith(".docx")])
     if docx_count > 0:
         folders.insert(0, ("root", base_dir, docx_count))
-    
+
     if not folders:
         print("No document folders found with .docx files.")
         print(f"Create a subfolder in {base_dir} and add .docx files to it.")
         return
-    
+
     # Print folders
     for name, path, count in folders:
         print(f"Name: {name}")
@@ -527,20 +527,23 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Process Word documents for a GraphRAG-based text adventure game"
     )
-    
+
     # Create subparsers for different commands
     subparsers = parser.add_subparsers(dest="command", help="Command to execute")
-    
+
     # Create the 'list' command
     list_parser = subparsers.add_parser("list", help="List available document folders")
-    
+
     # Create the 'process' command
-    process_parser = subparsers.add_parser("process", help="Process documents into a world")
+    process_parser = subparsers.add_parser(
+        "process", help="Process documents into a world"
+    )
     process_parser.add_argument(
         "--documents_dir", help="Directory containing Word documents"
     )
     process_parser.add_argument(
-        "--folder", help="Name of the document folder to process (subfolder of data/documents)"
+        "--folder",
+        help="Name of the document folder to process (subfolder of data/documents)",
     )
     process_parser.add_argument(
         "--output_dir", default="data/output", help="Directory to save output files"
@@ -556,7 +559,7 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-    
+
     # Handle commands
     if args.command == "list":
         list_document_folders()
@@ -565,13 +568,19 @@ if __name__ == "__main__":
         documents_dir = args.documents_dir
         if args.folder and not documents_dir:
             documents_dir = os.path.join("data/documents", args.folder)
-        
+
         if not documents_dir:
             print("Error: You must specify either --documents_dir or --folder")
             sys.exit(1)
-        
+
         # Process the documents
-        main(documents_dir, args.output_dir, args.chunk_size, args.overlap, args.output_name)
+        main(
+            documents_dir,
+            args.output_dir,
+            args.chunk_size,
+            args.overlap,
+            args.output_name,
+        )
     else:
         # If no command is provided, show help
         parser.print_help()

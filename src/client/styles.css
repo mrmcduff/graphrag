@@ -206,6 +206,31 @@ h1 {
     background-color: #c0392b;
 }
 
+/* Navigation Links */
+.nav-links {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+    background-color: #f9f9f9;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #eee;
+}
+
+.nav-link {
+    margin: 0 15px;
+    color: #3498db;
+    text-decoration: none;
+    font-weight: 500;
+    padding: 5px 10px;
+    border-radius: 4px;
+}
+
+.nav-link:hover {
+    background-color: #eee;
+    text-decoration: underline;
+}
+
 /* Utility classes */
 .hidden {
     display: none;
