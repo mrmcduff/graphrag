@@ -443,8 +443,28 @@ class GameState:
                 # Check if location is connected to current location
                 location_info = self._get_location_info(self.data.player_location)
                 if matched_location in location_info["connected_locations"]:
+                    # Store previous location for graph update
+                    previous_location = self.data.player_location
+                    
+                    # Update player location
                     self.data.player_location = matched_location
                     self.data.visited_locations.add(matched_location)
+                    
+                    # Update graph: player left previous location
+                    self.update_graph_relationship(
+                        subject="player",
+                        relation="located_in",
+                        object_=previous_location,
+                        add=False
+                    )
+                    
+                    # Update graph: player entered new location
+                    self.update_graph_relationship(
+                        subject="player",
+                        relation="located_in",
+                        object_=matched_location,
+                        add=True
+                    )
 
                     # Update NPCs who see the player arrive
                     for npc, data in self.data.npc_states.items():
@@ -453,6 +473,14 @@ class GameState:
                             and not data["met_player"]
                         ):
                             self.data.npc_states[npc]["met_player"] = True
+                            
+                            # Update graph: player met NPC
+                            self.update_graph_relationship(
+                                subject="player",
+                                relation="met",
+                                object_=npc,
+                                add=True
+                            )
 
                     return True
                 else:
@@ -470,9 +498,26 @@ class GameState:
             if matched_item and confidence >= 0.6:
                 location_info = self._get_location_info(self.data.player_location)
                 if matched_item in location_info["items"]:
+                    # Add item to inventory
                     self.data.inventory.append(matched_item)
-                    # In a full game, you'd remove it from the location
-                    # This simplified version doesn't track item locations accurately
+                    
+                    # Update graph: item is no longer at location
+                    self.update_graph_relationship(
+                        subject=self.data.player_location,
+                        relation="contains",
+                        object_=matched_item,
+                        add=False
+                    )
+                    
+                    # Update graph: player now owns item
+                    self.update_graph_relationship(
+                        subject="player",
+                        relation="owns",
+                        object_=matched_item,
+                        add=True
+                    )
+                    
+                    # Record the action
                     self.data.player_actions.append(
                         f"Took {matched_item} from {self.data.player_location}"
                     )
@@ -514,12 +559,30 @@ class GameState:
 
             if matched_npc:
                 # Record that the player has met this NPC
+                first_meeting = not self.data.npc_states[matched_npc]["met_player"]
                 self.data.npc_states[matched_npc]["met_player"] = True
 
                 # Add to conversation history (would add actual dialogue in a full game)
                 self.data.npc_states[matched_npc]["conversations"].append(
                     f"Turn {self.data.game_turn}"
                 )
+                
+                # Update graph: player talked to NPC
+                self.update_graph_relationship(
+                    subject="player",
+                    relation="talked_to",
+                    object_=matched_npc,
+                    add=True
+                )
+                
+                # If this is the first meeting, add that relationship too
+                if first_meeting:
+                    self.update_graph_relationship(
+                        subject="player",
+                        relation="met",
+                        object_=matched_npc,
+                        add=True
+                    )
 
                 # Update disposition based on faction relationships
                 # Get NPC's faction
@@ -538,6 +601,15 @@ class GameState:
                             0,
                             min(100, self.data.npc_states[matched_npc]["disposition"]),
                         )
+                        
+                        # Update graph with faction relationship if it exists
+                        if npc_faction:
+                            self.update_graph_relationship(
+                                subject=matched_npc,
+                                relation="belongs_to",
+                                object_=npc_faction,
+                                add=True
+                            )
 
                 return True
             else:
@@ -556,6 +628,22 @@ class GameState:
                         matched_item, confidence = item, similarity
 
             if matched_item:
+                # Update graph: player used item
+                self.update_graph_relationship(
+                    subject="player",
+                    relation="used",
+                    object_=matched_item,
+                    add=True
+                )
+                
+                # Update graph: item was used at location
+                self.update_graph_relationship(
+                    subject=matched_item,
+                    relation="used_at",
+                    object_=self.data.player_location,
+                    add=True
+                )
+                
                 # Record the action
                 self.data.player_actions.append(
                     f"Used {matched_item} in {self.data.player_location}"
@@ -577,6 +665,22 @@ class GameState:
                 self.find_best_match(target, "character") if target else (None, 0.0)
             )
             if matched_npc and matched_npc in npcs_here:
+                # Update graph: player attacked NPC
+                self.update_graph_relationship(
+                    subject="player",
+                    relation="attacked",
+                    object_=matched_npc,
+                    add=True
+                )
+                
+                # Update graph: NPC is hostile to player
+                self.update_graph_relationship(
+                    subject=matched_npc,
+                    relation="hostile_to",
+                    object_="player",
+                    add=True
+                )
+                
                 # Record the action - this is a major action that impacts relationships
                 self.data.player_actions.append(
                     f"Attacked {matched_npc} in {self.data.player_location}"
@@ -594,6 +698,14 @@ class GameState:
                 ].items():
                     if self._is_character_in_faction(matched_npc, faction):
                         self.data.world_state["player_faction_standing"][faction] -= 20
+                        
+                        # Update graph: faction relationship worsened
+                        self.update_graph_relationship(
+                            subject="player",
+                            relation="antagonized",
+                            object_=faction,
+                            add=True
+                        )
 
                         # Also affect allied factions
                         if faction in self.data.world_state["faction_relationships"]:
@@ -610,6 +722,14 @@ class GameState:
                                         self.data.world_state[
                                             "player_faction_standing"
                                         ][other_faction] -= 10
+                                        
+                                        # Update graph: allied faction relationship also worsened
+                                        self.update_graph_relationship(
+                                            subject="player",
+                                            relation="antagonized",
+                                            object_=other_faction,
+                                            add=True
+                                        )
 
                 return True
             else:
@@ -676,7 +796,7 @@ class GameState:
             # Add the relationship
             self.graph.add_edge(subject_id, object_id, relation=relation)
 
-            # Add to relations dataframe for retrieval
+            # Add to relations dataframe for retrieval - more efficient approach
             if hasattr(self, "relations_df"):
                 new_relation = {
                     "subject": subject.lower(),
@@ -686,9 +806,8 @@ class GameState:
                     "chunk_id": -1,
                     "sentence": f"{subject} {relation} {object_}.",
                 }
-                self.relations_df = pd.concat(
-                    [self.relations_df, pd.DataFrame([new_relation])], ignore_index=True
-                )
+                # More efficient than pd.concat - avoids creating a new DataFrame
+                self.relations_df.loc[len(self.relations_df)] = new_relation
             return True
         else:
             # Remove the relationship if it exists
