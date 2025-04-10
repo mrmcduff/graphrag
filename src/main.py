@@ -14,66 +14,78 @@ from typing import Dict, Any, List, Optional
 def list_available_worlds(base_dir: str = "data/output") -> List[Dict[str, any]]:
     """
     List all available worlds in the output directory.
-    
+
     Args:
         base_dir: Base directory containing world data
-        
+
     Returns:
         List of world information dictionaries
     """
     worlds = []
     base_path = os.path.abspath(base_dir)
-    
+
     # Check if the base directory exists
     if not os.path.isdir(base_path):
         print(f"Warning: Output directory '{base_dir}' does not exist.")
         return worlds
-    
+
     # Check if the root output directory has a knowledge graph
     if os.path.exists(os.path.join(base_path, "knowledge_graph.gexf")):
-        worlds.append({
-            "name": "default",
-            "path": base_dir,
-            "created": time.ctime(os.path.getmtime(os.path.join(base_path, "knowledge_graph.gexf"))),
-        })
-    
+        worlds.append(
+            {
+                "name": "default",
+                "path": base_dir,
+                "created": time.ctime(
+                    os.path.getmtime(os.path.join(base_path, "knowledge_graph.gexf"))
+                ),
+            }
+        )
+
     # Check subdirectories
     for item in os.listdir(base_path):
         item_path = os.path.join(base_path, item)
-        if os.path.isdir(item_path) and os.path.exists(os.path.join(item_path, "knowledge_graph.gexf")):
-            worlds.append({
-                "name": item,
-                "path": os.path.join(base_dir, item),
-                "created": time.ctime(os.path.getmtime(os.path.join(item_path, "knowledge_graph.gexf"))),
-            })
-    
+        if os.path.isdir(item_path) and os.path.exists(
+            os.path.join(item_path, "knowledge_graph.gexf")
+        ):
+            worlds.append(
+                {
+                    "name": item,
+                    "path": os.path.join(base_dir, item),
+                    "created": time.ctime(
+                        os.path.getmtime(
+                            os.path.join(item_path, "knowledge_graph.gexf")
+                        )
+                    ),
+                }
+            )
+
     return worlds
 
 
 def find_world_by_name(world_name: str, base_dir: str = "data/output") -> Optional[str]:
     """
     Find a world by name and return its path.
-    
+
     Args:
         world_name: Name of the world to find
         base_dir: Base directory containing world data
-        
+
     Returns:
         Path to the world directory if found, None otherwise
     """
     worlds = list_available_worlds(base_dir)
-    
+
     for world in worlds:
         if world["name"].lower() == world_name.lower():
             return world["path"]
-    
+
     return None
 
 
 def parse_arguments():
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(description="GraphRAG Text Adventure Game")
-    
+
     world_group = parser.add_argument_group("World Selection")
     world_group.add_argument(
         "--game_data_dir",
@@ -89,7 +101,7 @@ def parse_arguments():
         action="store_true",
         help="List all available worlds",
     )
-    
+
     parser.add_argument(
         "--load_save", default=None, help="Load a previously saved game file"
     )
@@ -193,14 +205,14 @@ def main():
     from util import pillow_patch
 
     load_environment_variables()
-    
+
     # Handle listing worlds if requested
     if args.list_worlds:
         worlds = list_available_worlds()
         if not worlds:
             print("No worlds found. Run the document processor to create a world.")
             sys.exit(0)
-            
+
         print("\nAvailable worlds:")
         print("-" * 80)
         for world in worlds:
@@ -209,7 +221,7 @@ def main():
             print(f"Created: {world['created']}")
             print("-" * 80)
         sys.exit(0)
-    
+
     # Handle world selection if specified
     if args.world:
         world_path = find_world_by_name(args.world)
@@ -217,7 +229,9 @@ def main():
             print(f"Using world: {args.world} ({world_path})")
             args.game_data_dir = world_path
         else:
-            print(f"Error: World '{args.world}' not found. Use --list_worlds to see available worlds.")
+            print(
+                f"Error: World '{args.world}' not found. Use --list_worlds to see available worlds."
+            )
             sys.exit(1)
 
     # Validate game data directory
