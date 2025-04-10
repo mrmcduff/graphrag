@@ -14,6 +14,7 @@ import json
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 class LocalLLMService:
     """Service for running Llama 3 8B locally with GraphRAG."""
 
@@ -22,7 +23,7 @@ class LocalLLMService:
         model_path: Optional[str] = None,
         model_name: str = "llama3-8b-instruct",
         context_size: int = 4096,
-        debug: bool = False
+        debug: bool = False,
     ):
         """
         Initialize the local LLM service.
@@ -64,7 +65,7 @@ class LocalLLMService:
                 model_path=self.model_path,
                 n_ctx=self.context_size,
                 n_gpu_layers=-1,  # Use all available GPU layers
-                verbose=self.debug
+                verbose=self.debug,
             )
 
             self._model_loaded = True
@@ -73,7 +74,9 @@ class LocalLLMService:
                 logger.info("Llama model loaded successfully")
 
         except ImportError:
-            logger.error("llama-cpp-python not installed. Run: pip install llama-cpp-python")
+            logger.error(
+                "llama-cpp-python not installed. Run: pip install llama-cpp-python"
+            )
             raise
         except Exception as e:
             logger.error(f"Failed to load Llama model: {e}")
@@ -86,7 +89,7 @@ class LocalLLMService:
         max_tokens: int = 512,
         temperature: float = 0.7,
         top_p: float = 0.9,
-        stop_sequences: Optional[List[str]] = None
+        stop_sequences: Optional[List[str]] = None,
     ) -> str:
         """
         Generate a response from the local LLM.
@@ -123,7 +126,7 @@ class LocalLLMService:
                 temperature=temperature,
                 top_p=top_p,
                 stop=stop_sequences or [],
-                echo=False
+                echo=False,
             )
 
             # Extract the generated text

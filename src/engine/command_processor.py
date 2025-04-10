@@ -863,38 +863,36 @@ quit - Exit the game
                 "action_type": CommandType.SYSTEM.value,
                 "llm_changed": True,
             }
-        
+
         elif action == "llm" and target == "local":
             # Use the local LLM directly
             prompt = input("Enter your prompt for the local LLM: ")
-            
+
             try:
                 # Import the local LLM integration
                 from src.llm_integration import GraphRAGLLMIntegration
-                
+
                 # Initialize the LLM integration
                 llm_integration = GraphRAGLLMIntegration(
-                    model_path="models/llama-3-8b-instruct.Q4_K_M.gguf",
-                    debug=True
+                    model_path="models/llama-3-8b-instruct.Q4_K_M.gguf", debug=True
                 )
-                
+
                 # Process the command using the local LLM
                 response = llm_integration.process_command(
-                    prompt, 
-                    self.game_state.to_dict()
+                    prompt, self.game_state.to_dict()
                 )
-                
+
                 return {
                     "success": True,
                     "message": response,
                     "action_type": CommandType.SYSTEM.value,
-                    "llm_used": "local"
+                    "llm_used": "local",
                 }
             except Exception as e:
                 return {
                     "success": False,
                     "message": f"Error using local LLM: {str(e)}",
-                    "action_type": CommandType.SYSTEM.value
+                    "action_type": CommandType.SYSTEM.value,
                 }
 
         # Default response
