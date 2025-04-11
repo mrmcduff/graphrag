@@ -15,6 +15,13 @@ flask-jwt-extended>=4.5.0
 passlib>=1.7.4
 email-validator>=2.0.0
 
+# PostgreSQL support for Heroku
+psycopg2-binary>=2.9.9
+gunicorn>=21.2.0
+
+# Cloud storage support
+boto3>=1.28.0
+
 # Local LLM dependencies
 llama-cpp-python>=0.2.11
 huggingface_hub>=0.19.0

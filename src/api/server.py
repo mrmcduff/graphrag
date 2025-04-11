@@ -50,9 +50,18 @@ def create_app(config: Dict[str, Any] = None) -> Flask:
     # Apply configuration
     app.config.update(config or {})
 
-    # Configure database
-    db_path = os.path.join(os.path.dirname(__file__), "..", "..", "data", "graphrag.db")
-    app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{db_path}"
+    # Configure database - use PostgreSQL on Heroku or SQLite locally
+    if os.environ.get("DATABASE_URL"):
+        # Heroku provides DATABASE_URL, but SQLAlchemy requires postgresql:// not postgres://
+        db_url = os.environ.get("DATABASE_URL")
+        if db_url.startswith("postgres://"):
+            db_url = db_url.replace("postgres://", "postgresql://", 1)
+        app.config["SQLALCHEMY_DATABASE_URI"] = db_url
+    else:
+        # Local development uses SQLite
+        db_path = os.path.join(os.path.dirname(__file__), "..", "..", "data", "graphrag.db")
+        app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{db_path}"
+    
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
     # Configure JWT

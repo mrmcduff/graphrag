@@ -1,0 +1,21 @@
+{
+  "name": "GraphRAG Text Adventure Game API",
+  "description": "A text adventure game engine with knowledge graph and LLM integration",
+  "repository": "https://github.com/yourusername/graphrag",
+  "keywords": ["python", "flask", "llm", "text-adventure", "knowledge-graph"],
+  "addons": [
+    "heroku-postgresql:hobby-dev",
+    "bucketeer:hobbyist"
+  ],
+  "env": {
+    "JWT_SECRET_KEY": {
+      "description": "Secret key for JWT token generation",
+      "generator": "secret"
+    }
+  },
+  "buildpacks": [
+    {
+      "url": "heroku/python"
+    }
+  ]
+}

@@ -352,6 +352,43 @@ The system is designed to be extensible in several ways:
 - Implement additional command types in the CommandProcessor
 - Create custom frontends using the API server
 
+## Deployment
+
+### Deploy to Heroku
+
+You can deploy GraphRAG to Heroku with one click using the button below:
+
+[![Deploy to Heroku](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/yourusername/graphrag)
+
+This will automatically:
+- Create a new Heroku app
+- Set up a PostgreSQL database
+- Configure Bucketeer for file storage
+- Deploy the application
+
+After deployment, you'll need to initialize the database and create an admin user:
+
+```bash
+# Initialize the database
+heroku run -a your-app-name python -c "from src.api.server import create_app; from src.api.models import db; app = create_app(); app.app_context().push(); db.create_all()"
+
+# Create an admin user
+heroku run -a your-app-name python -m src.api.server --create-admin
+```
+
+### GitHub Integration
+
+To set up continuous deployment from GitHub:
+
+1. Push your code to GitHub
+2. In the Heroku Dashboard, go to your app → Deploy tab
+3. Under Deployment Method, select GitHub
+4. Connect to your GitHub repository
+5. Enable Automatic Deploys from your main branch
+6. Optionally, enable "Wait for CI to pass before deploy" if you have CI set up
+
+With this configuration, every push to your main branch will automatically deploy to Heroku.
+
 ## Development History
 
 This project was initially developed through conversations with AI assistants. The current architecture represents a significant restructuring of the original codebase to improve modularity, maintainability, and expandability while preserving all original functionality.

@@ -1,0 +1,15 @@
+[Unit]
+Description=GraphRAG API Server
+After=network.target
+
+[Service]
+User=graphrag
+Group=graphrag
+WorkingDirectory=/opt/graphrag
+Environment="PATH=/opt/graphrag/venv/bin"
+ExecStart=/opt/graphrag/venv/bin/gunicorn -c /opt/graphrag/deployment/gunicorn_config.py src.api.server:create_app()
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target
