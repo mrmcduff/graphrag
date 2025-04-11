@@ -1,0 +1,23 @@
+{
+  "77b4bbd8-e75e-4fd4-8ce1-cbeb8ac05128": {
+    "quest_id": "77b4bbd8-e75e-4fd4-8ce1-cbeb8ac05128",
+    "title": "Seeking Mt. Dorn",
+    "description": "Talyss Wavecaller asks the player to find a way to enter Mount Dorn. If the player can get there in time, Talyss will give the player 50 gold. If the player fails, Talyss will not give any more quests to the player and they will reduce the player's reputation with all factions other than the Goblins.",
+    "quest_type": "location",
+    "giver": "Talyss Wavecaller",
+    "status": "not_started",
+    "parent_quest_id": null,
+    "sub_quest_ids": [],
+    "expiration_turn": null,
+    "hidden": false,
+    "achievements": [],
+    "turn_started": null,
+    "turn_completed": null,
+    "turn_failed": null,
+    "notes": [
+      "Reward: 50 gold",
+      "Failure Consequence: Talyss will not give any more quests to the player",
+      "Failure Consequence: Reduction in reputation with all factions other than the Goblins"
+    ]
+  }
+}
