@@ -4,13 +4,15 @@ API Routes for GraphRAG Text Adventure Game.
 This module defines all the API endpoints for interacting with the game.
 """
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from typing import Dict, Any
 import os
 import time
 import json
+import logging
 
 from .game_session import GameSession
+from .redis_session import save_session, load_session, delete_session
 from .utils import (
     format_error_response,
     log_api_request,
@@ -18,6 +20,9 @@ from .utils import (
     sanitize_input,
 )
 from .auth import require_auth
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 # Create a blueprint for the API routes
 api_bp = Blueprint("api", __name__, url_prefix="/api")
@@ -67,6 +72,15 @@ def new_game():
         # Create new game session with provider configuration
         session = GameSession(game_data_dir, config, provider_id, provider_config)
         game_sessions[session.session_id] = session
+        
+        # Save to Redis for persistence
+        try:
+            if save_session(session):
+                logger.info(f"Session {session.session_id} saved to Redis")
+            else:
+                logger.warning(f"Failed to save session {session.session_id} to Redis")
+        except Exception as e:
+            logger.error(f"Error saving session to Redis: {str(e)}")
 
         # Return initial game state
         return jsonify(session.get_initial_state())
@@ -108,9 +122,24 @@ def process_command(session_id):
     Returns:
         Command result with formatting metadata
     """
-    # Validate session ID
-    if not validate_session_id(session_id) or session_id not in game_sessions:
-        return jsonify(format_error_response("Invalid session ID", 404)), 404
+    # Validate session ID format
+    if not validate_session_id(session_id):
+        return jsonify(format_error_response("Invalid session ID format", 404)), 404
+        
+    # Check if session exists in memory cache
+    if session_id not in game_sessions:
+        # Try to load from Redis
+        try:
+            session = load_session(session_id)
+            if session:
+                # Add to in-memory cache
+                game_sessions[session_id] = session
+                logger.info(f"Loaded session {session_id} from Redis")
+            else:
+                return jsonify(format_error_response("Session not found", 404)), 404
+        except Exception as e:
+            logger.error(f"Error loading session from Redis: {str(e)}")
+            return jsonify(format_error_response("Error retrieving session", 500)), 500
 
     data = request.json or {}
     command = sanitize_input(data.get("command", ""))
@@ -123,20 +152,21 @@ def process_command(session_id):
 
     try:
         # Process the command
-        result = game_sessions[session_id].process_command(command)
+        session = game_sessions[session_id]
+        result = session.process_command(command)
         
-        # Update the session in the database
+        # Store last command and response for persistence
+        session.last_command = command
+        session.last_response = result.get("response", "")
+        
+        # Save updated session to Redis
         try:
-            db_session = GameSessionModel.query.get(session_id)
-            if db_session:
-                # Serialize the updated game session
-                session_data = pickle.dumps(game_sessions[session_id])
-                db_session.game_data = session_data.hex()
-                db_session.last_accessed = datetime.utcnow()
-                db.session.commit()
+            if save_session(session):
+                logger.info(f"Updated session {session_id} in Redis")
+            else:
+                logger.warning(f"Failed to update session {session_id} in Redis")
         except Exception as e:
-            print(f"Warning: Failed to update game session in database: {str(e)}")
-            # Continue anyway since we already have the result
+            logger.error(f"Error updating session in Redis: {str(e)}")
             
         return jsonify(result)
     except Exception as e:
@@ -177,9 +207,24 @@ def save_game(session_id):
     Returns:
         Success or error message
     """
-    # Validate session ID
-    if not validate_session_id(session_id) or session_id not in game_sessions:
-        return jsonify(format_error_response("Invalid session ID", 404)), 404
+    # Validate session ID format
+    if not validate_session_id(session_id):
+        return jsonify(format_error_response("Invalid session ID format", 404)), 404
+        
+    # Check if session exists in memory cache
+    if session_id not in game_sessions:
+        # Try to load from Redis
+        try:
+            session = load_session(session_id)
+            if session:
+                # Add to in-memory cache
+                game_sessions[session_id] = session
+                logger.info(f"Loaded session {session_id} from Redis")
+            else:
+                return jsonify(format_error_response("Session not found", 404)), 404
+        except Exception as e:
+            logger.error(f"Error loading session from Redis: {str(e)}")
+            return jsonify(format_error_response("Error retrieving session", 500)), 500
 
     data = request.json or {}
     filename = data.get("filename", f"save_{session_id}.json")
@@ -212,9 +257,24 @@ def load_game(session_id):
     Returns:
         Success or error message with updated game state
     """
-    # Validate session ID
-    if not validate_session_id(session_id) or session_id not in game_sessions:
-        return jsonify(format_error_response("Invalid session ID", 404)), 404
+    # Validate session ID format
+    if not validate_session_id(session_id):
+        return jsonify(format_error_response("Invalid session ID format", 404)), 404
+        
+    # Check if session exists in memory cache
+    if session_id not in game_sessions:
+        # Try to load from Redis
+        try:
+            session = load_session(session_id)
+            if session:
+                # Add to in-memory cache
+                game_sessions[session_id] = session
+                logger.info(f"Loaded session {session_id} from Redis")
+            else:
+                return jsonify(format_error_response("Session not found", 404)), 404
+        except Exception as e:
+            logger.error(f"Error loading session from Redis: {str(e)}")
+            return jsonify(format_error_response("Error retrieving session", 500)), 500
 
     data = request.json or {}
     filename = data.get("filename", "")
@@ -260,9 +320,24 @@ def get_game_state(session_id):
     Returns:
         Current game state
     """
-    # Validate session ID
-    if not validate_session_id(session_id) or session_id not in game_sessions:
-        return jsonify(format_error_response("Invalid session ID", 404)), 404
+    # Validate session ID format
+    if not validate_session_id(session_id):
+        return jsonify(format_error_response("Invalid session ID format", 404)), 404
+        
+    # Check if session exists in memory cache
+    if session_id not in game_sessions:
+        # Try to load from Redis
+        try:
+            session = load_session(session_id)
+            if session:
+                # Add to in-memory cache
+                game_sessions[session_id] = session
+                logger.info(f"Loaded session {session_id} from Redis")
+            else:
+                return jsonify(format_error_response("Session not found", 404)), 404
+        except Exception as e:
+            logger.error(f"Error loading session from Redis: {str(e)}")
+            return jsonify(format_error_response("Error retrieving session", 500)), 500
 
     # Log the request
     log_api_request(session_id, f"/game/{session_id}/state", {})
@@ -305,9 +380,24 @@ def set_llm_provider(session_id):
     Returns:
         Success or error message
     """
-    # Validate session ID
-    if not validate_session_id(session_id) or session_id not in game_sessions:
-        return jsonify(format_error_response("Invalid session ID", 404)), 404
+    # Validate session ID format
+    if not validate_session_id(session_id):
+        return jsonify(format_error_response("Invalid session ID format", 404)), 404
+        
+    # Check if session exists in memory cache
+    if session_id not in game_sessions:
+        # Try to load from Redis
+        try:
+            session = load_session(session_id)
+            if session:
+                # Add to in-memory cache
+                game_sessions[session_id] = session
+                logger.info(f"Loaded session {session_id} from Redis")
+            else:
+                return jsonify(format_error_response("Session not found", 404)), 404
+        except Exception as e:
+            logger.error(f"Error loading session from Redis: {str(e)}")
+            return jsonify(format_error_response("Error retrieving session", 500)), 500
 
     data = request.json or {}
     provider_id = data.get("provider_id", 3)  # Default to OpenAI
@@ -351,16 +441,42 @@ def end_game_session(session_id):
     Returns:
         Success or error message
     """
-    # Validate session ID
-    if not validate_session_id(session_id) or session_id not in game_sessions:
-        return jsonify(format_error_response("Invalid session ID", 404)), 404
+    # Validate session ID format
+    if not validate_session_id(session_id):
+        return jsonify(format_error_response("Invalid session ID format", 404)), 404
+        
+    # Check if session exists in memory cache
+    if session_id not in game_sessions:
+        # Try to load from Redis
+        try:
+            session = load_session(session_id)
+            if session:
+                # Add to in-memory cache
+                game_sessions[session_id] = session
+                logger.info(f"Loaded session {session_id} from Redis")
+            else:
+                return jsonify(format_error_response("Session not found", 404)), 404
+        except Exception as e:
+            logger.error(f"Error loading session from Redis: {str(e)}")
+            return jsonify(format_error_response("Error retrieving session", 500)), 500
 
     # Log the request
     log_api_request(session_id, f"/game/{session_id}", {"action": "delete"})
 
     try:
-        # Remove the session
-        del game_sessions[session_id]
+        # Remove the session from memory cache
+        if session_id in game_sessions:
+            del game_sessions[session_id]
+        
+        # Delete from Redis
+        try:
+            if delete_session(session_id):
+                logger.info(f"Deleted session {session_id} from Redis")
+            else:
+                logger.warning(f"Failed to delete session {session_id} from Redis")
+        except Exception as e:
+            logger.error(f"Error deleting session from Redis: {str(e)}")
+            
         return jsonify({"success": True, "message": f"Game session {session_id} ended"})
     except Exception as e:
         return jsonify(

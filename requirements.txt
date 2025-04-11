@@ -22,6 +22,9 @@ gunicorn>=21.2.0
 # Cloud storage support
 boto3>=1.28.0
 
+# Redis for session persistence
+redis>=5.0.0
+
 # Cloud LLM dependencies (removing local LLM support for Heroku deployment)
 huggingface_hub>=0.19.0
 # Using CPU-only PyTorch to reduce slug size

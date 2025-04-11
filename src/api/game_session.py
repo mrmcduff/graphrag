@@ -25,6 +25,7 @@ class GameSession:
         config: Optional[Dict[str, Any]] = None,
         provider_id: int = 4,
         provider_config: Optional[Dict[str, Any]] = None,
+        session_id: Optional[str] = None,
     ):
         """
         Initialize a new game session with all required components.
@@ -35,7 +36,11 @@ class GameSession:
             provider_id: LLM provider ID (default: 4 for Anthropic)
             provider_config: Optional provider-specific configuration
         """
-        self.session_id = str(uuid.uuid4())
+        # Use provided session_id or generate a new one
+        self.session_id = session_id or str(uuid.uuid4())
+        self.game_data_dir = game_data_dir
+        self.last_command = ""
+        self.last_response = ""
         self.config = config or {}
 
         # Initialize components

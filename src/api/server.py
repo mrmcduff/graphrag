@@ -84,14 +84,25 @@ def create_app(config: Dict[str, Any] = None) -> Flask:
     app.register_blueprint(auth_bp)
     app.register_blueprint(world_bp)
     
-    # Initialize session persistence
+    # Initialize Redis session persistence
     with app.app_context():
         try:
-            from .session_persistence import update_session_routes
-            update_session_routes()
-            app.logger.info("Session persistence initialized successfully")
+            from .redis_session import get_redis_client
+            redis_client = get_redis_client()
+            if redis_client:
+                app.logger.info("Redis connection established for session persistence")
+                # Test Redis connection
+                redis_client.set("test_key", "test_value")
+                test_result = redis_client.get("test_key")
+                if test_result and test_result.decode('utf-8') == "test_value":
+                    app.logger.info("Redis connection test successful")
+                    redis_client.delete("test_key")
+                else:
+                    app.logger.warning("Redis connection test failed")
+            else:
+                app.logger.warning("Redis client not available, sessions will not persist across dyno restarts")
         except Exception as e:
-            app.logger.error(f"Failed to initialize session persistence: {str(e)}")
+            app.logger.error(f"Failed to initialize Redis: {str(e)}")
 
     # Serve static files from client directory
     @app.route("/client/<path:filename>")
