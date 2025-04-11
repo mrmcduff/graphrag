@@ -1,0 +1,3 @@
+[build]
+# Tell Heroku to use pyproject.toml instead of requirements.txt
+use_pyproject_toml = true
