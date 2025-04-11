@@ -222,7 +222,12 @@ class CommandProcessor:
         Returns:
             Dictionary with the results of the command
         """
-        from util.debug import debug_print
+        try:
+            # Try local import path first
+            from util.debug import debug_print
+        except ModuleNotFoundError:
+            # Fall back to Heroku import path
+            from src.util.debug import debug_print
 
         debug_print(f"DEBUG: Processing command: '{command}'")
 
@@ -243,7 +248,12 @@ class CommandProcessor:
 
         # Check if we're in combat
         if self.combat_system.active_combat:
-            from util.debug import debug_print
+            try:
+                # Try local import path first
+                from util.debug import debug_print
+            except ModuleNotFoundError:
+                # Fall back to Heroku import path
+                from src.util.debug import debug_print
 
             debug_print("DEBUG: In combat mode, processing as combat command")
             return self._process_combat_command(command)
@@ -819,7 +829,12 @@ quit - Exit the game
 
         elif action == "map":
             # Show map
-            from util.debug import debug_print
+            try:
+                # Try local import path first
+                from util.debug import debug_print
+            except ModuleNotFoundError:
+                # Fall back to Heroku import path
+                from src.util.debug import debug_print
 
             debug_print("DEBUG: Map command detected in command processor")
             if target and target.lower() == "local":
