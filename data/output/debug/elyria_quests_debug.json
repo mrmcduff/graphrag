@@ -1,0 +1,23 @@
+[
+  {
+    "quest_id": "8e84667c-3caa-49d9-8be7-18e1a64ae67f",
+    "title": "Seeking Mt. Dorn",
+    "description": "Talyss Wavecaller asks the player to find a way to enter Mount Dorn. If the player can get there in time, Talyss will give the player 50 gold. If the player fails, Talyss will not give any more quests to the player and they will reduce the player\u2019s reputation with all factions other than the Goblins. The player must make it to Mt. Dorn within the next 40 turns to succeed.\n\nImportant instructions:\n1. Generate a complete quest object with all relevant fields for the quest type\n2. If information is missing from the text, use your creativity to suggest appropriate values\n3. Make sure the quest title is engaging and thematic for a fantasy adventure game\n4. Be creative but stay consistent with the information provided in the text\n5. Format your response as a JSON array containing the quest object\n\nExample response format:\n```json\n[\n  {\n    \"title\": \"The Blacksmith's Lost Masterpiece\",\n    \"description\": \"The blacksmith has lost his prized sword and asks you to find it. It was last seen in the abandoned mine to the north. Return it to him for a reward of 50 gold pieces.\",\n    \"quest_type\": \"FETCH\",\n    \"giver\": \"Blacksmith\",\n    \"item_to_fetch\": \"Prized Sword\",\n    \"recipient\": \"Blacksmith\",\n    \"reward\": \"50 gold pieces\",\n    \"difficulty\": \"MEDIUM\",\n    \"time_limit\": \"3 days\",\n    \"failure_consequences\": [\n      \"The blacksmith will be disappointed and less willing to help you in the future\",\n      \"You will lose access to special blacksmith equipment upgrades\",\n      \"Your reputation with the town merchants will decrease slightly\"\n    ]\n  }\n]\n```\n\nIf no quests are found in the text, return an empty array: []",
+    "quest_type": "QuestType.LOCATION",
+    "giver": "Dorn\n\nTalyss Wavecaller",
+    "reward": null,
+    "target_location": "Mt. Dorn",
+    "success_consequences": [
+      {
+        "consequence_type": "change_world_state",
+        "target": "player.gold",
+        "parameters": {
+          "value": 50
+        }
+      }
+    ],
+    "notes": [
+      "Reward: 50 gold"
+    ]
+  }
+]

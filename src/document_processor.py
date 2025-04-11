@@ -1,4 +1,5 @@
 import os
+import sys
 import pandas as pd
 import docx
 import re
@@ -145,28 +146,109 @@ def process_documents_with_chunking(
 def initialize_nlp():
     """
     Initialize and return the spaCy NLP pipeline.
+    Will attempt to download models if they're not found.
 
     Returns:
         spaCy NLP pipeline with necessary components
     """
+    # Try models in order of preference (largest to smallest)
+    models_to_try = ["en_core_web_lg", "en_core_web_md", "en_core_web_sm"]
+
+    for model_name in models_to_try:
+        try:
+            print(f"Attempting to load spaCy model: {model_name}")
+            # Load spaCy English model with the needed components
+            nlp = spacy.load(model_name)
+
+            # Add the dependency parse and entity recognition components if not present
+            if "parser" not in nlp.pipe_names:
+                nlp.add_pipe("parser")
+            if "ner" not in nlp.pipe_names:
+                nlp.add_pipe("ner")
+
+            print(f"Successfully loaded spaCy model: {model_name}")
+            return nlp
+
+        except Exception as e:
+            print(f"Could not load spaCy model {model_name}: {e}")
+            # Try to download the model using uv
+            try:
+                print(f"Attempting to download spaCy model: {model_name} using uv")
+                import subprocess
+
+                # First try using uv
+                result = subprocess.run(
+                    ["uv", "pip", "install", model_name, "--system"],
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                if result.returncode == 0:
+                    print(
+                        f"Successfully downloaded {model_name} using uv. Trying to load it again..."
+                    )
+                    nlp = spacy.load(model_name)
+                    # Add the dependency parse and entity recognition components if not present
+                    if "parser" not in nlp.pipe_names:
+                        nlp.add_pipe("parser")
+                    if "ner" not in nlp.pipe_names:
+                        nlp.add_pipe("ner")
+                    print(f"Successfully loaded spaCy model: {model_name}")
+                    return nlp
+                else:
+                    # Try the spacy download command as fallback
+                    print(
+                        f"uv install failed, trying spacy download command: {result.stderr}"
+                    )
+                    result = subprocess.run(
+                        [sys.executable, "-m", "spacy", "download", model_name],
+                        capture_output=True,
+                        text=True,
+                        check=False,
+                    )
+                    if result.returncode == 0:
+                        print(
+                            f"Successfully downloaded {model_name} using spacy download. Trying to load it again..."
+                        )
+                        nlp = spacy.load(model_name)
+                        # Add the dependency parse and entity recognition components if not present
+                        if "parser" not in nlp.pipe_names:
+                            nlp.add_pipe("parser")
+                        if "ner" not in nlp.pipe_names:
+                            nlp.add_pipe("ner")
+                        print(f"Successfully loaded spaCy model: {model_name}")
+                        return nlp
+                    else:
+                        print(
+                            f"Failed to download {model_name} with spacy download: {result.stderr}"
+                        )
+            except Exception as download_error:
+                print(f"Error while trying to download {model_name}: {download_error}")
+
+    # If we get here, none of the models worked and downloads failed
+    print(
+        "\nERROR: Could not load or download any spaCy models. Please install at least one of the following manually:"
+    )
+    for model in models_to_try:
+        print(f"  uv pip install {model} --system")
+        print(f"  OR: python -m spacy download {model}")
+    print(
+        "\nAlternatively, you can skip the knowledge graph generation with --skip-graph\n"
+    )
+
+    # As a last resort, try to create a blank English model
     try:
-        # Load spaCy English model with the needed components
-        # You may need to download this model: python -m spacy download en_core_web_lg
-        nlp = spacy.load("en_core_web_lg")
-
-        # Add the dependency parse and entity recognition components if not present
-        if "parser" not in nlp.pipe_names:
-            nlp.add_pipe("parser")
-        if "ner" not in nlp.pipe_names:
-            nlp.add_pipe("ner")
-
+        print("Attempting to create a blank English model as last resort...")
+        nlp = spacy.blank("en")
+        # Add minimal components
+        nlp.add_pipe("sentencizer")
+        print("Created minimal blank English model")
         return nlp
     except Exception as e:
-        print(f"Error initializing spaCy: {e}")
-        print(
-            "Make sure to install spaCy and download the model: python -m spacy download en_core_web_lg"
+        print(f"Failed to create blank model: {e}")
+        raise RuntimeError(
+            "Could not initialize any spaCy NLP model. Please install spaCy and at least one English model."
         )
-        raise
 
 
 def extract_entities_and_relations(text: str, nlp) -> Tuple[List[Dict], List[Dict]]:
@@ -237,8 +319,21 @@ def build_knowledge_graph(
         - DataFrame of entities
         - DataFrame of relations
     """
-    # Initialize spaCy
-    nlp = initialize_nlp()
+    try:
+        # Initialize spaCy
+        nlp = initialize_nlp()
+    except Exception as e:
+        print(f"Warning: Could not initialize spaCy NLP model: {e}")
+        print("Creating empty knowledge graph as fallback.")
+        # Create empty graph and DataFrames as fallback
+        G = nx.Graph()
+        df_entities = pd.DataFrame(
+            columns=["id", "text", "label", "source_file", "chunk_id"]
+        )
+        df_relations = pd.DataFrame(
+            columns=["subject", "predicate", "object", "source_file", "chunk_id"]
+        )
+        return G, df_entities, df_relations
 
     all_entities = []
     all_relations = []
@@ -249,23 +344,46 @@ def build_knowledge_graph(
         desc="Extracting entities and relations",
         total=len(df_chunks),
     ):
-        entities, relations = extract_entities_and_relations(row["chunk_text"], nlp)
+        try:
+            entities, relations = extract_entities_and_relations(row["chunk_text"], nlp)
 
-        # Add source information to entities and relations
-        for entity in entities:
-            entity["source_file"] = row["filename"]
-            entity["chunk_id"] = row["chunk_id"]
+            # Add source information to entities and relations
+            for entity in entities:
+                entity["source_file"] = row["filename"]
+                entity["chunk_id"] = row["chunk_id"]
 
-        for relation in relations:
-            relation["source_file"] = row["filename"]
-            relation["chunk_id"] = row["chunk_id"]
+            for relation in relations:
+                relation["source_file"] = row["filename"]
+                relation["chunk_id"] = row["chunk_id"]
 
-        all_entities.extend(entities)
-        all_relations.extend(relations)
+            all_entities.extend(entities)
+            all_relations.extend(relations)
+        except Exception as e:
+            print(
+                f"Warning: Error processing chunk {row['chunk_id']} from {row['filename']}: {e}"
+            )
+            continue
+
+    # Check if we have any entities or relations
+    if not all_entities:
+        print("Warning: No entities were extracted. Creating empty knowledge graph.")
+        G = nx.Graph()
+        df_entities = pd.DataFrame(
+            columns=["id", "text", "label", "source_file", "chunk_id"]
+        )
+        df_relations = pd.DataFrame(
+            columns=["subject", "predicate", "object", "source_file", "chunk_id"]
+        )
+        return G, df_entities, df_relations
 
     # Convert to DataFrames
     df_entities = pd.DataFrame(all_entities)
-    df_relations = pd.DataFrame(all_relations)
+    df_relations = pd.DataFrame(
+        all_relations if all_relations else [],
+        columns=["subject", "predicate", "object", "source_file", "chunk_id"]
+        if not all_relations
+        else None,
+    )
 
     # Remove duplicates
     if not df_entities.empty:
@@ -281,16 +399,26 @@ def build_knowledge_graph(
 
     # Add entities as nodes
     for _, entity in df_entities.iterrows():
-        G.add_node(entity["id"], label=entity["text"], type=entity["label"])
+        try:
+            G.add_node(entity["id"], label=entity["text"], type=entity["label"])
+        except Exception as e:
+            print(
+                f"Warning: Error adding entity node {entity.get('id', 'unknown')}: {e}"
+            )
+            continue
 
     # Add relations as edges
     for _, relation in df_relations.iterrows():
-        subject_id = relation["subject"].replace(" ", "_")
-        object_id = relation["object"].replace(" ", "_")
+        try:
+            subject_id = relation["subject"].replace(" ", "_")
+            object_id = relation["object"].replace(" ", "_")
 
-        # Only add edge if both nodes exist
-        if subject_id in G.nodes and object_id in G.nodes:
-            G.add_edge(subject_id, object_id, relation=relation["predicate"])
+            # Only add edge if both nodes exist
+            if subject_id in G.nodes and object_id in G.nodes:
+                G.add_edge(subject_id, object_id, relation=relation["predicate"])
+        except Exception as e:
+            print(f"Warning: Error adding relation edge: {e}")
+            continue
 
     return G, df_entities, df_relations
 
@@ -407,6 +535,10 @@ def main(
     output_name: str = None,
     process_quests: bool = True,
     use_llm: bool = True,
+    llm_client=None,
+    interactive_llm_selection: bool = False,
+    skip_graph: bool = False,
+    debug: bool = False,
 ):
     """
     Run the complete pipeline from document processing to game element extraction.
@@ -437,25 +569,48 @@ def main(
         f"Created {len(df_chunks)} chunks from {df_chunks['filename'].nunique()} documents"
     )
 
-    print("\nStep 2: Building knowledge graph...")
-    G, df_entities, df_relations = build_knowledge_graph(df_chunks)
-    print(f"Built knowledge graph with {len(G.nodes)} nodes and {len(G.edges)} edges")
+    # Skip knowledge graph generation if requested
+    if skip_graph:
+        print("\nSkipping knowledge graph generation as requested.")
+        # Create empty graph and DataFrames as placeholders
+        G = nx.Graph()
+        df_entities = pd.DataFrame(
+            columns=["id", "text", "label", "source_file", "chunk_id"]
+        )
+        df_relations = pd.DataFrame(
+            columns=["subject", "predicate", "object", "source_file", "chunk_id"]
+        )
+        game_elements = {
+            "locations": [],
+            "characters": [],
+            "items": [],
+            "actions": [],
+            "character_relations": [],
+        }
+    else:
+        print("\nStep 2: Building knowledge graph...")
+        G, df_entities, df_relations = build_knowledge_graph(df_chunks)
+        print(
+            f"Built knowledge graph with {len(G.nodes)} nodes and {len(G.edges)} edges"
+        )
 
-    # Save results
-    df_entities.to_csv(os.path.join(world_output_dir, "entities.csv"), index=False)
-    df_relations.to_csv(os.path.join(world_output_dir, "relations.csv"), index=False)
+        # Save results
+        df_entities.to_csv(os.path.join(world_output_dir, "entities.csv"), index=False)
+        df_relations.to_csv(
+            os.path.join(world_output_dir, "relations.csv"), index=False
+        )
 
-    # Save graph
-    nx.write_gexf(G, os.path.join(world_output_dir, "knowledge_graph.gexf"))
+        # Save graph
+        nx.write_gexf(G, os.path.join(world_output_dir, "knowledge_graph.gexf"))
 
-    print("\nStep 3: Visualizing graph...")
-    plt.figure(figsize=(12, 12))
-    visualize_graph(G)
-    plt.savefig(os.path.join(world_output_dir, "graph_sample.png"))
-    plt.close()
+        print("\nStep 3: Visualizing graph...")
+        plt.figure(figsize=(12, 12))
+        visualize_graph(G)
+        plt.savefig(os.path.join(world_output_dir, "graph_sample.png"))
+        plt.close()
 
-    print("\nStep 4: Extracting game elements...")
-    game_elements = extract_game_elements(G, df_entities, df_relations)
+        print("\nStep 4: Extracting game elements...")
+        game_elements = extract_game_elements(G, df_entities, df_relations)
 
     # Save game elements as CSV files
     pd.DataFrame(game_elements["locations"], columns=["location"]).to_csv(
@@ -489,7 +644,16 @@ def main(
     if process_quests:
         # Extract world name from the output directory
         current_world_name = os.path.basename(world_output_dir)
-        process_quest_documents(documents_dir, output_dir, current_world_name, use_llm)
+        # Pass the llm_client parameter to process_quest_documents
+        process_quest_documents(
+            documents_dir,
+            output_dir,
+            current_world_name,
+            use_llm,
+            debug_mode=debug,
+            llm_client=llm_client,
+            interactive_selection=interactive_llm_selection,
+        )
 
     print(f"\nAll results saved to {world_output_dir}/")
 
@@ -535,7 +699,9 @@ def process_quest_documents(
     output_dir: str,
     world_name: str,
     use_llm: bool = True,
-    debug_mode: bool = True,
+    debug_mode: bool = False,
+    llm_client=None,
+    interactive_selection: bool = False,
 ) -> None:
     """
     Process quest documents in a directory.
@@ -607,28 +773,52 @@ def process_quest_documents(
         for doc in quest_docs:
             print(f"  - {os.path.basename(doc)}")
 
-        # Select LLM client if requested
-        llm_client = None
-        if use_llm:
-            try:
-                from llm_clients import select_llm_client
+        # Use provided LLM client or select one if needed
+        if llm_client is not None:
+            print(f"Using provided LLM client: {llm_client.name} for quest parsing")
+        elif use_llm:
+            # Try to use Anthropic client first if key is available and not in interactive mode
+            if not interactive_selection and os.environ.get("ANTHROPIC_API_KEY"):
+                try:
+                    # Import here to avoid circular imports
+                    from llm.anthropic_client import AnthropicClient
 
-                llm_client = select_llm_client(interactive=True, debug_mode=debug_mode)
-                print(f"Using {llm_client.name} for quest parsing")
-            except ImportError:
-                print(
-                    "LLM client module not available. Using rule-based quest parsing."
-                )
-                from llm_clients import RuleBasedClient
+                    llm_client = AnthropicClient()
+                    print(
+                        f"Using Anthropic client for quest parsing: {llm_client.name}"
+                    )
+                except ImportError as e:
+                    print(f"Error importing Anthropic client: {e}")
+                    # Fall back to selection or rule-based
+                    llm_client = None
+                except Exception as e:
+                    print(f"Error initializing Anthropic client: {e}")
+                    # Fall back to selection or rule-based
+                    llm_client = None
 
-                llm_client = RuleBasedClient(debug_mode=debug_mode)
-            except Exception as e:
-                print(
-                    f"Error selecting LLM client: {e}. Using rule-based quest parsing."
-                )
-                from llm_clients import RuleBasedClient
+            # If no Anthropic client or interactive mode is requested, try selection
+            if llm_client is None:
+                try:
+                    from llm_clients import select_llm_client
 
-                llm_client = RuleBasedClient(debug_mode=debug_mode)
+                    llm_client = select_llm_client(
+                        interactive=interactive_selection, debug_mode=debug_mode
+                    )
+                    print(f"Using {llm_client.name} for quest parsing")
+                except ImportError:
+                    print(
+                        "LLM client module not available. Using rule-based quest parsing."
+                    )
+                    from llm_clients import RuleBasedClient
+
+                    llm_client = RuleBasedClient(debug_mode=debug_mode)
+                except Exception as e:
+                    print(
+                        f"Error selecting LLM client: {e}. Using rule-based quest parsing."
+                    )
+                    from llm_clients import RuleBasedClient
+
+                    llm_client = RuleBasedClient(debug_mode=debug_mode)
         else:
             # Use rule-based client with debug mode
             from llm_clients import RuleBasedClient
@@ -891,6 +1081,16 @@ if __name__ == "__main__":
         action="store_true",
         help="Disable LLM for quest parsing (use rule-based parsing)",
     )
+    process_parser.add_argument(
+        "--skip-graph",
+        action="store_true",
+        help="Skip knowledge graph generation (useful if spaCy models are not installed)",
+    )
+    process_parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Enable debug output for LLM interactions",
+    )
 
     args = parser.parse_args()
 
@@ -920,6 +1120,10 @@ if __name__ == "__main__":
             args.output_name,
             not args.skip_quests,  # Process quests unless skip_quests is True
             not getattr(args, "no_llm", False),  # Use LLM unless no-llm is True
+            skip_graph=getattr(
+                args, "skip_graph", False
+            ),  # Skip graph if skip-graph is True
+            debug=getattr(args, "debug", False),  # Enable debug mode if debug is True
         )
     else:
         # If no command is provided, show help

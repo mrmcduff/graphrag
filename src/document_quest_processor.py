@@ -30,14 +30,15 @@ logger = logging.getLogger(__name__)
 class DocumentQuestProcessor:
     """Class to extract quest information from documents and create quest objects."""
 
-    def __init__(self, llm_client=None):
+    def __init__(self, llm_client=None, debug=False):
         """
         Initialize the document quest processor.
 
         Args:
             llm_client: Client for the LLM API (optional)
+            debug: Whether to print debug information
         """
-        self.quest_parser = QuestParser(llm_client)
+        self.quest_parser = QuestParser(llm_client, debug=debug)
 
     def set_llm_client(self, llm_client):
         """
@@ -283,6 +284,7 @@ def main(
     output_dir: str = "output",
     world_name: str = None,
     llm_client=None,
+    debug=False,
 ) -> QuestManager:
     """
     Process documents and extract quests.
@@ -299,7 +301,7 @@ def main(
     os.makedirs(output_dir, exist_ok=True)
 
     # Create document quest processor
-    processor = DocumentQuestProcessor(llm_client)
+    processor = DocumentQuestProcessor(llm_client, debug=debug)
 
     # Process documents
     quests, _ = processor.process_documents_for_quests(
@@ -328,10 +330,13 @@ if __name__ == "__main__":
         "--output_dir", default="data/output", help="Directory to save output files"
     )
     parser.add_argument("--world_name", help="Name of the world to save quests to")
+    parser.add_argument("--debug", action="store_true", help="Enable debug output")
 
     args = parser.parse_args()
 
     # Process documents
-    quest_manager = main(args.documents_dir, args.output_dir, args.world_name)
+    quest_manager = main(
+        args.documents_dir, args.output_dir, args.world_name, debug=args.debug
+    )
 
     print(f"Extracted {len(quest_manager.quests)} quests from documents")

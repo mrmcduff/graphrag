@@ -259,6 +259,9 @@ def generate_world():
         chunk_size: Maximum chunk size in tokens (optional)
         overlap: Overlap between chunks in tokens (optional)
         output_name: Optional name for the output world
+        interactive_llm_selection: Whether to prompt for LLM selection (optional, default: false)
+        skip_graph: Whether to skip knowledge graph generation (optional, default: false)
+        debug: Whether to enable debug output for LLM interactions (optional, default: false)
 
     Returns:
         Information about the generated world
@@ -268,6 +271,9 @@ def generate_world():
     chunk_size = data.get("chunk_size", 512)
     overlap = data.get("overlap", 50)
     output_name = data.get("output_name")
+    interactive_llm_selection = data.get("interactive_llm_selection", False)
+    skip_graph = data.get("skip_graph", False)
+    debug = data.get("debug", False)
 
     # Log the request
     log_api_request("generate_world", "/worlds/generate", data)
@@ -297,17 +303,30 @@ def generate_world():
                 format_error_response(f"World '{world_name}' has no documents", 400)
             ), 400
 
-        # Import the document processor
+        # Import the document processor and Anthropic client
         sys.path.append(get_base_dir())
         from src.document_processor import main as process_documents
+        from src.llm.anthropic_client import AnthropicClient
 
-        # Process the documents
+        # Create Anthropic client for quest extraction if not in interactive mode
+        anthropic_client = None
+        if not interactive_llm_selection and os.environ.get("ANTHROPIC_API_KEY"):
+            anthropic_client = AnthropicClient()
+            print(
+                f"Using Anthropic client for quest extraction: {anthropic_client.name}"
+            )
+
+        # Process the documents with the Anthropic client or interactive selection
         world_dir = process_documents(
             documents_dir=world_path,
             output_dir=output_dir,
             chunk_size=chunk_size,
             overlap=overlap,
             output_name=output_name,
+            llm_client=anthropic_client,
+            interactive_llm_selection=interactive_llm_selection,
+            skip_graph=skip_graph,
+            debug=debug,
         )
 
         # Get the relative path for the response
