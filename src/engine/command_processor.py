@@ -2,6 +2,12 @@ import re
 from typing import Dict, List, Any, Optional, Tuple
 from enum import Enum
 
+# Import helper for cross-environment compatibility
+try:
+    from util.import_helper import import_from
+except ModuleNotFoundError:
+    from src.util.import_helper import import_from
+
 
 class CommandType(Enum):
     """Types of commands the player can input."""
@@ -70,15 +76,11 @@ class CommandProcessor:
         # Initialize config if not provided
         if config is None:
             config = {}
-        # Try different import paths to support both local and Heroku environments
-        try:
-            # Local development import path
-            from llm.providers.base import LLMType
-            from util.config import get_api_key, load_environment_variables
-        except ModuleNotFoundError:
-            # Heroku deployment import path
-            from src.llm.providers.base import LLMType
-            from src.util.config import get_api_key, load_environment_variables
+            
+        # Import required modules using the import helper
+        LLMType = import_from('llm.providers.base', 'LLMType')
+        get_api_key = import_from('util.config', 'get_api_key')
+        load_environment_variables = import_from('util.config', 'load_environment_variables')
 
         # Load environment variables from .env file
         load_environment_variables()
@@ -222,12 +224,8 @@ class CommandProcessor:
         Returns:
             Dictionary with the results of the command
         """
-        try:
-            # Try local import path first
-            from util.debug import debug_print
-        except ModuleNotFoundError:
-            # Fall back to Heroku import path
-            from src.util.debug import debug_print
+        # Import debug_print using the import helper
+        debug_print = import_from('util.debug', 'debug_print')
 
         debug_print(f"DEBUG: Processing command: '{command}'")
 
@@ -248,12 +246,8 @@ class CommandProcessor:
 
         # Check if we're in combat
         if self.combat_system.active_combat:
-            try:
-                # Try local import path first
-                from util.debug import debug_print
-            except ModuleNotFoundError:
-                # Fall back to Heroku import path
-                from src.util.debug import debug_print
+            # Import debug_print using the import helper
+            debug_print = import_from('util.debug', 'debug_print')
 
             debug_print("DEBUG: In combat mode, processing as combat command")
             return self._process_combat_command(command)
@@ -829,12 +823,8 @@ quit - Exit the game
 
         elif action == "map":
             # Show map
-            try:
-                # Try local import path first
-                from util.debug import debug_print
-            except ModuleNotFoundError:
-                # Fall back to Heroku import path
-                from src.util.debug import debug_print
+            # Import debug_print using the enhanced import helper
+            debug_print = import_from('util.debug', 'debug_print')
 
             debug_print("DEBUG: Map command detected in command processor")
             if target and target.lower() == "local":
