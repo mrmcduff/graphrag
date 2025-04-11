@@ -1,63 +1,95 @@
-id,text,label,start,end,source_file,chunk_id
-eryndor_leafshade,Eryndor Leafshade,PERSON,0,17,Eryndor_Leafshade.docx,0
-treefolk,Treefolk,WORK_OF_ART,37,45,Eryndor_Leafshade.docx,0
-goblins,Goblins,ORG,257,264,Eryndor_Leafshade.docx,0
-gorath,Gorath,PERSON,23,29,Gorath_the_Goblin_King.docx,0
-mt._dorn,Mt. Dorn,LOC,68,76,Gorath_the_Goblin_King.docx,0
-mt._dorn’s,Mt. Dorn’s,LOC,740,750,Gorath_the_Goblin_King.docx,0
-deepkin,Deepkin,PERSON,890,897,The_Abyssal_Realm.docx,0
-thalric_ironbeard,Thalric Ironbeard,PERSON,0,17,Thalric_Ironbeard.docx,0
-decades,decades,DATE,92,99,Thalric_Ironbeard.docx,0
-thalric,Thalric,ORG,194,201,Thalric_Ironbeard.docx,0
-talyss_wavecaller,Talyss Wavecaller,PERSON,30,47,FindingMtDorn_quest.docx,0
-mount_dorn,Mount Dorn,LOC,87,97,FindingMtDorn_quest.docx,0
-talyss,Talyss,ORG,124,130,FindingMtDorn_quest.docx,0
-50,50,CARDINAL,152,154,FindingMtDorn_quest.docx,0
-the_next_40,the next 40,DATE,361,372,FindingMtDorn_quest.docx,0
-korran_tidebreaker,Korran Tidebreaker,PERSON,588,606,Talyss_Wavecaller.docx,0
+id,text,label,start,end,source_file,chunk_id,entity,type,subtype,description
+eryndor_leafshade,Eryndor Leafshade,PERSON,0.0,17.0,Eryndor_Leafshade.docx,0.0,,,,
+treefolk,Treefolk,WORK_OF_ART,37.0,45.0,Eryndor_Leafshade.docx,0.0,,,,
+goblins,Goblins,ORG,257.0,264.0,Eryndor_Leafshade.docx,0.0,,,,
+gorath,Gorath,PERSON,23.0,29.0,Gorath_the_Goblin_King.docx,0.0,,,,
+mt._dorn,Mt. Dorn,LOC,68.0,76.0,Gorath_the_Goblin_King.docx,0.0,,,,
+mt._dorn’s,Mt. Dorn’s,LOC,740.0,750.0,Gorath_the_Goblin_King.docx,0.0,,,,
+deepkin,Deepkin,PERSON,890.0,897.0,The_Abyssal_Realm.docx,0.0,,,,
+thalric_ironbeard,Thalric Ironbeard,PERSON,0.0,17.0,Thalric_Ironbeard.docx,0.0,,,,
+decades,decades,DATE,92.0,99.0,Thalric_Ironbeard.docx,0.0,,,,
+thalric,Thalric,ORG,194.0,201.0,Thalric_Ironbeard.docx,0.0,,,,
+talyss_wavecaller,Talyss Wavecaller,PERSON,30.0,47.0,FindingMtDorn_quest.docx,0.0,,,,
+mount_dorn,Mount Dorn,LOC,87.0,97.0,FindingMtDorn_quest.docx,0.0,,,,
+talyss,Talyss,ORG,136.0,142.0,FindingMtDorn_quest.docx,0.0,,,,
+50,50,CARDINAL,164.0,166.0,FindingMtDorn_quest.docx,0.0,,,,
+the_next_40,the next 40,DATE,375.0,386.0,FindingMtDorn_quest.docx,0.0,,,,
+korran_tidebreaker,Korran Tidebreaker,PERSON,588.0,606.0,Talyss_Wavecaller.docx,0.0,,,,
 "korrik_deepdelve
 korrik","Korrik Deepdelve
-Korrik",PERSON,0,23,Korrik_Deepdelve.docx,0
-the_ironroot_range,the Ironroot Range,LOC,108,126,Korrik_Deepdelve.docx,0
-lyssara_abyssglow,Lyssara Abyssglow,PERSON,0,17,Lyssara_Abyssglow.docx,0
-korran,Korran,GPE,565,571,Lyssara_Abyssglow.docx,0
-the_brief_summer_months,the brief summer months,DATE,534,557,The_Ironroot_Range.docx,0
-mist,Mist,PERSON,559,563,The_Ironroot_Range.docx,0
-fed,fed,ORG,606,609,The_Ironroot_Range.docx,0
-winter,winter,DATE,717,723,The_Ironroot_Range.docx,0
-summer,summer,DATE,762,768,The_Ironroot_Range.docx,0
-the_abyssal_realm,the Abyssal Realm,WORK_OF_ART,336,353,Korran_Tidebreaker.docx,0
-barely_three_feet,barely three feet,QUANTITY,113,130,The_Gnomes.docx,0
-gnomish,Gnomish,NORP,528,535,The_Gnomes.docx,0
-krug_ironfang,Krug Ironfang,ORG,0,13,Krug_Ironfang.docx,0
-krug,Krug,PERSON,14,18,Krug_Ironfang.docx,0
-zrakka,Zrakka,ORG,418,424,Krug_Ironfang.docx,0
-brynna_gearwhistle,Brynna Gearwhistle,NORP,0,18,Brynna_Gearwhistle.docx,0
-brynna,Brynna,NORP,19,25,Brynna_Gearwhistle.docx,0
+Korrik",PERSON,0.0,23.0,Korrik_Deepdelve.docx,0.0,,,,
+the_ironroot_range,the Ironroot Range,LOC,108.0,126.0,Korrik_Deepdelve.docx,0.0,,,,
+lyssara_abyssglow,Lyssara Abyssglow,PERSON,0.0,17.0,Lyssara_Abyssglow.docx,0.0,,,,
+korran,Korran,GPE,565.0,571.0,Lyssara_Abyssglow.docx,0.0,,,,
+the_brief_summer_months,the brief summer months,DATE,534.0,557.0,The_Ironroot_Range.docx,0.0,,,,
+mist,Mist,PERSON,559.0,563.0,The_Ironroot_Range.docx,0.0,,,,
+fed,fed,ORG,606.0,609.0,The_Ironroot_Range.docx,0.0,,,,
+winter,winter,DATE,717.0,723.0,The_Ironroot_Range.docx,0.0,,,,
+summer,summer,DATE,762.0,768.0,The_Ironroot_Range.docx,0.0,,,,
+the_abyssal_realm,the Abyssal Realm,WORK_OF_ART,336.0,353.0,Korran_Tidebreaker.docx,0.0,,,,
+barely_three_feet,barely three feet,QUANTITY,113.0,130.0,The_Gnomes.docx,0.0,,,,
+gnomish,Gnomish,NORP,528.0,535.0,The_Gnomes.docx,0.0,,,,
+krug_ironfang,Krug Ironfang,ORG,0.0,13.0,Krug_Ironfang.docx,0.0,,,,
+krug,Krug,PERSON,14.0,18.0,Krug_Ironfang.docx,0.0,,,,
+zrakka,Zrakka,ORG,418.0,424.0,Krug_Ironfang.docx,0.0,,,,
+brynna_gearwhistle,Brynna Gearwhistle,NORP,0.0,18.0,Brynna_Gearwhistle.docx,0.0,,,,
+brynna,Brynna,NORP,19.0,25.0,Brynna_Gearwhistle.docx,0.0,,,,
 "kael_thornstride
 kael","Kael Thornstride
-Kael",PERSON,0,21,Kael_Thornstride.docx,0
-sylvara,Sylvara,PERSON,156,163,Kael_Thornstride.docx,0
-kael,Kael,PERSON,165,169,Kael_Thornstride.docx,0
-gnomes,Gnomes,ORG,309,315,Kael_Thornstride.docx,0
-less_than_half,less than half,CARDINAL,159,173,The_Treefolk.docx,0
-veyron,Veyron,ORG,19,25,Veyron_Thunderhand.docx,0
-skyway,Skyway,ORG,154,160,Veyron_Thunderhand.docx,0
-aeryn,Aeryn,PERSON,526,531,Veyron_Thunderhand.docx,0
-stormriders,Stormriders,ORG,717,728,Veyron_Thunderhand.docx,0
-aeryn_cloudpiercer,Aeryn Cloudpiercer,PERSON,0,18,Aeryn_Cloudpiercer.docx,0
-skyways,Skyways,FAC,158,165,Aeryn_Cloudpiercer.docx,0
-moonlight,moonlight,TIME,211,220,Aeryn_Cloudpiercer.docx,0
-thunderhand,Thunderhand,PERSON,544,555,Aeryn_Cloudpiercer.docx,0
-one,one,CARDINAL,64,67,Zrakka_the_Shaman.docx,0
-gorath_the_goblin_king,Gorath the Goblin King,PERSON,119,141,The_Goblins.docx,0
-some_over_a_thousand_years_old,some over a thousand years old,CARDINAL,180,210,TreeHome.docx,0
-hundreds_of_feet,hundreds of feet,QUANTITY,242,258,TreeHome.docx,0
-night,night,TIME,844,849,TreeHome.docx,0
-sky_harbors,Sky Harbors,ORG,709,720,The_Skyways.docx,0
-kaelis_windweaver,Kaelis Windweaver,PERSON,0,17,Kaelis_Windweaver.docx,0
-kaelis,Kaelis,PERSON,18,24,Kaelis_Windweaver.docx,0
-the_breath_of_the_sky,the Breath of the Sky,WORK_OF_ART,379,400,Kaelis_Windweaver.docx,0
-sylvara_willowbark,Sylvara Willowbark,PERSON,0,18,Sylvara_Willowbark.docx,0
-centuries,centuries,DATE,103,112,Sylvara_Willowbark.docx,0
-zrakka_of_mt._dorn,Zrakka of Mt. Dorn,ORG,377,395,Sylvara_Willowbark.docx,0
+Kael",PERSON,0.0,21.0,Kael_Thornstride.docx,0.0,,,,
+sylvara,Sylvara,PERSON,156.0,163.0,Kael_Thornstride.docx,0.0,,,,
+kael,Kael,PERSON,165.0,169.0,Kael_Thornstride.docx,0.0,,,,
+gnomes,Gnomes,ORG,309.0,315.0,Kael_Thornstride.docx,0.0,,,,
+less_than_half,less than half,CARDINAL,159.0,173.0,The_Treefolk.docx,0.0,,,,
+veyron,Veyron,ORG,19.0,25.0,Veyron_Thunderhand.docx,0.0,,,,
+skyway,Skyway,ORG,154.0,160.0,Veyron_Thunderhand.docx,0.0,,,,
+aeryn,Aeryn,PERSON,526.0,531.0,Veyron_Thunderhand.docx,0.0,,,,
+stormriders,Stormriders,ORG,717.0,728.0,Veyron_Thunderhand.docx,0.0,,,,
+aeryn_cloudpiercer,Aeryn Cloudpiercer,PERSON,0.0,18.0,Aeryn_Cloudpiercer.docx,0.0,,,,
+skyways,Skyways,FAC,158.0,165.0,Aeryn_Cloudpiercer.docx,0.0,,,,
+moonlight,moonlight,TIME,211.0,220.0,Aeryn_Cloudpiercer.docx,0.0,,,,
+thunderhand,Thunderhand,PERSON,544.0,555.0,Aeryn_Cloudpiercer.docx,0.0,,,,
+one,one,CARDINAL,64.0,67.0,Zrakka_the_Shaman.docx,0.0,,,,
+gorath_the_goblin_king,Gorath the Goblin King,PERSON,119.0,141.0,The_Goblins.docx,0.0,,,,
+some_over_a_thousand_years_old,some over a thousand years old,CARDINAL,180.0,210.0,TreeHome.docx,0.0,,,,
+hundreds_of_feet,hundreds of feet,QUANTITY,242.0,258.0,TreeHome.docx,0.0,,,,
+night,night,TIME,844.0,849.0,TreeHome.docx,0.0,,,,
+sky_harbors,Sky Harbors,ORG,709.0,720.0,The_Skyways.docx,0.0,,,,
+kaelis_windweaver,Kaelis Windweaver,PERSON,0.0,17.0,Kaelis_Windweaver.docx,0.0,,,,
+kaelis,Kaelis,PERSON,18.0,24.0,Kaelis_Windweaver.docx,0.0,,,,
+the_breath_of_the_sky,the Breath of the Sky,WORK_OF_ART,379.0,400.0,Kaelis_Windweaver.docx,0.0,,,,
+sylvara_willowbark,Sylvara Willowbark,PERSON,0.0,18.0,Sylvara_Willowbark.docx,0.0,,,,
+centuries,centuries,DATE,103.0,112.0,Sylvara_Willowbark.docx,0.0,,,,
+zrakka_of_mt._dorn,Zrakka of Mt. Dorn,ORG,377.0,395.0,Sylvara_Willowbark.docx,0.0,,,,
+,,,,,,,Seeking Mt. Dorn,quest,location,"Talyss Wavecaller asks the player to find a way to enter Mount Dorn. If the player can get there in time, Talyss will give the player 50 gold. If the player fails, Talyss will not give any more quests to the player and they will reduce the player’s reputation with all factions other than the Goblins. The player must make it to Mt. Dorn within the next 40 turns to succeed.
+
+Important instructions:
+1. Generate a complete quest object with all relevant fields for the quest type
+2. If information is missing from the text, use your creativity to suggest appropriate values
+3. Make sure the quest title is engaging and thematic for a fantasy adventure game
+4. Be creative but stay consistent with the information provided in the text
+5. Format your response as a JSON array containing the quest object
+
+Example response format:
+```json
+[
+  {
+    ""title"": ""The Blacksmith's Lost Masterpiece"",
+    ""description"": ""The blacksmith has lost his prized sword and asks you to find it. It was last seen in the abandoned mine to the north. Return it to him for a reward of 50 gold pieces."",
+    ""quest_type"": ""FETCH"",
+    ""giver"": ""Blacksmith"",
+    ""item_to_fetch"": ""Prized Sword"",
+    ""recipient"": ""Blacksmith"",
+    ""reward"": ""50 gold pieces"",
+    ""difficulty"": ""MEDIUM"",
+    ""time_limit"": ""3 days"",
+    ""failure_consequences"": [
+      ""The blacksmith will be disappointed and less willing to help you in the future"",
+      ""You will lose access to special blacksmith equipment upgrades"",
+      ""Your reputation with the town merchants will decrease slightly""
+    ]
+  }
+]
+```
+
+If no quests are found in the text, return an empty array: []"

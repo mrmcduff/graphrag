@@ -5,10 +5,12 @@
   </meta>
   <graph defaultedgetype="undirected" mode="static" name="">
     <attributes mode="static" class="edge">
-      <attribute id="1" title="relation" type="string" />
+      <attribute id="3" title="relation" type="string" />
     </attributes>
     <attributes mode="static" class="node">
       <attribute id="0" title="type" type="string" />
+      <attribute id="1" title="quest_type" type="string" />
+      <attribute id="2" title="description" type="string" />
     </attributes>
     <nodes>
       <node id="eryndor_leafshade" label="Eryndor Leafshade">
@@ -301,16 +303,23 @@
           <attvalue for="0" value="ORG" />
         </attvalues>
       </node>
+      <node id="quest_8e84667c-3caa-49d9-8be7-18e1a64ae67f" label="Seeking Mt. Dorn">
+        <attvalues>
+          <attvalue for="0" value="quest" />
+          <attvalue for="1" value="location" />
+          <attvalue for="2" value="Talyss Wavecaller asks the player to find a way to enter Mount Dorn. If the player can get there in time, Talyss will give the player 50 gold. If the player fails, Talyss will not give any more quests to the player and they will reduce the player’s reputation with all factions other than the Goblins. The player must make it to Mt. Dorn within the next 40 turns to succeed.&#10;&#10;Important instructions:&#10;1. Generate a complete quest object with all relevant fields for the quest type&#10;2. If information is missing from the text, use your creativity to suggest appropriate values&#10;3. Make sure the quest title is engaging and thematic for a fantasy adventure game&#10;4. Be creative but stay consistent with the information provided in the text&#10;5. Format your response as a JSON array containing the quest object&#10;&#10;Example response format:&#10;```json&#10;[&#10;  {&#10;    &quot;title&quot;: &quot;The Blacksmith's Lost Masterpiece&quot;,&#10;    &quot;description&quot;: &quot;The blacksmith has lost his prized sword and asks you to find it. It was last seen in the abandoned mine to the north. Return it to him for a reward of 50 gold pieces.&quot;,&#10;    &quot;quest_type&quot;: &quot;FETCH&quot;,&#10;    &quot;giver&quot;: &quot;Blacksmith&quot;,&#10;    &quot;item_to_fetch&quot;: &quot;Prized Sword&quot;,&#10;    &quot;recipient&quot;: &quot;Blacksmith&quot;,&#10;    &quot;reward&quot;: &quot;50 gold pieces&quot;,&#10;    &quot;difficulty&quot;: &quot;MEDIUM&quot;,&#10;    &quot;time_limit&quot;: &quot;3 days&quot;,&#10;    &quot;failure_consequences&quot;: [&#10;      &quot;The blacksmith will be disappointed and less willing to help you in the future&quot;,&#10;      &quot;You will lose access to special blacksmith equipment upgrades&quot;,&#10;      &quot;Your reputation with the town merchants will decrease slightly&quot;&#10;    ]&#10;  }&#10;]&#10;```&#10;&#10;If no quests are found in the text, return an empty array: []" />
+        </attvalues>
+      </node>
     </nodes>
     <edges>
       <edge source="gorath" target="brynna" id="0">
         <attvalues>
-          <attvalue for="1" value="views" />
+          <attvalue for="3" value="views" />
         </attvalues>
       </edge>
       <edge source="zrakka" target="gnomes" id="1">
         <attvalues>
-          <attvalue for="1" value="despises" />
+          <attvalue for="3" value="despises" />
         </attvalues>
       </edge>
     </edges>

@@ -11,11 +11,10 @@ energies,permeate,areas,"Strange energies permeate certain areas, creating pocke
 he,harbors,hatred,"He harbors an intense hatred for Gorath, whom he sees as an obstacle to gnomish prosperity.",Thalric_Ironbeard.docx,0
 he,sees,whom,"He harbors an intense hatred for Gorath, whom he sees as an obstacle to gnomish prosperity.",Thalric_Ironbeard.docx,0
 thalric,rallying,support,Thalric has been rallying support among neighboring factions to pressure or overthrow the Goblin King but struggles with internal dissent from more pacifist gnomes.,Thalric_Ironbeard.docx,0
-player,do,it,"If the player can do it, Talyss will give the player 50 gold.",FindingMtDorn_quest.docx,0
-talyss,give,gold,"If the player can do it, Talyss will give the player 50 gold.",FindingMtDorn_quest.docx,0
-talyss,give,quests,"If the player fails, Talyss will not give any more quests to the player and he will reduce the player’s reputation with all factions other than the Goblins.",FindingMtDorn_quest.docx,0
-he,reduce,reputation,"If the player fails, Talyss will not give any more quests to the player and he will reduce the player’s reputation with all factions other than the Goblins.",FindingMtDorn_quest.docx,0
-player,make,it,The player must make it to Mt. Dorn within the next 40 turns.,FindingMtDorn_quest.docx,0
+talyss,give,gold,"If the player can get there in time, Talyss will give the player 50 gold.",FindingMtDorn_quest.docx,0
+talyss,give,quests,"If the player fails, Talyss will not give any more quests to the player and they will reduce the player’s reputation with all factions other than the Goblins.",FindingMtDorn_quest.docx,0
+they,reduce,reputation,"If the player fails, Talyss will not give any more quests to the player and they will reduce the player’s reputation with all factions other than the Goblins.",FindingMtDorn_quest.docx,0
+player,make,it,The player must make it to Mt. Dorn within the next 40 turns to succeed.,FindingMtDorn_quest.docx,0
 that,calm,storms,"Talyss Wavecaller
 Talyss is a priestess of the Deepkin, known for her hauntingly beautiful voice that can calm storms or summon tidal waves depending on her intent.",Talyss_Wavecaller.docx,0
 she,wears,jewelry,"Her bioluminescent skin glows with soft blue patterns that shift like ocean currents, and she wears ceremonial coral jewelry that signifies her high rank within Deepkin society.",Talyss_Wavecaller.docx,0

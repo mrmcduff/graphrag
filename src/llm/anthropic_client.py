@@ -52,11 +52,27 @@ class AnthropicClient:
             client = anthropic.Anthropic(api_key=self.api_key)
 
             # Generate text with the API
+            system_message = (
+                "You are an expert quest designer for RPG games. Your task is to extract quest information from text and format it as structured JSON. "
+                "A quest in the game can be one of the following types: FETCH (get an item and bring it to an NPC), "
+                "LOCATION (travel to a specific location), COMBAT (defeat a specific enemy), or INFORMATION (deliver information between NPCs). "
+                "For each quest, include the following fields in your JSON response: "
+                "title (creative and engaging), description (detailed), quest_type (FETCH, LOCATION, COMBAT, or INFORMATION), "
+                "giver (NPC who gives the quest), and type-specific fields such as: "
+                "target_location (for LOCATION quests), item_to_fetch and recipient (for FETCH quests), "
+                "target_enemy (for COMBAT quests), or information, source, and target (for INFORMATION quests). "
+                "Also include reward (specific amount and type), difficulty (EASY, MEDIUM, HARD), "
+                "time_limit (if mentioned), and failure_consequences (as an array of specific consequences). "
+                "If information is missing, use your creativity to suggest appropriate values. "
+                "Format your response as a JSON array containing quest objects. If no quests are found, return an empty array: []. "
+                "Always ensure the JSON is valid and complete."
+            )
+
             response = client.messages.create(
                 model=self.model,
                 max_tokens=max_tokens,
                 temperature=temperature,
-                system="You are a helpful assistant that extracts quest information from text.",
+                system=system_message,
                 messages=[{"role": "user", "content": prompt}],
             )
 

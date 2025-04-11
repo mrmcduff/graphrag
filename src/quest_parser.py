@@ -32,14 +32,16 @@ logger = logging.getLogger(__name__)
 class QuestParser:
     """Class to parse quest information from text using an LLM."""
 
-    def __init__(self, llm_client=None):
+    def __init__(self, llm_client=None, debug=False):
         """
         Initialize the quest parser.
 
         Args:
             llm_client: Client for the LLM API (optional)
+            debug: Whether to print debug information
         """
         self.llm_client = llm_client
+        self.debug = debug
 
     def set_llm_client(self, llm_client):
         """
@@ -71,9 +73,10 @@ class QuestParser:
             # Call the LLM API
             response = self.llm_client.generate_text(prompt)
 
-            # Print raw response for debugging
-            print("\nRaw LLM response:")
-            print(response)
+            # Print raw response only if debug mode is enabled
+            if self.debug:
+                print("\nRaw LLM response:")
+                print(response)
 
             # Parse the response
             quest_data = self._parse_llm_response(response)
