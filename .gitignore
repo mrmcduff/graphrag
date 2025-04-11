@@ -3,6 +3,7 @@
 
 # Environment variables
 .env
+HEROKU_CREDENTIALS.md
 
 # Project-specific directories
 /comms/*

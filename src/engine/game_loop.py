@@ -18,12 +18,22 @@ class GameLoop:
             config: Optional configuration dictionary
         """
         # Import here to avoid circular imports
-        from llm.llm_manager import LLMManager
-        from gamestate.game_state import GameState
-        from graphrag.graph_rag_engine import GraphRAGEngine
-        from combat.combat_system import CombatSystem
-        from .command_processor import CommandProcessor
-        from .output_manager import OutputManager
+        try:
+            # Try local import paths first
+            from llm.llm_manager import LLMManager
+            from gamestate.game_state import GameState
+            from graphrag.graph_rag_engine import GraphRAGEngine
+            from combat.combat_system import CombatSystem
+            from .command_processor import CommandProcessor
+            from .output_manager import OutputManager
+        except ModuleNotFoundError:
+            # Fall back to Heroku import paths
+            from src.llm.llm_manager import LLMManager
+            from src.gamestate.game_state import GameState
+            from src.graphrag.graph_rag_engine import GraphRAGEngine
+            from src.combat.combat_system import CombatSystem
+            from .command_processor import CommandProcessor
+            from .output_manager import OutputManager
 
         # Set defaults for config if not provided
         self.config = config or {}
