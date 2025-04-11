@@ -70,8 +70,15 @@ class CommandProcessor:
         # Initialize config if not provided
         if config is None:
             config = {}
-        from llm.providers.base import LLMType
-        from util.config import get_api_key, load_environment_variables
+        # Try different import paths to support both local and Heroku environments
+        try:
+            # Local development import path
+            from llm.providers.base import LLMType
+            from util.config import get_api_key, load_environment_variables
+        except ModuleNotFoundError:
+            # Heroku deployment import path
+            from src.llm.providers.base import LLMType
+            from src.util.config import get_api_key, load_environment_variables
 
         # Load environment variables from .env file
         load_environment_variables()
