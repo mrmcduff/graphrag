@@ -8,7 +8,6 @@ from flask_sqlalchemy import SQLAlchemy
 from passlib.hash import pbkdf2_sha256
 from datetime import datetime
 import uuid
-import json
 
 db = SQLAlchemy()
 
@@ -30,22 +29,6 @@ class User(db.Model):
 
     # Usage tracking
     api_calls_count = db.Column(db.Integer, default=0)
-
-
-class GameSessionModel(db.Model):
-    """Model for storing game sessions persistently in the database."""
-
-    __tablename__ = "game_sessions"
-
-    session_id = db.Column(db.String(36), primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
-    game_data = db.Column(db.Text, nullable=False)  # JSON serialized game session data
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    last_accessed = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    is_active = db.Column(db.Boolean, default=True)
-
-    # Relationship with User model
-    user = db.relationship("User", backref=db.backref("game_sessions", lazy=True))
     daily_limit = db.Column(db.Integer, default=100)  # Default API call limit per day
 
     def __init__(self, username, email, password, is_admin=False, daily_limit=100):
