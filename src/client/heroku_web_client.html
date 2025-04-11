@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GraphRAG Text Adventure</title>
+    <!-- Google OAuth Library -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <!-- External CSS -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <h1>GraphRAG Text Adventure</h1>
+
+    <!-- Navigation Links -->
+    <div class="nav-links">
+        <a href="web_client.html" class="nav-link">Game Client</a>
+        <a href="admin.html" class="nav-link">User Management</a>
+        <a href="world_admin.html" class="nav-link">World Management</a>
+    </div>
+
+    <!-- Login Container -->
+    <div id="login-container">
+        <h2>Authentication Required</h2>
+        <p>Please sign in with your Google account to access the game.</p>
+        <div id="login-status">Not logged in</div>
+
+        <!-- Google Sign-In Button -->
+        <div id="g_id_onload"
+             data-client_id="911441509904-gigqvoc05jc5vilbtp5ba1td3ktc5h17.apps.googleusercontent.com"
+             data-context="signin"
+             data-ux_mode="popup"
+             data-callback="handleCredentialResponse"
+             data-auto_prompt="false">
+        </div>
+
+        <div class="g_id_signin"
+             data-type="standard"
+             data-shape="rectangular"
+             data-theme="outline"
+             data-text="signin_with"
+             data-size="large"
+             data-logo_alignment="left">
+        </div>
+
+        <button id="logout-button" class="hidden">Sign Out</button>
+    </div>
+
+    <div id="game-container" class="hidden">
+        <div class="controls">
+            <button id="new-game" class="control-button">New Game</button>
+            <span id="session-id"></span>
+            <button id="save-game" class="control-button" disabled>Save Game</button>
+            <button id="load-game" class="control-button" disabled>Load Game</button>
+        </div>
+
+        <div class="llm-config">
+            <div class="provider-selection">
+                <label for="llm-provider">LLM Provider:</label>
+                <select id="llm-provider">
+                    <option value="3">OpenAI</option>
+                    <option value="4" selected>Anthropic Claude</option>
+                    <option value="5">Google Gemini</option>
+                    <option value="6">Rule-based (No LLM)</option>
+                </select>
+            </div>
+
+            <!-- Model configuration fields -->
+            <div id="model-config-anthropic" class="model-config active">
+                <label for="anthropic-model">Anthropic Model:</label>
+                <select id="anthropic-model">
+                    <option value="claude-3-haiku-20240307" selected>Claude 3 Haiku</option>
+                    <option value="claude-3-sonnet-20240229">Claude 3 Sonnet</option>
+                    <option value="claude-3-opus-20240229">Claude 3 Opus</option>
+                    <option value="claude-2.1">Claude 2.1</option>
+                </select>
+            </div>
+
+            <div id="model-config-openai" class="model-config">
+                <label for="openai-model">OpenAI Model:</label>
+                <select id="openai-model">
+                    <option value="gpt-3.5-turbo" selected>GPT-3.5 Turbo</option>
+                    <option value="gpt-4">GPT-4</option>
+                    <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                </select>
+            </div>
+
+            <div id="model-config-google" class="model-config">
+                <label for="google-model">Google Model:</label>
+                <select id="google-model">
+                    <option value="gemini-1.5-flash" selected>Gemini 1.5 Flash</option>
+                    <option value="gemini-ultra">Gemini Ultra</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="game-output">Welcome to GraphRAG Text Adventure! Click "New Game" to start.</div>
+
+        <div class="input-container">
+            <input type="text" id="command-input" placeholder="Enter your command..." disabled>
+            <button id="send-command" disabled>Send</button>
+        </div>
+
+        <div id="suggestions"></div>
+
+        <div class="metadata">
+            <div id="player-location"></div>
+            <div id="inventory-count"></div>
+            <div id="combat-status"></div>
+        </div>
+    </div>
+
+    <script>
+        // API Configuration - Updated for Heroku
+        const API_URL = 'https://graphrag-api-a77f8919e96d.herokuapp.com/api';
+        let sessionId = null;
+        let userToken = null;
+        let userEmail = null;
+        let isAuthorized = false;
+
+        // DOM Elements
+        const loginStatus = document.getElementById('login-status');
+        const logoutButton = document.getElementById('logout-button');
+        const newGameButton = document.getElementById('new-game');
+        const saveGameButton = document.getElementById('save-game');
+        const loadGameButton = document.getElementById('load-game');
+        const sessionIdElement = document.getElementById('session-id');
+        const gameOutput = document.getElementById('game-output');
+        const commandInput = document.getElementById('command-input');
+        const sendButton = document.getElementById('send-command');
+        const suggestionsElement = document.getElementById('suggestions');
+        const playerLocationElement = document.getElementById('player-location');
+        const inventoryCountElement = document.getElementById('inventory-count');
+        const combatStatusElement = document.getElementById('combat-status');
+        const gameContainer = document.getElementById('game-container');
+        const loginContainer = document.getElementById('login-container');
+
+        // Event Listeners
+        newGameButton.addEventListener('click', createNewGame);
+        sendButton.addEventListener('click', sendCommand);
+        saveGameButton.addEventListener('click', saveGame);
+        loadGameButton.addEventListener('click', loadGame);
+        commandInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendCommand();
+            }
+        });
+
+        // Google OAuth Callback
+        function handleCredentialResponse(response) {
+            userToken = response.credential;
+            const userInfo = parseJwt(userToken);
+            userEmail = userInfo.email;
+            loginStatus.textContent = `Logged in as: ${userEmail}`;
+            logoutButton.classList.remove('hidden');
+            
+            // Check if user is authorized
+            checkUserAuthorization(userEmail);
+        }
+
+        // Parse JWT token
+        function parseJwt(token) {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            return JSON.parse(jsonPayload);
+        }
+
+        // Check if user is authorized to access the game
+        function checkUserAuthorization(email) {
+            fetch(`${API_URL}/users/authorize`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${userToken}`
+                },
+                body: JSON.stringify({ email: email })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Authorization check failed');
+                }
+                return response.json();
+            })
+            .then(data => {
+                isAuthorized = data.authorized;
+                
+                if (isAuthorized) {
+                    loginStatus.textContent = `Authorized as: ${userEmail}`;
+                    loginContainer.classList.add('hidden');
+                    gameContainer.classList.remove('hidden');
+                    
+                    // Enable game controls
+                    commandInput.disabled = false;
+                    sendButton.disabled = false;
+                    
+                    // Clear any previous game state
+                    clearOutput();
+                    appendToOutput('Welcome to GraphRAG Text Adventure! Click "New Game" to start a new game session.');
+                } else {
+                    loginStatus.textContent = `Not authorized: ${userEmail}`;
+                    alert('Your email is not authorized to access this application. Please contact the administrator.');
+                }
+            })
+            .catch(error => {
+                console.error('Error checking authorization:', error);
+                loginStatus.textContent = `Error: ${error.message}`;
+            });
+        }
+
+        // Handle logout
+        logoutButton.addEventListener('click', function() {
+            userToken = null;
+            userEmail = null;
+            isAuthorized = false;
+            loginStatus.textContent = 'Not logged in';
+            
+            // Hide logout button
+            logoutButton.classList.add('hidden');
+            
+            // Hide game container, show login
+            gameContainer.classList.add('hidden');
+            loginContainer.classList.remove('hidden');
+            
+            // Reset game state
+            sessionId = null;
+            sessionIdElement.textContent = '';
+            clearOutput();
+            commandInput.disabled = true;
+            sendButton.disabled = true;
+            saveGameButton.disabled = true;
+            loadGameButton.disabled = true;
+            
+            // Reset metadata
+            playerLocationElement.textContent = '';
+            inventoryCountElement.textContent = '';
+            combatStatusElement.textContent = '';
+
+            // Set default provider to Anthropic (4)
+            document.getElementById('llm-provider').value = '4';
+        });
+
+        // LLM Provider selection event listener
+        const llmProviderSelect = document.getElementById('llm-provider');
+        llmProviderSelect.addEventListener('change', function() {
+            // Hide all model config divs
+            const modelConfigs = document.querySelectorAll('.model-config');
+            modelConfigs.forEach(div => {
+                div.classList.remove('active');
+                div.style.display = 'none';
+            });
+            
+            // Show the appropriate config div based on selection
+            const providerId = llmProviderSelect.value;
+            let configDiv;
+            
+            switch (providerId) {
+                case '3': // OpenAI
+                    configDiv = document.getElementById('model-config-openai');
+                    break;
+                case '4': // Anthropic
+                    configDiv = document.getElementById('model-config-anthropic');
+                    break;
+                case '5': // Google
+                    configDiv = document.getElementById('model-config-google');
+                    break;
+                // No config needed for Rule-based
+            }
+
+            if (configDiv) {
+                configDiv.classList.add('active');
+                configDiv.style.display = 'block';
+            }
+        });
+
+        // Functions
+        function createNewGame() {
+            if (!isAuthorized) {
+                alert('Please log in to create a new game.');
+                return;
+            }
+            
+            clearOutput();
+            appendToOutput('Creating new game session...');
+            
+            // Get LLM provider configuration
+            const providerId = document.getElementById('llm-provider').value;
+            let providerConfig = {};
+            
+            // Add model-specific configuration
+            switch (providerId) {
+                case '3': // OpenAI
+                    providerConfig.model = document.getElementById('openai-model').value;
+                    break;
+                case '4': // Anthropic
+                    providerConfig.model = document.getElementById('anthropic-model').value;
+                    break;
+                case '5': // Google
+                    providerConfig.model = document.getElementById('google-model').value;
+                    break;
+                // No config needed for Rule-based
+            }
+            
+            // Create new game session
+            fetch(`${API_URL}/game/new`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${userToken}`
+                },
+                body: JSON.stringify({
+                    provider_id: parseInt(providerId),
+                    provider_config: providerConfig
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to create game session');
+                }
+                return response.json();
+            })
+            .then(data => {
+                sessionId = data.session_id;
+                sessionIdElement.textContent = `Session: ${sessionId.substring(0, 8)}...`;
+                
+                // Enable game controls
+                commandInput.disabled = false;
+                sendButton.disabled = false;
+                saveGameButton.disabled = false;
+                loadGameButton.disabled = false;
+                
+                // Display initial game state
+                displayGameState(data);
+            })
+            .catch(error => {
+                console.error('Error creating game session:', error);
+                appendToOutput(`Error: ${error.message}`);
+            });
+        }
+
+        function sendCommand() {
+            if (!sessionId) {
+                alert('Please start a new game first.');
+                return;
+            }
+            
+            const command = commandInput.value.trim();
+            if (!command) return;
+            
+            // Display user command
+            appendToOutput(`> ${command}`, 'user-command');
+            commandInput.value = '';
+            
+            // Send command to API
+            fetch(`${API_URL}/game/${sessionId}/command`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${userToken}`
+                },
+                body: JSON.stringify({ command: command })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Command processing failed');
+                }
+                return response.json();
+            })
+            .then(data => {
+                displayGameState(data);
+            })
+            .catch(error => {
+                console.error('Error processing command:', error);
+                appendToOutput(`Error: ${error.message}`);
+            });
+        }
+
+        function saveGame() {
+            if (!sessionId) {
+                alert('Please start a new game first.');
+                return;
+            }
+            
+            fetch(`${API_URL}/game/${sessionId}/save`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${userToken}`
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to save game');
+                }
+                return response.json();
+            })
+            .then(data => {
+                appendToOutput('Game saved successfully.');
+            })
+            .catch(error => {
+                console.error('Error saving game:', error);
+                appendToOutput(`Error: ${error.message}`);
+            });
+        }
+
+        function loadGame() {
+            fetch(`${API_URL}/game/load`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${userToken}`
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to load game');
+                }
+                return response.json();
+            })
+            .then(data => {
+                sessionId = data.session_id;
+                sessionIdElement.textContent = `Session: ${sessionId.substring(0, 8)}...`;
+                
+                // Enable game controls
+                commandInput.disabled = false;
+                sendButton.disabled = false;
+                saveGameButton.disabled = false;
+                loadGameButton.disabled = false;
+                
+                clearOutput();
+                appendToOutput('Game loaded successfully.');
+                displayGameState(data);
+            })
+            .catch(error => {
+                console.error('Error loading game:', error);
+                appendToOutput(`Error: ${error.message}`);
+            });
+        }
+
+        function displayGameState(data) {
+            // Update metadata
+            if (data.metadata) {
+                updateMetadata(data.metadata);
+            }
+            
+            // Display content
+            if (data.content && Array.isArray(data.content)) {
+                for (const item of data.content) {
+                    appendToOutput(item.text, item.format);
+                }
+            } else if (data.message) {
+                appendToOutput(data.message);
+            } else if (data.welcome_message) {
+                appendToOutput(data.welcome_message, 'welcome');
+                if (data.player_location) {
+                    appendToOutput(`You are in ${data.player_location}.`, 'location');
+                }
+            } else if (data && typeof data === 'object') {
+                // If we have an object but none of the expected fields, show a summary
+                const keys = Object.keys(data);
+                if (keys.length > 0) {
+                    appendToOutput(`Game session created with ID: ${sessionId}`);
+                    if (data.session_id) {
+                        appendToOutput(`Ready to play! Type a command to begin.`);
+                    }
+                } else {
+                    appendToOutput('Game session created successfully.');
+                }
+            } else {
+                appendToOutput('Game session created successfully.');
+            }
+
+            // Generate command suggestions
+            if (data && data.metadata) {
+                generateSuggestions(data);
+            }
+        }
+
+        function updateMetadata(metadata) {
+            if (!metadata) return;
+
+            if (metadata.player_location) {
+                playerLocationElement.textContent = `Location: ${metadata.player_location}`;
+            }
+
+            if (metadata.inventory_count !== undefined) {
+                inventoryCountElement.textContent = `Inventory: ${metadata.inventory_count} items`;
+            }
+
+            if (metadata.combat_active !== undefined) {
+                combatStatusElement.textContent = metadata.combat_active ?
+                    'Combat: Active ⚔️' : 'Combat: Inactive';
+            }
+        }
+
+        function generateSuggestions(data) {
+            suggestionsElement.innerHTML = '';
+
+            // Default suggestions
+            const suggestions = [
+                'look around',
+                'inventory',
+                'help'
+            ];
+
+            // Add location-based suggestions
+            if (data.npcs_present) {
+                for (const npc of data.npcs_present) {
+                    suggestions.push(`talk to ${npc}`);
+                    suggestions.push(`examine ${npc}`);
+                }
+            }
+
+            if (data.items_present) {
+                for (const item of data.items_present) {
+                    suggestions.push(`take ${item}`);
+                    suggestions.push(`examine ${item}`);
+                }
+            }
+
+            // Add available commands if provided
+            if (data.metadata && data.metadata.available_commands) {
+                suggestions.push(...data.metadata.available_commands);
+            }
+
+            // Create suggestion buttons
+            const uniqueSuggestions = [...new Set(suggestions)];
+            for (const suggestion of uniqueSuggestions.slice(0, 8)) {
+                const suggestionElement = document.createElement('div');
+                suggestionElement.className = 'suggestion';
+                suggestionElement.textContent = suggestion;
+                suggestionElement.addEventListener('click', () => {
+                    commandInput.value = suggestion;
+                    sendCommand();
+                });
+                suggestionsElement.appendChild(suggestionElement);
+            }
+        }
+
+        function appendToOutput(text, format = 'normal') {
+            const element = document.createElement('div');
+            element.textContent = text;
+
+            // Apply formatting
+            if (format === 'welcome') {
+                element.className = 'welcome';
+            } else if (format === 'location') {
+                element.className = 'location';
+            } else if (format === 'combat') {
+                element.className = 'combat';
+            } else if (format === 'inventory') {
+                element.className = 'inventory';
+            } else if (format === 'user-command') {
+                element.style.color = '#666';
+                element.style.fontStyle = 'italic';
+            }
+
+            gameOutput.appendChild(element);
+            gameOutput.scrollTop = gameOutput.scrollHeight;
+        }
+
+        function clearOutput() {
+            gameOutput.innerHTML = '';
+        }
+    </script>
+</body>
+</html>
