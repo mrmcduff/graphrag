@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GraphRAG - Choose Environment</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .environment-selector {
+            display: flex;
+            justify-content: space-around;
+            margin: 40px 0;
+        }
+        .environment-option {
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            text-align: center;
+            width: 40%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .environment-option:hover {
+            background-color: #f5f5f5;
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        h2 {
+            margin-top: 0;
+        }
+        p {
+            color: #666;
+        }
+        .btn {
+            display: inline-block;
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 4px;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+        .btn:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h1>GraphRAG Text Adventure</h1>
+    
+    <div class="environment-selector">
+        <div class="environment-option" onclick="window.location.href='web_client.html'">
+            <h2>Local Environment</h2>
+            <p>Connect to your local development server running on localhost:8000</p>
+            <p>Supports all LLM options including local models</p>
+            <a href="web_client.html" class="btn">Launch Local Client</a>
+        </div>
+        
+        <div class="environment-option" onclick="window.location.href='heroku_web_client.html'">
+            <h2>Heroku Environment</h2>
+            <p>Connect to the Heroku deployment at graphrag-api-a77f8919e96d.herokuapp.com</p>
+            <p>Supports cloud-based LLMs (OpenAI, Anthropic, Google)</p>
+            <a href="heroku_web_client.html" class="btn">Launch Heroku Client</a>
+        </div>
+    </div>
+    
+    <div>
+        <h2>Environment Information</h2>
+        <p><strong>Local Environment:</strong> Use this when running the GraphRAG server locally on your machine. This environment supports all LLM options, including local models.</p>
+        <p><strong>Heroku Environment:</strong> Use this to connect to the deployed Heroku instance. This environment supports cloud-based LLMs only (OpenAI, Anthropic, Google) due to Heroku's size limitations.</p>
+    </div>
+</body>
+</html>
