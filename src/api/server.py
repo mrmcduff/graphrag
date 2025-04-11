@@ -83,6 +83,15 @@ def create_app(config: Dict[str, Any] = None) -> Flask:
     app.register_blueprint(user_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(world_bp)
+    
+    # Initialize session persistence
+    with app.app_context():
+        try:
+            from .session_persistence import update_session_routes
+            update_session_routes()
+            app.logger.info("Session persistence initialized successfully")
+        except Exception as e:
+            app.logger.error(f"Failed to initialize session persistence: {str(e)}")
 
     # Serve static files from client directory
     @app.route("/client/<path:filename>")

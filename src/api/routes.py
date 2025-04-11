@@ -4,25 +4,28 @@ API Routes for GraphRAG Text Adventure Game.
 This module defines all the API endpoints for interacting with the game.
 """
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, g
 from typing import Dict, Any
 import os
 import time
 import json
+import pickle
 
 from .game_session import GameSession
+from .models import db, GameSessionModel, User
 from .utils import (
     format_error_response,
     log_api_request,
     validate_session_id,
     sanitize_input,
 )
-from .auth import require_auth
+from .auth import require_auth, get_current_user
 
 # Create a blueprint for the API routes
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 
-# Store active game sessions
+# In-memory cache for active game sessions to improve performance
+# This will be backed by the database for persistence
 game_sessions: Dict[str, GameSession] = {}
 
 
@@ -64,9 +67,26 @@ def new_game():
     log_api_request("new_session", "/game/new", data)
 
     try:
+        # Get current user from the JWT token
+        current_user = get_current_user()
+        if not current_user:
+            return jsonify(format_error_response("User not authenticated", 401)), 401
+
         # Create new game session with provider configuration
         session = GameSession(game_data_dir, config, provider_id, provider_config)
         game_sessions[session.session_id] = session
+
+        # Serialize the game session for database storage
+        session_data = pickle.dumps(session)
+
+        # Store in database for persistence
+        db_session = GameSessionModel(
+            session_id=session.session_id,
+            user_id=current_user.id,
+            game_data=session_data.hex()  # Store as hex string for text compatibility
+        )
+        db.session.add(db_session)
+        db.session.commit()
 
         # Return initial game state
         return jsonify(session.get_initial_state())
@@ -124,6 +144,20 @@ def process_command(session_id):
     try:
         # Process the command
         result = game_sessions[session_id].process_command(command)
+        
+        # Update the session in the database
+        try:
+            db_session = GameSessionModel.query.get(session_id)
+            if db_session:
+                # Serialize the updated game session
+                session_data = pickle.dumps(game_sessions[session_id])
+                db_session.game_data = session_data.hex()
+                db_session.last_accessed = datetime.utcnow()
+                db.session.commit()
+        except Exception as e:
+            print(f"Warning: Failed to update game session in database: {str(e)}")
+            # Continue anyway since we already have the result
+            
         return jsonify(result)
     except Exception as e:
         import traceback
