@@ -124,12 +124,22 @@ class IntentResolver:
         # Special case for map commands - preserve them exactly
         lower_input = user_input.lower().strip()
         if lower_input == "map" or lower_input == "m":
-            from util.debug import debug_print
+            try:
+                # Try local import path first
+                from util.debug import debug_print
+            except ModuleNotFoundError:
+                # Fall back to Heroku import path
+                from src.util.debug import debug_print
 
             debug_print("DEBUG: Preserving exact map command")
             return "map"
         if lower_input == "local map" or lower_input == "detailed map":
-            from util.debug import debug_print
+            try:
+                # Try local import path first
+                from util.debug import debug_print
+            except ModuleNotFoundError:
+                # Fall back to Heroku import path
+                from src.util.debug import debug_print
 
             debug_print("DEBUG: Preserving exact local map command")
             return "local map"
@@ -162,19 +172,34 @@ class IntentResolver:
             if resolved_command.startswith("show map") or resolved_command.startswith(
                 "display map"
             ):
-                from util.debug import debug_print
+                try:
+                    # Try local import path first
+                    from util.debug import debug_print
+                except ModuleNotFoundError:
+                    # Fall back to Heroku import path
+                    from src.util.debug import debug_print
 
                 debug_print("DEBUG: Fixing resolved map command")
                 return "map"
             if "local map" in resolved_command or "detailed map" in resolved_command:
-                from util.debug import debug_print
+                try:
+                    # Try local import path first
+                    from util.debug import debug_print
+                except ModuleNotFoundError:
+                    # Fall back to Heroku import path
+                    from src.util.debug import debug_print
 
                 debug_print("DEBUG: Fixing resolved local map command")
                 return "local map"
 
             return resolved_command
         except Exception as e:
-            from util.debug import debug_print
+            try:
+                # Try local import path first
+                from util.debug import debug_print
+            except ModuleNotFoundError:
+                # Fall back to Heroku import path
+                from src.util.debug import debug_print
 
             debug_print(f"Error resolving intent: {e}")
             # Return the original input if there's an error

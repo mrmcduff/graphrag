@@ -126,9 +126,26 @@ def process_command(session_id):
         result = game_sessions[session_id].process_command(command)
         return jsonify(result)
     except Exception as e:
-        return jsonify(
-            format_error_response(f"Error processing command: {str(e)}")
-        ), 500
+        import traceback
+        error_traceback = traceback.format_exc()
+        print(f"ERROR in process_command: {str(e)}")
+        print(f"TRACEBACK: {error_traceback}")
+        
+        # Check if we're in debug mode
+        debug_mode = os.environ.get('FLASK_DEBUG', '0') == '1'
+        
+        if debug_mode:
+            # In debug mode, return detailed error information
+            return jsonify({
+                "error": "Error processing command",
+                "message": str(e),
+                "traceback": error_traceback
+            }), 500
+        else:
+            # In production mode, return a generic error message
+            return jsonify(
+                format_error_response(f"Error processing command: {str(e)}")
+            ), 500
 
 
 @api_bp.route("/game/<session_id>/save", methods=["POST"])
