@@ -8,11 +8,11 @@ import uuid
 from typing import Dict, Any, Optional, List
 
 # Import game components
-from gamestate.game_state import GameState
-from graphrag.graph_rag_engine import GraphRAGEngine
-from combat.combat_system import CombatSystem
-from llm.llm_manager import LLMManager
-from engine.command_processor import CommandProcessor
+from src.gamestate.game_state import GameState
+from src.graphrag.graph_rag_engine import GraphRAGEngine
+from src.combat.combat_system import CombatSystem
+from src.llm.llm_manager import LLMManager
+from src.engine.command_processor import CommandProcessor
 from src.api.api_utils import get_non_interactive_llm_config
 
 

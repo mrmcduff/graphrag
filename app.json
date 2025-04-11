@@ -4,7 +4,7 @@
   "repository": "https://github.com/yourusername/graphrag",
   "keywords": ["python", "flask", "llm", "text-adventure", "knowledge-graph"],
   "addons": [
-    "heroku-postgresql:hobby-dev",
+    "heroku-postgresql",
     "bucketeer:hobbyist"
   ],
   "env": {

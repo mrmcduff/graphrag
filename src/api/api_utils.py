@@ -6,7 +6,7 @@ import os
 from typing import Dict, Any, Optional
 
 # Import API key utility
-from util.config import get_api_key, load_environment_variables
+from src.util.config import get_api_key, load_environment_variables
 
 
 def get_non_interactive_llm_config(
