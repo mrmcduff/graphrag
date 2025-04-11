@@ -7,8 +7,9 @@ import networkx as nx
 from tqdm import tqdm
 from concurrent.futures import ProcessPoolExecutor
 import matplotlib.pyplot as plt
-from typing import List, Dict, Tuple, Set
+from typing import List, Dict, Tuple, Set, Any, Optional
 import time
+import logging
 
 
 # Step 1: Read text from Word documents
@@ -404,6 +405,8 @@ def main(
     chunk_size: int = 512,
     overlap: int = 50,
     output_name: str = None,
+    process_quests: bool = True,
+    use_llm: bool = True,
 ):
     """
     Run the complete pipeline from document processing to game element extraction.
@@ -482,6 +485,12 @@ def main(
     print(f"- {len(game_elements['actions'])} actions")
     print(f"- {len(game_elements['character_relations'])} character relationships")
 
+    # Process quest documents if enabled
+    if process_quests:
+        # Extract world name from the output directory
+        current_world_name = os.path.basename(world_output_dir)
+        process_quest_documents(documents_dir, output_dir, current_world_name, use_llm)
+
     print(f"\nAll results saved to {world_output_dir}/")
 
     return world_output_dir
@@ -521,6 +530,320 @@ def list_document_folders(base_dir="data/documents"):
         print("-" * 80)
 
 
+def process_quest_documents(
+    documents_dir: str,
+    output_dir: str,
+    world_name: str,
+    use_llm: bool = True,
+    debug_mode: bool = True,
+) -> None:
+    """
+    Process quest documents in a directory.
+
+    Args:
+        documents_dir: Directory containing documents
+        output_dir: Directory to save output files
+        world_name: Name of the world
+        use_llm: Whether to use an LLM for quest parsing
+        debug_mode: Whether to enable debug mode for quest parsing
+    """
+    try:
+        # Import here to avoid circular imports
+        import sys
+        import os
+        import logging
+        import json
+
+        logger = logging.getLogger(__name__)
+        logger.info(f"Current working directory: {os.getcwd()}")
+        logger.info(f"Python path: {sys.path}")
+
+        try:
+            # Try importing directly (when script is run directly)
+            logger.info("Attempting direct import of DocumentQuestProcessor")
+            from document_quest_processor import DocumentQuestProcessor
+
+            logger.info("Direct import successful")
+        except ImportError as e:
+            logger.warning(f"Direct import failed: {e}")
+            # If that fails, try importing as a module
+            try:
+                logger.info("Attempting module import of DocumentQuestProcessor")
+                from src.document_quest_processor import DocumentQuestProcessor
+
+                logger.info("Module import successful")
+            except ImportError as e:
+                logger.warning(f"Module import failed: {e}")
+                # If both fail, try a relative import
+                try:
+                    logger.info("Attempting relative import of DocumentQuestProcessor")
+                    from .document_quest_processor import DocumentQuestProcessor
+
+                    logger.info("Relative import successful")
+                except ImportError as e:
+                    logger.error(f"All import attempts failed: {e}")
+                    # Check if the file exists
+                    quest_processor_path = os.path.join(
+                        os.path.dirname(__file__), "document_quest_processor.py"
+                    )
+                    if os.path.exists(quest_processor_path):
+                        logger.info(f"File exists at {quest_processor_path}")
+                    else:
+                        logger.error(f"File does not exist at {quest_processor_path}")
+                    # If all fail, raise the error to be caught by the outer try/except
+                    raise ImportError("Could not import DocumentQuestProcessor")
+
+        # Find quest documents (files ending with quest.docx, case insensitive)
+        quest_docs = []
+        for filename in os.listdir(documents_dir):
+            if filename.lower().endswith("quest.docx"):
+                quest_docs.append(os.path.join(documents_dir, filename))
+
+        if not quest_docs:
+            print("No quest documents found.")
+            return
+
+        print(f"\nFound {len(quest_docs)} quest document(s). Processing...")
+        for doc in quest_docs:
+            print(f"  - {os.path.basename(doc)}")
+
+        # Select LLM client if requested
+        llm_client = None
+        if use_llm:
+            try:
+                from llm_clients import select_llm_client
+
+                llm_client = select_llm_client(interactive=True, debug_mode=debug_mode)
+                print(f"Using {llm_client.name} for quest parsing")
+            except ImportError:
+                print(
+                    "LLM client module not available. Using rule-based quest parsing."
+                )
+                from llm_clients import RuleBasedClient
+
+                llm_client = RuleBasedClient(debug_mode=debug_mode)
+            except Exception as e:
+                print(
+                    f"Error selecting LLM client: {e}. Using rule-based quest parsing."
+                )
+                from llm_clients import RuleBasedClient
+
+                llm_client = RuleBasedClient(debug_mode=debug_mode)
+        else:
+            # Use rule-based client with debug mode
+            from llm_clients import RuleBasedClient
+
+            llm_client = RuleBasedClient(debug_mode=debug_mode)
+            print("Using rule-based quest parsing (no LLM)")
+
+        # Create a temporary directory for quest documents
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Copy quest documents to temp directory
+            import shutil
+
+            for doc in quest_docs:
+                shutil.copy2(doc, temp_dir)
+
+            # Process quest documents
+            processor = DocumentQuestProcessor(llm_client)
+            quests, df_quests = processor.process_documents_for_quests(
+                temp_dir, output_dir, world_name
+            )
+
+            # Output quests as JSON for debugging
+            if debug_mode and quests:
+                debug_output_dir = os.path.join(output_dir, "debug")
+                os.makedirs(debug_output_dir, exist_ok=True)
+                debug_file = os.path.join(
+                    debug_output_dir, f"{world_name}_quests_debug.json"
+                )
+
+                # Convert Quest objects to dictionaries for JSON serialization
+                quest_dicts = []
+                for quest in quests:
+                    try:
+                        # If it's already a dict, use it directly
+                        if isinstance(quest, dict):
+                            quest_dicts.append(quest)
+                        # Otherwise, convert Quest object to dict
+                        else:
+                            quest_dict = {
+                                "quest_id": quest.quest_id,
+                                "title": quest.title,
+                                "description": quest.description,
+                                "quest_type": str(quest.quest_type),
+                                "giver": quest.giver
+                                if hasattr(quest, "giver")
+                                else None,
+                                "reward": quest.reward
+                                if hasattr(quest, "reward")
+                                else None,
+                            }
+
+                            # Add type-specific attributes
+                            if hasattr(quest, "target_location"):
+                                quest_dict["target_location"] = quest.target_location
+                            if hasattr(quest, "item_to_fetch"):
+                                quest_dict["item_to_fetch"] = quest.item_to_fetch
+                            if hasattr(quest, "recipient"):
+                                quest_dict["recipient"] = quest.recipient
+                            if hasattr(quest, "target_enemy"):
+                                quest_dict["target_enemy"] = quest.target_enemy
+                            if hasattr(quest, "information"):
+                                quest_dict["information"] = quest.information
+                            if hasattr(quest, "source"):
+                                quest_dict["source"] = quest.source
+                            if hasattr(quest, "target"):
+                                quest_dict["target"] = quest.target
+                            if hasattr(quest, "difficulty"):
+                                quest_dict["difficulty"] = quest.difficulty
+                            if hasattr(quest, "time_limit"):
+                                quest_dict["time_limit"] = quest.time_limit
+
+                            # Handle success and failure consequences
+                            if (
+                                hasattr(quest, "success_consequences")
+                                and quest.success_consequences
+                            ):
+                                success_consequences = []
+                                for consequence in quest.success_consequences:
+                                    success_consequences.append(
+                                        {
+                                            "consequence_type": consequence.consequence_type,
+                                            "target": consequence.target,
+                                            "parameters": consequence.parameters,
+                                        }
+                                    )
+                                quest_dict["success_consequences"] = (
+                                    success_consequences
+                                )
+
+                            if (
+                                hasattr(quest, "failure_consequences")
+                                and quest.failure_consequences
+                            ):
+                                failure_consequences = []
+                                for consequence in quest.failure_consequences:
+                                    failure_consequences.append(
+                                        {
+                                            "consequence_type": consequence.consequence_type,
+                                            "target": consequence.target,
+                                            "parameters": consequence.parameters,
+                                        }
+                                    )
+                                quest_dict["failure_consequences"] = (
+                                    failure_consequences
+                                )
+
+                            # Add notes if available
+                            if hasattr(quest, "notes") and quest.notes:
+                                quest_dict["notes"] = quest.notes
+
+                            quest_dicts.append(quest_dict)
+                    except Exception as e:
+                        logger.error(f"Error converting quest to dict: {e}")
+
+                # Save the quest dictionaries as JSON
+                with open(debug_file, "w") as f:
+                    json.dump(quest_dicts, f, indent=2)
+                print(f"Saved debug quest data to {debug_file}")
+
+            print(f"Extracted {len(quests)} quests from documents")
+            if len(quests) > 0:
+                for quest in quests:
+                    if isinstance(quest, dict):
+                        title = quest.get("title", "Unnamed quest")
+                        quest_type = quest.get("quest_type", "Unknown type")
+                    else:
+                        title = (
+                            quest.title if hasattr(quest, "title") else "Unnamed quest"
+                        )
+                        quest_type = (
+                            str(quest.quest_type)
+                            if hasattr(quest, "quest_type")
+                            else "Unknown type"
+                        )
+                    print(f"  - {title} ({quest_type})")
+            else:
+                print("No quests were extracted. Check the quest document format.")
+
+    except ImportError:
+        print("Quest processing module not available. Skipping quest processing.")
+    except Exception as e:
+        print(f"Error processing quest documents: {e}")
+
+
+def print_help_message():
+    """
+    Print a detailed help message explaining how to use the document processor.
+    """
+    help_text = """
+=== GraphRAG Document Processor Help ===
+
+The document processor is used to extract game elements from Word documents and create a world for the GraphRAG text adventure game.
+
+Available Commands:
+  list                    List available document folders in data/documents/
+  process                 Process documents into a world
+  help                    Show this help message
+
+Process Command Usage:
+  python document_processor.py process --folder <world_name>
+
+Example:
+  python document_processor.py process --folder fantasy_world
+
+This will:
+  1. Process all .docx files in data/documents/fantasy_world/
+  2. Extract locations, characters, items, and relationships
+  3. Automatically process any files ending with 'quest.docx' to extract quests
+  4. Save all data to data/output/fantasy_world/
+
+Options:
+  --folder <name>         Name of the document folder to process (subfolder of data/documents)
+  --documents_dir <path>  Alternative: Full path to directory containing Word documents
+  --output_dir <path>     Directory to save output files (default: data/output)
+  --output_name <name>    Custom name for the output world directory
+  --chunk_size <int>      Maximum chunk size in tokens (default: 512)
+  --overlap <int>         Overlap between chunks in tokens (default: 50)
+  --skip_quests           Skip processing quest documents
+  --no-llm                Disable LLM for quest parsing (use rule-based parsing)
+
+Quest Documents:
+  Any document whose filename ends with 'quest.docx' (case insensitive) will be
+  automatically processed to extract quest information. Quests will be integrated
+  into the world knowledge graph and saved to quests.json in the output directory.
+
+  By default, the processor will prompt you to select an LLM for quest parsing.
+  Available options may include:
+  - Rule-Based (No LLM): Simple pattern matching, always available
+  - Local LLM: If you have a local model installed in the models/llm directory
+  - OpenAI GPT-3.5: If you have an OpenAI API key set
+
+Examples:
+  # List available document folders
+  python document_processor.py list
+
+  # Process a specific folder
+  python document_processor.py process --folder fantasy_world
+
+  # Process with custom output name
+  python document_processor.py process --folder fantasy_world --output_name my_fantasy_world
+
+  # Skip quest processing
+  python document_processor.py process --folder fantasy_world --skip_quests
+
+  # Use rule-based quest parsing (no LLM)
+  python document_processor.py process --folder fantasy_world --no-llm
+
+  # Use a custom documents directory
+  python document_processor.py process --documents_dir /path/to/my/documents
+"""
+    print(help_text)
+
+
 if __name__ == "__main__":
     import argparse
 
@@ -533,6 +856,9 @@ if __name__ == "__main__":
 
     # Create the 'list' command
     list_parser = subparsers.add_parser("list", help="List available document folders")
+
+    # Create the 'help' command
+    help_parser = subparsers.add_parser("help", help="Show detailed help information")
 
     # Create the 'process' command
     process_parser = subparsers.add_parser(
@@ -557,12 +883,22 @@ if __name__ == "__main__":
     process_parser.add_argument(
         "--output_name", help="Optional name for the output world directory"
     )
+    process_parser.add_argument(
+        "--skip_quests", action="store_true", help="Skip processing quest documents"
+    )
+    process_parser.add_argument(
+        "--no-llm",
+        action="store_true",
+        help="Disable LLM for quest parsing (use rule-based parsing)",
+    )
 
     args = parser.parse_args()
 
     # Handle commands
     if args.command == "list":
         list_document_folders()
+    elif args.command == "help":
+        print_help_message()
     elif args.command == "process":
         # Determine the documents directory
         documents_dir = args.documents_dir
@@ -571,6 +907,8 @@ if __name__ == "__main__":
 
         if not documents_dir:
             print("Error: You must specify either --documents_dir or --folder")
+            import sys
+
             sys.exit(1)
 
         # Process the documents
@@ -580,7 +918,12 @@ if __name__ == "__main__":
             args.chunk_size,
             args.overlap,
             args.output_name,
+            not args.skip_quests,  # Process quests unless skip_quests is True
+            not getattr(args, "no_llm", False),  # Use LLM unless no-llm is True
         )
     else:
         # If no command is provided, show help
+        print(
+            "\nUse 'python document_processor.py help' for detailed usage instructions."
+        )
         parser.print_help()

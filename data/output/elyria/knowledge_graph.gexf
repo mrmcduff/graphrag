@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='utf-8'?>
 <gexf xmlns="http://www.gexf.net/1.2draft" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.gexf.net/1.2draft http://www.gexf.net/1.2draft/gexf.xsd" version="1.2">
-  <meta lastmodifieddate="2025-04-10">
+  <meta lastmodifieddate="2025-04-11">
     <creator>NetworkX 3.4.2</creator>
   </meta>
   <graph defaultedgetype="undirected" mode="static" name="">
@@ -66,6 +66,26 @@
           <attvalue for="0" value="PERSON" />
         </attvalues>
       </node>
+      <node id="mount_dorn" label="Mount Dorn">
+        <attvalues>
+          <attvalue for="0" value="LOC" />
+        </attvalues>
+      </node>
+      <node id="talyss" label="Talyss">
+        <attvalues>
+          <attvalue for="0" value="ORG" />
+        </attvalues>
+      </node>
+      <node id="50" label="50">
+        <attvalues>
+          <attvalue for="0" value="CARDINAL" />
+        </attvalues>
+      </node>
+      <node id="the_next_40" label="the next 40">
+        <attvalues>
+          <attvalue for="0" value="DATE" />
+        </attvalues>
+      </node>
       <node id="korran_tidebreaker" label="Korran Tidebreaker">
         <attvalues>
           <attvalue for="0" value="PERSON" />
@@ -82,11 +102,6 @@
         </attvalues>
       </node>
       <node id="lyssara_abyssglow" label="Lyssara Abyssglow">
-        <attvalues>
-          <attvalue for="0" value="PERSON" />
-        </attvalues>
-      </node>
-      <node id="talyss" label="Talyss">
         <attvalues>
           <attvalue for="0" value="PERSON" />
         </attvalues>

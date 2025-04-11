@@ -9,14 +9,17 @@ deepkin,Deepkin,PERSON,890,897,The_Abyssal_Realm.docx,0
 thalric_ironbeard,Thalric Ironbeard,PERSON,0,17,Thalric_Ironbeard.docx,0
 decades,decades,DATE,92,99,Thalric_Ironbeard.docx,0
 thalric,Thalric,ORG,194,201,Thalric_Ironbeard.docx,0
-talyss_wavecaller,Talyss Wavecaller,PERSON,0,17,Talyss_Wavecaller.docx,0
+talyss_wavecaller,Talyss Wavecaller,PERSON,30,47,FindingMtDorn_quest.docx,0
+mount_dorn,Mount Dorn,LOC,87,97,FindingMtDorn_quest.docx,0
+talyss,Talyss,ORG,124,130,FindingMtDorn_quest.docx,0
+50,50,CARDINAL,152,154,FindingMtDorn_quest.docx,0
+the_next_40,the next 40,DATE,361,372,FindingMtDorn_quest.docx,0
 korran_tidebreaker,Korran Tidebreaker,PERSON,588,606,Talyss_Wavecaller.docx,0
 "korrik_deepdelve
 korrik","Korrik Deepdelve
 Korrik",PERSON,0,23,Korrik_Deepdelve.docx,0
 the_ironroot_range,the Ironroot Range,LOC,108,126,Korrik_Deepdelve.docx,0
 lyssara_abyssglow,Lyssara Abyssglow,PERSON,0,17,Lyssara_Abyssglow.docx,0
-talyss,Talyss,PERSON,492,498,Lyssara_Abyssglow.docx,0
 korran,Korran,GPE,565,571,Lyssara_Abyssglow.docx,0
 the_brief_summer_months,the brief summer months,DATE,534,557,The_Ironroot_Range.docx,0
 mist,Mist,PERSON,559,563,The_Ironroot_Range.docx,0
