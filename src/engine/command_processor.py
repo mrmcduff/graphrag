@@ -762,12 +762,10 @@ Look: look, examine [object/person]
 Interaction: talk [character], take [item], use [item]
 Inventory: inventory, equip [item]
 Combat: attack [enemy], stats, block, dodge, flee
-System: save [filename], load [filename], help, map, quit
+System: save [filename], load [filename], help, quit
 
 Special Commands:
 ----------------
-map - Show the world map
-local map - Show detailed map of current location
 quit - Exit the game
             """
 
@@ -778,34 +776,7 @@ quit - Exit the game
                 "help_displayed": True,
             }
 
-        elif action == "map":
-            # Show map
-            # Import debug_print using the enhanced import helper
-            debug_print = import_from("util.debug", "debug_print")
-
-            debug_print("DEBUG: Map command detected in command processor")
-            if target and target.lower() == "local":
-                result = {
-                    "success": True,
-                    "message": f"Displaying local map of {self.game_state.player_location}...",
-                    "action_type": CommandType.SYSTEM.value,
-                    "map_type": "local",
-                    "location": self.game_state.player_location,
-                    "display_map": True,
-                }
-                debug_print(f"DEBUG: Returning local map result: {result}")
-                return result
-            else:
-                result = {
-                    "success": True,
-                    "message": "Displaying world map...",
-                    "action_type": CommandType.SYSTEM.value,
-                    "map_type": "world",
-                    "locations": list(self.game_state.visited_locations),
-                    "display_map": True,
-                }
-                debug_print(f"DEBUG: Returning world map result: {result}")
-                return result
+        # Map command removed - visualization library dependencies were removed
 
         elif action == "llm" and target == "info":
             # Display LLM information
