@@ -32,8 +32,24 @@ def create_app(config: Dict[str, Any] = None) -> Flask:
     """
     app = Flask(__name__)
 
-    # Enable CORS for all routes
-    CORS(app)
+    # Configure CORS with specific allowed origins
+    cors_origins = [
+        # Heroku app itself
+        'https://graphrag-api-a77f8919e96d.herokuapp.com',
+        # Local development server
+        'http://localhost:5000',
+        'http://127.0.0.1:5000',
+        # Add your new web application origin here
+        'http://localhost:3000',  # Common React/Next.js dev server
+        # 'https://your-production-app.com',  # Uncomment and replace with your production URL
+    ]
+    
+    # You can also set this via environment variable
+    additional_origins = os.environ.get('ALLOWED_ORIGINS', '')
+    if additional_origins:
+        cors_origins.extend(additional_origins.split(','))
+    
+    CORS(app, resources={r"/api/*": {"origins": cors_origins}})
 
     # Create log directory if it doesn't exist
     log_dir = os.path.join(os.path.dirname(__file__), "..", "..", "logs")
