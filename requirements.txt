@@ -25,13 +25,8 @@ boto3>=1.28.0
 # Redis for session persistence
 redis>=5.0.0
 
-# Cloud LLM dependencies (removing local LLM support for Heroku deployment)
+# Cloud LLM dependencies (removed local LLM support for Heroku deployment)
 huggingface_hub>=0.19.0
-# Using CPU-only PyTorch to reduce slug size
-torch==2.0.0+cpu
-torchvision==0.15.1+cpu
-torchaudio==2.0.1+cpu
---extra-index-url https://download.pytorch.org/whl/cpu
 transformers>=4.35.0
 accelerate>=0.25.0
 anthropic>=0.49.0

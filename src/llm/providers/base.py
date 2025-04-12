@@ -5,8 +5,7 @@ from typing import Dict, List, Any
 class LLMType(Enum):
     """Enum for types of LLM backends."""
 
-    LOCAL_API = "local_api"  # Local server API (e.g., llama.cpp server)
-    LOCAL_DIRECT = "local_direct"  # Direct model loading (e.g., llama-cpp-python)
+    # Local LLM options removed to reduce deployment size
     OPENAI = "openai"  # OpenAI API
     ANTHROPIC = "anthropic"  # Anthropic API
     GOOGLE = "google"  # Google API (Gemini)

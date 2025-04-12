@@ -222,21 +222,19 @@ class GameLoop:
     def _setup_llm_provider(self) -> None:
         """Set up the LLM provider based on user choice."""
         print("\nSelect an LLM provider:")
-        print("1. Local API (e.g., llama.cpp server)")
-        print("2. Local direct model loading")
-        print("3. OpenAI")
-        print("4. Anthropic Claude")
-        print("5. Google Gemini")
-        print("6. Rule-based (no LLM)")
+        print("1. OpenAI")
+        print("2. Anthropic Claude")
+        print("3. Google Gemini")
+        print("4. Rule-based (no LLM)")
 
-        choice = input("Enter your choice (1-6): ")
+        choice = input("Enter your choice (1-4): ")
         try:
             choice = int(choice)
-            if choice < 1 or choice > 6:
+            if choice < 1 or choice > 4:
                 raise ValueError("Invalid choice")
         except ValueError:
             print("Invalid choice, defaulting to rule-based provider")
-            choice = 6
+            choice = 4
 
         # Set up the chosen provider
         self.command_processor.setup_llm_provider(choice)

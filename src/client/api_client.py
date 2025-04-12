@@ -230,62 +230,51 @@ def interactive_mode(client: GraphRAGApiClient) -> None:
     try:
         # Let the user choose the LLM provider
         print("Choose an LLM provider:")
-        print("1. Local API (e.g., llama.cpp server)")
-        print("2. Local direct model loading")
-        print("3. OpenAI")
-        print("4. Anthropic Claude (default)")
-        print("5. Google Gemini")
-        print("6. Rule-based (no LLM)")
+        print("1. OpenAI")
+        print("2. Anthropic Claude (default)")
+        print("3. Google Gemini")
+        print("4. Rule-based (no LLM)")
 
-        provider_choice = input("Enter your choice (1-6) [4]: ").strip()
+        provider_choice = input("Enter your choice (1-4) [2]: ").strip()
 
-        # Default to Anthropic (4) if no input
+        # Default to Anthropic (2) if no input
         if not provider_choice:
-            provider_id = 4
+            provider_id = 2
         else:
             try:
                 provider_id = int(provider_choice)
-                if provider_id < 1 or provider_id > 6:
-                    print("Invalid choice. Using default (4. Anthropic Claude).")
-                    provider_id = 4
+                if provider_id < 1 or provider_id > 4:
+                    print("Invalid choice. Using default (2. Anthropic Claude).")
+                    provider_id = 2
             except ValueError:
-                print("Invalid input. Using default (4. Anthropic Claude).")
-                provider_id = 4
+                print("Invalid input. Using default (2. Anthropic Claude).")
+                provider_id = 2
 
         # Get additional configuration based on provider
         provider_config = {}
 
         # For providers that need a model name
-        if provider_id == 3:  # OpenAI
+        if provider_id == 1:  # OpenAI
             default_model = "gpt-3.5-turbo"
             model = (
                 input(f"Enter model name [default: {default_model}]: ").strip()
                 or default_model
             )
             provider_config["model"] = model
-        elif provider_id == 4:  # Anthropic
+        elif provider_id == 2:  # Anthropic
             default_model = "claude-3-haiku-20240307"
             model = (
                 input(f"Enter model name [default: {default_model}]: ").strip()
                 or default_model
             )
             provider_config["model"] = model
-        elif provider_id == 5:  # Google
+        elif provider_id == 3:  # Google
             default_model = "gemini-1.5-flash"
             model = (
                 input(f"Enter model name [default: {default_model}]: ").strip()
                 or default_model
             )
             provider_config["model"] = model
-        elif provider_id == 1:  # Local API
-            host = input("Enter host [default: localhost]: ").strip() or "localhost"
-            port = input("Enter port [default: 8000]: ").strip() or "8000"
-            provider_config["host"] = host
-            provider_config["port"] = port
-        elif provider_id == 2:  # Local direct
-            model_path = input("Enter model path: ").strip()
-            if model_path:
-                provider_config["model_path"] = model_path
 
         # Create a new game with the chosen provider and configuration
         print(f"Creating a new game session with provider {provider_id}...")

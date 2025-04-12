@@ -29,21 +29,7 @@ class LLMManager:
             Instantiated LLM provider
         """
         # Import the appropriate provider class based on type
-        if provider_type.value == "local_api":
-            from .providers.local_api import LocalAPIProvider
-
-            return LocalAPIProvider(
-                host=kwargs.get("host", "localhost"),
-                port=kwargs.get("port", 8000),
-                api_path=kwargs.get("api_path", "/api/generate"),
-            )
-
-        elif provider_type.value == "local_direct":
-            from .providers.local_direct import LocalDirectProvider
-
-            return LocalDirectProvider(model_path=kwargs.get("model_path", ""))
-
-        elif provider_type.value == "openai":
+        if provider_type.value == "openai":
             from .providers.openai import OpenAIProvider
 
             return OpenAIProvider(

@@ -44,36 +44,14 @@ class TextAdventureGame:
         """Configure LLM options interactively."""
         print("\n=== LLM Configuration ===")
         print("Select LLM provider:")
-        print("1. Local API (e.g., llama.cpp server)")
-        print("2. Local direct model loading")
-        print("3. OpenAI")
-        print("4. Anthropic Claude")
-        print("5. Google Gemini")
-        print("6. Rule-based (no LLM)")
+        print("1. OpenAI")
+        print("2. Anthropic Claude")
+        print("3. Google Gemini")
+        print("4. Rule-based (no LLM)")
 
-        choice = input("Enter choice (1-6): ").strip()
+        choice = input("Enter choice (1-4): ").strip()
 
         if choice == "1":
-            host = input("Enter host (default: localhost): ").strip() or "localhost"
-            port = input("Enter port (default: 8000): ").strip() or "8000"
-
-            provider = LocalAPIProvider(host=host, port=int(port))
-            self.llm_manager.add_provider(LLMType.LOCAL_API, provider)
-            self.llm_manager.set_active_provider(LLMType.LOCAL_API)
-
-        elif choice == "2":
-            model_path = input("Enter path to model file: ").strip()
-            if os.path.exists(model_path):
-                provider = LocalDirectProvider(model_path=model_path)
-                self.llm_manager.add_provider(LLMType.LOCAL_DIRECT, provider)
-                self.llm_manager.set_active_provider(LLMType.LOCAL_DIRECT)
-            else:
-                print(f"Model file not found: {model_path}")
-                print("Using rule-based fallback instead")
-                self.llm_manager.add_provider(LLMType.RULE_BASED, RuleBasedProvider())
-                self.llm_manager.set_active_provider(LLMType.RULE_BASED)
-
-        elif choice == "3":
             api_key = input("Enter OpenAI API key: ").strip()
             model = (
                 input("Enter model name (default: gpt-3.5-turbo): ").strip()
@@ -89,7 +67,7 @@ class TextAdventureGame:
                 self.llm_manager.add_provider(LLMType.RULE_BASED, RuleBasedProvider())
                 self.llm_manager.set_active_provider(LLMType.RULE_BASED)
 
-        elif choice == "4":
+        elif choice == "2":
             api_key = input("Enter Anthropic API key: ").strip()
             model = (
                 input("Enter model name (default: claude-3-haiku-20240307): ").strip()
@@ -105,7 +83,7 @@ class TextAdventureGame:
                 self.llm_manager.add_provider(LLMType.RULE_BASED, RuleBasedProvider())
                 self.llm_manager.set_active_provider(LLMType.RULE_BASED)
 
-        elif choice == "5":
+        elif choice == "3":
             api_key = input("Enter Google API key: ").strip()
             model = (
                 input("Enter model name (default: gemini-1.5-flash): ").strip()
@@ -121,7 +99,7 @@ class TextAdventureGame:
                 self.llm_manager.add_provider(LLMType.RULE_BASED, RuleBasedProvider())
                 self.llm_manager.set_active_provider(LLMType.RULE_BASED)
 
-        elif choice == "6":
+        elif choice == "4":
             provider = RuleBasedProvider()
             self.llm_manager.add_provider(LLMType.RULE_BASED, provider)
             self.llm_manager.set_active_provider(LLMType.RULE_BASED)

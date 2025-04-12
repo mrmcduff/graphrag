@@ -69,7 +69,7 @@ class CommandProcessor:
         Set up the LLM provider based on user choice.
 
         Args:
-            choice: Integer representing the LLM provider choice (1-6)
+            choice: Integer representing the LLM provider choice (1-3)
             config: Optional dictionary with configuration parameters for the provider
             interactive: Whether to prompt for input if configuration is missing
         """
@@ -86,50 +86,6 @@ class CommandProcessor:
         load_environment_variables()
 
         if choice == 1:
-            # Local API
-            # Use the host from config if provided, otherwise use default or prompt if interactive
-            if "host" in config:
-                host = config["host"]
-            elif interactive:
-                host = input("Enter host (default: localhost): ") or "localhost"
-            else:
-                host = "localhost"
-
-            # Use the port from config if provided, otherwise use default or prompt if interactive
-            if "port" in config:
-                port_str = config["port"]
-            elif interactive:
-                port_str = input("Enter port (default: 8000): ") or "8000"
-            else:
-                port_str = "8000"
-
-            port = int(port_str) if isinstance(port_str, str) else port_str
-            self.llm_manager.add_provider(
-                LLMType.LOCAL_API,
-                self.llm_manager.create_provider(
-                    LLMType.LOCAL_API, host=host, port=port
-                ),
-            )
-            self.llm_manager.set_active_provider(LLMType.LOCAL_API)
-
-        elif choice == 2:
-            # Local direct
-            # Use the model path from config if provided, otherwise prompt for input if interactive
-            if "model_path" in config:
-                model_path = config["model_path"]
-            elif interactive:
-                model_path = input("Enter model path: ")
-            else:
-                model_path = ""  # Default empty path
-            self.llm_manager.add_provider(
-                LLMType.LOCAL_DIRECT,
-                self.llm_manager.create_provider(
-                    LLMType.LOCAL_DIRECT, model_path=model_path
-                ),
-            )
-            self.llm_manager.set_active_provider(LLMType.LOCAL_DIRECT)
-
-        elif choice == 3:
             # OpenAI
             api_key = config.get("api_key")
             if not api_key:
@@ -155,7 +111,7 @@ class CommandProcessor:
             )
             self.llm_manager.set_active_provider(LLMType.OPENAI)
 
-        elif choice == 4:
+        elif choice == 2:
             # Anthropic
             api_key = config.get("api_key")
             if not api_key:
@@ -181,7 +137,7 @@ class CommandProcessor:
             )
             self.llm_manager.set_active_provider(LLMType.ANTHROPIC)
 
-        elif choice == 5:
+        elif choice == 3:
             # Google
             api_key = config.get("api_key")
             if not api_key:
@@ -810,7 +766,6 @@ Special Commands:
 ----------------
 map - Show the world map
 local map - Show detailed map of current location
-llm local - Use the local LLM for direct interaction
 quit - Exit the game
             """
 
@@ -864,7 +819,7 @@ quit - Exit the game
 
         elif action == "llm" and target == "change":
             # Change LLM provider
-            provider_id = int(input("Enter new LLM provider (1-6): "))
+            provider_id = int(input("Enter new LLM provider (1-3): "))
             self.setup_llm_provider(provider_id, interactive=True)
             provider = self.llm_manager.active_provider
             provider_name = provider.name if provider else "None"
@@ -876,36 +831,7 @@ quit - Exit the game
                 "llm_changed": True,
             }
 
-        elif action == "llm" and target == "local":
-            # Use the local LLM directly
-            prompt = input("Enter your prompt for the local LLM: ")
 
-            try:
-                # Import the local LLM integration
-                from src.llm_integration import GraphRAGLLMIntegration
-
-                # Initialize the LLM integration
-                llm_integration = GraphRAGLLMIntegration(
-                    model_path="models/llama-3-8b-instruct.Q4_K_M.gguf", debug=True
-                )
-
-                # Process the command using the local LLM
-                response = llm_integration.process_command(
-                    prompt, self.game_state.to_dict()
-                )
-
-                return {
-                    "success": True,
-                    "message": response,
-                    "action_type": CommandType.SYSTEM.value,
-                    "llm_used": "local",
-                }
-            except Exception as e:
-                return {
-                    "success": False,
-                    "message": f"Error using local LLM: {str(e)}",
-                    "action_type": CommandType.SYSTEM.value,
-                }
 
         # Default response
         return {
