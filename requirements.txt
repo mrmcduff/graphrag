@@ -23,7 +23,7 @@ gunicorn>=21.2.0
 boto3>=1.28.0
 
 # Redis for session persistence
-redis>=5.0.0
+redis>=5.2.1
 
 # Cloud LLM dependencies (removed local LLM support for Heroku deployment)
 huggingface_hub>=0.19.0

@@ -35,26 +35,26 @@ def create_app(config: Dict[str, Any] = None) -> Flask:
     # Configure CORS with specific allowed origins
     cors_origins = [
         # Heroku app itself
-        'https://graphrag-api-a77f8919e96d.herokuapp.com',
+        "https://graphrag-api-a77f8919e96d.herokuapp.com",
         # Local development server
-        'http://localhost:5000',
-        'http://127.0.0.1:5000',
+        "http://localhost:5000",
+        "http://127.0.0.1:5000",
         # Add your new web application origin here
-        'http://localhost:3000',  # Common React/Next.js dev server
+        "http://localhost:3000",  # Common React/Next.js dev server
         # 'https://your-production-app.com',  # Uncomment and replace with your production URL
     ]
-    
+
     # You can also set this via environment variable
-    additional_origins = os.environ.get('ALLOWED_ORIGINS', '')
+    additional_origins = os.environ.get("ALLOWED_ORIGINS", "")
     if additional_origins:
-        cors_origins.extend(additional_origins.split(','))
-    
+        cors_origins.extend(additional_origins.split(","))
+
     CORS(app, resources={r"/api/*": {"origins": cors_origins}})
 
     # Create log directory if it doesn't exist
     log_dir = os.path.join(os.path.dirname(__file__), "..", "..", "logs")
     os.makedirs(log_dir, exist_ok=True)
-    
+
     # Configure logging
     logging.basicConfig(
         level=logging.INFO,
@@ -77,9 +77,11 @@ def create_app(config: Dict[str, Any] = None) -> Flask:
         app.config["SQLALCHEMY_DATABASE_URI"] = db_url
     else:
         # Local development uses SQLite
-        db_path = os.path.join(os.path.dirname(__file__), "..", "..", "data", "graphrag.db")
+        db_path = os.path.join(
+            os.path.dirname(__file__), "..", "..", "data", "graphrag.db"
+        )
         app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{db_path}"
-    
+
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
     # Configure JWT
@@ -99,24 +101,27 @@ def create_app(config: Dict[str, Any] = None) -> Flask:
     app.register_blueprint(user_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(world_bp)
-    
+
     # Initialize Redis session persistence
     with app.app_context():
         try:
             from .redis_session import get_redis_client
+
             redis_client = get_redis_client()
             if redis_client:
                 app.logger.info("Redis connection established for session persistence")
                 # Test Redis connection
                 redis_client.set("test_key", "test_value")
                 test_result = redis_client.get("test_key")
-                if test_result and test_result.decode('utf-8') == "test_value":
+                if test_result and test_result.decode("utf-8") == "test_value":
                     app.logger.info("Redis connection test successful")
                     redis_client.delete("test_key")
                 else:
                     app.logger.warning("Redis connection test failed")
             else:
-                app.logger.warning("Redis client not available, sessions will not persist across dyno restarts")
+                app.logger.warning(
+                    "Redis client not available, sessions will not persist across dyno restarts"
+                )
         except Exception as e:
             app.logger.error(f"Failed to initialize Redis: {str(e)}")
 

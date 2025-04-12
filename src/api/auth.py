@@ -5,7 +5,12 @@ This module provides authentication middleware and utilities for the API.
 """
 
 from flask import request, jsonify, current_app, g
-from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, verify_jwt_in_request
+from flask_jwt_extended import (
+    JWTManager,
+    create_access_token,
+    get_jwt_identity,
+    verify_jwt_in_request,
+)
 from functools import wraps
 from datetime import datetime, timedelta
 import re
@@ -21,23 +26,23 @@ jwt = JWTManager()
 def get_current_user() -> Optional[User]:
     """
     Get the current authenticated user from the JWT token.
-    
+
     Returns:
         User object if authenticated, None otherwise
     """
     try:
         # Verify JWT token is present and valid
         verify_jwt_in_request()
-        
+
         # Get user identity from token
         user_id = get_jwt_identity()
-        
+
         # Retrieve user from database
         if user_id:
             return User.query.get(user_id)
     except Exception as e:
         current_app.logger.error(f"Error getting current user: {str(e)}")
-    
+
     return None
 
 

@@ -35,13 +35,13 @@ def load_environment_variables(env_file: str = ".env") -> bool:
     """
     # Check if we're running on Heroku or another cloud platform
     # by looking for common environment variables set by these platforms
-    is_heroku = 'DYNO' in os.environ or 'PORT' in os.environ
-    
+    is_heroku = "DYNO" in os.environ or "PORT" in os.environ
+
     # If we're on Heroku, environment variables are already set in the platform
     if is_heroku:
         print("Running on Heroku, using platform environment variables")
         return True
-        
+
     # For local development, try to load from .env file
     if not DOTENV_AVAILABLE:
         print("Warning: python-dotenv not available, cannot load .env file")
@@ -56,7 +56,9 @@ def load_environment_variables(env_file: str = ".env") -> bool:
             print(f"Error loading environment variables: {e}")
             return False
     else:
-        print(f"Environment file {env_file} not found. Using existing environment variables.")
+        print(
+            f"Environment file {env_file} not found. Using existing environment variables."
+        )
         # Even if .env file is not found, we might have environment variables set another way
         return True
 

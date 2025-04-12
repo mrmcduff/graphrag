@@ -76,11 +76,13 @@ class CommandProcessor:
         # Initialize config if not provided
         if config is None:
             config = {}
-            
+
         # Import required modules using the import helper
-        LLMType = import_from('llm.providers.base', 'LLMType')
-        get_api_key = import_from('util.config', 'get_api_key')
-        load_environment_variables = import_from('util.config', 'load_environment_variables')
+        LLMType = import_from("llm.providers.base", "LLMType")
+        get_api_key = import_from("util.config", "get_api_key")
+        load_environment_variables = import_from(
+            "util.config", "load_environment_variables"
+        )
 
         # Load environment variables from .env file
         load_environment_variables()
@@ -181,7 +183,7 @@ class CommandProcessor:
             Dictionary with the results of the command
         """
         # Import debug_print using the import helper
-        debug_print = import_from('util.debug', 'debug_print')
+        debug_print = import_from("util.debug", "debug_print")
 
         debug_print(f"DEBUG: Processing command: '{command}'")
 
@@ -203,7 +205,7 @@ class CommandProcessor:
         # Check if we're in combat
         if self.combat_system.active_combat:
             # Import debug_print using the import helper
-            debug_print = import_from('util.debug', 'debug_print')
+            debug_print = import_from("util.debug", "debug_print")
 
             debug_print("DEBUG: In combat mode, processing as combat command")
             return self._process_combat_command(command)
@@ -779,7 +781,7 @@ quit - Exit the game
         elif action == "map":
             # Show map
             # Import debug_print using the enhanced import helper
-            debug_print = import_from('util.debug', 'debug_print')
+            debug_print = import_from("util.debug", "debug_print")
 
             debug_print("DEBUG: Map command detected in command processor")
             if target and target.lower() == "local":
@@ -830,8 +832,6 @@ quit - Exit the game
                 "action_type": CommandType.SYSTEM.value,
                 "llm_changed": True,
             }
-
-
 
         # Default response
         return {

@@ -13,13 +13,13 @@ from typing import Any, Dict, List, Callable
 def import_module(module_path: str) -> Any:
     """
     Import a module using either local or Heroku path format.
-    
+
     Args:
         module_path: The module path to import (e.g., 'util.debug')
-        
+
     Returns:
         The imported module
-        
+
     Raises:
         ImportError: If the module cannot be imported in either format
     """
@@ -41,14 +41,14 @@ def import_module(module_path: str) -> Any:
 def import_from(module_path: str, name: str) -> Any:
     """
     Import a specific object from a module using either local or Heroku path format.
-    
+
     Args:
         module_path: The module path to import from (e.g., 'util.debug')
         name: The name of the object to import (e.g., 'debug_print')
-        
+
     Returns:
         The imported object
-        
+
     Raises:
         ImportError: If the object cannot be imported in either format
     """
@@ -72,30 +72,32 @@ def import_from(module_path: str, name: str) -> Any:
 # Common imports used throughout the application
 def get_debug_print() -> Callable:
     """Get the debug_print function from util.debug"""
-    return import_from('util.debug', 'debug_print')
+    return import_from("util.debug", "debug_print")
 
 
 def get_llm_type() -> Any:
     """Get the LLMType enum from llm.providers.base"""
-    return import_from('llm.providers.base', 'LLMType')
+    return import_from("llm.providers.base", "LLMType")
 
 
 def get_config_functions() -> Dict[str, Callable]:
     """Get common configuration functions"""
     return {
-        'get_api_key': import_from('util.config', 'get_api_key'),
-        'load_environment_variables': import_from('util.config', 'load_environment_variables')
+        "get_api_key": import_from("util.config", "get_api_key"),
+        "load_environment_variables": import_from(
+            "util.config", "load_environment_variables"
+        ),
     }
 
 
 def is_heroku_environment() -> bool:
     """
     Detect if the application is running in a Heroku environment.
-    
+
     Returns:
         True if running on Heroku, False otherwise
     """
-    return 'DYNO' in sys.modules or 'PORT' in sys.modules
+    return "DYNO" in sys.modules or "PORT" in sys.modules
 
 
 def patch_imports() -> None:

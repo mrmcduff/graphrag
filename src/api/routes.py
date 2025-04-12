@@ -72,7 +72,7 @@ def new_game():
         # Create new game session with provider configuration
         session = GameSession(game_data_dir, config, provider_id, provider_config)
         game_sessions[session.session_id] = session
-        
+
         # Save to Redis for persistence
         try:
             if save_session(session):
@@ -86,20 +86,23 @@ def new_game():
         return jsonify(session.get_initial_state())
     except Exception as e:
         import traceback
+
         error_traceback = traceback.format_exc()
         print(f"ERROR in new_game: {str(e)}")
         print(f"TRACEBACK: {error_traceback}")
-        
+
         # Check if we're in debug mode
-        debug_mode = os.environ.get('FLASK_DEBUG', '0') == '1'
-        
+        debug_mode = os.environ.get("FLASK_DEBUG", "0") == "1"
+
         if debug_mode:
             # In debug mode, return detailed error information
-            return jsonify({
-                "error": "Error creating game session",
-                "message": str(e),
-                "traceback": error_traceback
-            }), 500
+            return jsonify(
+                {
+                    "error": "Error creating game session",
+                    "message": str(e),
+                    "traceback": error_traceback,
+                }
+            ), 500
         else:
             # In production mode, return a generic error message
             return jsonify(
@@ -125,7 +128,7 @@ def process_command(session_id):
     # Validate session ID format
     if not validate_session_id(session_id):
         return jsonify(format_error_response("Invalid session ID format", 404)), 404
-        
+
     # Check if session exists in memory cache
     if session_id not in game_sessions:
         # Try to load from Redis
@@ -154,11 +157,11 @@ def process_command(session_id):
         # Process the command
         session = game_sessions[session_id]
         result = session.process_command(command)
-        
+
         # Store last command and response for persistence
         session.last_command = command
         session.last_response = result.get("response", "")
-        
+
         # Save updated session to Redis
         try:
             if save_session(session):
@@ -167,24 +170,27 @@ def process_command(session_id):
                 logger.warning(f"Failed to update session {session_id} in Redis")
         except Exception as e:
             logger.error(f"Error updating session in Redis: {str(e)}")
-            
+
         return jsonify(result)
     except Exception as e:
         import traceback
+
         error_traceback = traceback.format_exc()
         print(f"ERROR in process_command: {str(e)}")
         print(f"TRACEBACK: {error_traceback}")
-        
+
         # Check if we're in debug mode
-        debug_mode = os.environ.get('FLASK_DEBUG', '0') == '1'
-        
+        debug_mode = os.environ.get("FLASK_DEBUG", "0") == "1"
+
         if debug_mode:
             # In debug mode, return detailed error information
-            return jsonify({
-                "error": "Error processing command",
-                "message": str(e),
-                "traceback": error_traceback
-            }), 500
+            return jsonify(
+                {
+                    "error": "Error processing command",
+                    "message": str(e),
+                    "traceback": error_traceback,
+                }
+            ), 500
         else:
             # In production mode, return a generic error message
             return jsonify(
@@ -210,7 +216,7 @@ def save_game(session_id):
     # Validate session ID format
     if not validate_session_id(session_id):
         return jsonify(format_error_response("Invalid session ID format", 404)), 404
-        
+
     # Check if session exists in memory cache
     if session_id not in game_sessions:
         # Try to load from Redis
@@ -260,7 +266,7 @@ def load_game(session_id):
     # Validate session ID format
     if not validate_session_id(session_id):
         return jsonify(format_error_response("Invalid session ID format", 404)), 404
-        
+
     # Check if session exists in memory cache
     if session_id not in game_sessions:
         # Try to load from Redis
@@ -323,7 +329,7 @@ def get_game_state(session_id):
     # Validate session ID format
     if not validate_session_id(session_id):
         return jsonify(format_error_response("Invalid session ID format", 404)), 404
-        
+
     # Check if session exists in memory cache
     if session_id not in game_sessions:
         # Try to load from Redis
@@ -383,7 +389,7 @@ def set_llm_provider(session_id):
     # Validate session ID format
     if not validate_session_id(session_id):
         return jsonify(format_error_response("Invalid session ID format", 404)), 404
-        
+
     # Check if session exists in memory cache
     if session_id not in game_sessions:
         # Try to load from Redis
@@ -444,7 +450,7 @@ def end_game_session(session_id):
     # Validate session ID format
     if not validate_session_id(session_id):
         return jsonify(format_error_response("Invalid session ID format", 404)), 404
-        
+
     # Check if session exists in memory cache
     if session_id not in game_sessions:
         # Try to load from Redis
@@ -467,7 +473,7 @@ def end_game_session(session_id):
         # Remove the session from memory cache
         if session_id in game_sessions:
             del game_sessions[session_id]
-        
+
         # Delete from Redis
         try:
             if delete_session(session_id):
@@ -476,7 +482,7 @@ def end_game_session(session_id):
                 logger.warning(f"Failed to delete session {session_id} from Redis")
         except Exception as e:
             logger.error(f"Error deleting session from Redis: {str(e)}")
-            
+
         return jsonify({"success": True, "message": f"Game session {session_id} ended"})
     except Exception as e:
         return jsonify(

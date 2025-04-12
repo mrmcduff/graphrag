@@ -30,8 +30,11 @@ class GameLoop:
             # Fall back to absolute import paths
             import sys
             import os
+
             # Add the project root to the path
-            sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+            sys.path.append(
+                os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+            )
             from src.llm.llm_manager import LLMManager
             from src.gamestate.game_state import GameState
             from src.graphrag.graph_rag_engine import GraphRAGEngine
