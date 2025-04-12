@@ -2,6 +2,22 @@
 
 This document provides a comprehensive overview of all API endpoints available in the GraphRAG Text Adventure Game system.
 
+## Heroku Deployment Optimization
+
+To optimize the application for Heroku deployment, the following changes have been made:
+
+1. **Removed Local LLM Support**: Local LLM providers have been removed to reduce the slug size. The available LLM providers are now:
+   - Provider 1: OpenAI
+   - Provider 2: Anthropic Claude
+   - Provider 3: Google Gemini
+   - Provider 4: Rule-based (fallback)
+
+2. **Removed Map Functionality**: The map visualization feature has been removed to eliminate dependencies on matplotlib and other visualization libraries.
+
+3. **Reduced Dependencies**: Heavy dependencies like PyTorch, transformers, and accelerate have been removed to keep the slug size under Heroku's limits.
+
+These optimizations ensure the API can be deployed efficiently on Heroku while maintaining all core functionality.
+
 ## Authentication
 
 Most API endpoints require authentication. Authentication is handled via JWT tokens obtained through either:
@@ -53,7 +69,7 @@ Creates a new game session with optional configuration.
   {
     "game_data_dir": "data/output",  // Optional, directory containing game data files
     "config": {},                    // Optional, configuration dictionary
-    "provider_id": 4,                // Optional, LLM provider ID (1-6, default: 4 for Anthropic)
+    "provider_id": 4,                // Optional, LLM provider ID (1-4, default: 4 for Anthropic)
     "provider_config": {}            // Optional, provider-specific configuration
   }
   ```
@@ -73,7 +89,7 @@ Creates a new game session with optional configuration.
   ```
 - **Error Response**:
   - **Code**: 400
-  - **Content**: `{"error": "Invalid provider_id. Must be an integer between 1 and 6."}`
+  - **Content**: `{"error": "Invalid provider_id. Must be an integer between 1 and 4."}`
   - **Code**: 500
   - **Content**: `{"error": "Error creating game session: [error message]"}`
 
@@ -221,7 +237,7 @@ Set the LLM provider for a game session.
 - **Request Body**:
   ```json
   {
-    "provider_id": 4,  // LLM provider ID (1-6)
+    "provider_id": 4,  // LLM provider ID (1-4)
     "provider_config": {
       "model": "claude-3-haiku-20240307"  // Optional, provider-specific configuration
     }
@@ -241,7 +257,7 @@ Set the LLM provider for a game session.
   - **Code**: 404
   - **Content**: `{"error": "Invalid session ID"}`
   - **Code**: 400
-  - **Content**: `{"error": "Invalid provider_id. Must be an integer between 1 and 6."}`
+  - **Content**: `{"error": "Invalid provider_id. Must be an integer between 1 and 4."}`
   - **Code**: 500
   - **Content**: `{"error": "Error setting LLM provider: [error message]"}`
 
