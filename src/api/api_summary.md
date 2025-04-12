@@ -4,7 +4,40 @@ This document provides a comprehensive overview of all API endpoints available i
 
 ## Authentication
 
-Most API endpoints require authentication. Authentication is handled via JWT tokens obtained through Google OAuth.
+Most API endpoints require authentication. Authentication is handled via JWT tokens obtained through either:
+
+1. **Google OAuth** - For web clients using Google Sign-In
+2. **API Key** - For programmatic access using the API key found in HEROKU_CREDENTIALS.md
+
+### API Key Authentication
+
+To authenticate using an API key:
+
+```
+POST /api/auth/login
+Content-Type: application/json
+
+{
+  "api_key": "YOUR_API_KEY_HERE"
+}
+```
+
+Response:
+```json
+{
+  "access_token": "JWT_TOKEN",
+  "user": {
+    "id": 1,
+    "email": "admin@example.com"
+  }
+}
+```
+
+Once you have the JWT token, include it in the Authorization header for all subsequent requests:
+
+```
+Authorization: Bearer JWT_TOKEN
+```
 
 ## Game Session Endpoints
 
@@ -667,3 +700,292 @@ Get information about the API.
     ]
   }
   ```
+
+## Consuming the API from a React Application
+
+### Setting Up a React Client
+
+To consume the GraphRAG API from a React application, follow these steps:
+
+1. **CORS Configuration**: Ensure your React app's origin is added to the allowed CORS origins. See the `cors_updates.md` file for instructions.
+
+2. **API Client Implementation**: Create a service class to handle API requests. Here's a sample implementation:
+
+```javascript
+// src/services/graphRagApi.js
+import axios from 'axios';
+
+const API_URL = 'https://graphrag-api-a77f8919e96d.herokuapp.com';
+
+class GraphRagApiService {
+  constructor() {
+    this.axios = axios.create({
+      baseURL: API_URL,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    // Add auth token to requests if available
+    this.axios.interceptors.request.use(config => {
+      const token = localStorage.getItem('graphrag_token');
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
+    });
+  }
+
+  // Authentication
+  async login(apiKey) {
+    const response = await this.axios.post('/api/auth/login', { api_key: apiKey });
+    if (response.data.access_token) {
+      localStorage.setItem('graphrag_token', response.data.access_token);
+    }
+    return response.data;
+  }
+
+  async googleLogin(credential) {
+    const response = await this.axios.post('/api/auth/google', { credential });
+    if (response.data.access_token) {
+      localStorage.setItem('graphrag_token', response.data.access_token);
+    }
+    return response.data;
+  }
+
+  logout() {
+    localStorage.removeItem('graphrag_token');
+  }
+
+  // Game Session Management
+  async createNewGame(providerId = 4) {
+    const response = await this.axios.post('/api/game/new', { provider_id: providerId });
+    return response.data;
+  }
+
+  async sendCommand(sessionId, command) {
+    const response = await this.axios.post(`/api/game/${sessionId}/command`, { command });
+    return response.data;
+  }
+
+  async getGameState(sessionId) {
+    const response = await this.axios.get(`/api/game/${sessionId}/state`);
+    return response.data;
+  }
+
+  async endGame(sessionId) {
+    const response = await this.axios.delete(`/api/game/${sessionId}`);
+    return response.data;
+  }
+
+  // Error handler wrapper
+  async apiCall(method, ...args) {
+    try {
+      return await method.apply(this, args);
+    } catch (error) {
+      if (error.response && error.response.status === 401) {
+        // Token expired or invalid
+        this.logout();
+        window.location.href = '/login';
+      }
+      throw error;
+    }
+  }
+}
+
+export default new GraphRagApiService();
+```
+
+3. **React Context for Authentication**: Create an authentication context to manage the user's authentication state:
+
+```javascript
+// src/contexts/AuthContext.js
+import React, { createContext, useState, useEffect, useContext } from 'react';
+import graphRagApi from '../services/graphRagApi';
+
+const AuthContext = createContext();
+
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Check if user is already logged in
+    const token = localStorage.getItem('graphrag_token');
+    if (token) {
+      graphRagApi.axios.get('/api/users/me')
+        .then(response => {
+          setUser(response.data);
+        })
+        .catch(() => {
+          localStorage.removeItem('graphrag_token');
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    } else {
+      setLoading(false);
+    }
+  }, []);
+
+  const login = async (apiKey) => {
+    const data = await graphRagApi.login(apiKey);
+    setUser(data.user);
+    return data;
+  };
+
+  const googleLogin = async (credential) => {
+    const data = await graphRagApi.googleLogin(credential);
+    setUser(data.user);
+    return data;
+  };
+
+  const logout = () => {
+    graphRagApi.logout();
+    setUser(null);
+  };
+
+  return (
+    <AuthContext.Provider value={{ user, login, googleLogin, logout, loading }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth() {
+  return useContext(AuthContext);
+}
+```
+
+4. **Game Session Context**: Create a context for managing game sessions:
+
+```javascript
+// src/contexts/GameContext.js
+import React, { createContext, useState, useContext } from 'react';
+import graphRagApi from '../services/graphRagApi';
+
+const GameContext = createContext();
+
+export function GameProvider({ children }) {
+  const [sessionId, setSessionId] = useState(null);
+  const [gameState, setGameState] = useState(null);
+  const [history, setHistory] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const startNewGame = async (providerId = 4) => {
+    setLoading(true);
+    try {
+      const data = await graphRagApi.createNewGame(providerId);
+      setSessionId(data.session_id);
+      setGameState(data);
+      setHistory([{ type: 'system', text: data.initial_text }]);
+      return data;
+    } catch (error) {
+      console.error('Error starting game:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const sendCommand = async (command) => {
+    if (!sessionId) return;
+    
+    setLoading(true);
+    setHistory(prev => [...prev, { type: 'user', text: command }]);
+    
+    try {
+      const data = await graphRagApi.sendCommand(sessionId, command);
+      setGameState(data);
+      setHistory(prev => [...prev, { type: 'system', text: data.response }]);
+      return data;
+    } catch (error) {
+      console.error('Error sending command:', error);
+      setHistory(prev => [...prev, { type: 'error', text: 'Error processing command' }]);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const endGame = async () => {
+    if (!sessionId) return;
+    
+    try {
+      await graphRagApi.endGame(sessionId);
+      setSessionId(null);
+      setGameState(null);
+      setHistory([]);
+    } catch (error) {
+      console.error('Error ending game:', error);
+      throw error;
+    }
+  };
+
+  return (
+    <GameContext.Provider value={{
+      sessionId,
+      gameState,
+      history,
+      loading,
+      startNewGame,
+      sendCommand,
+      endGame
+    }}>
+      {children}
+    </GameContext.Provider>
+  );
+}
+
+export function useGame() {
+  return useContext(GameContext);
+}
+```
+
+5. **Usage in Components**: Use the contexts in your React components:
+
+```jsx
+// src/App.js
+import React from 'react';
+import { AuthProvider } from './contexts/AuthContext';
+import { GameProvider } from './contexts/GameContext';
+import GameInterface from './components/GameInterface';
+import LoginPage from './components/LoginPage';
+import PrivateRoute from './components/PrivateRoute';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+
+function App() {
+  return (
+    <Router>
+      <AuthProvider>
+        <GameProvider>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/" element={
+              <PrivateRoute>
+                <GameInterface />
+              </PrivateRoute>
+            } />
+          </Routes>
+        </GameProvider>
+      </AuthProvider>
+    </Router>
+  );
+}
+
+export default App;
+```
+
+### Error Handling
+
+Implement proper error handling for API requests:
+
+1. **Network Errors**: Handle cases where the API is unreachable
+2. **Authentication Errors**: Redirect to login page when the token expires
+3. **API Errors**: Display meaningful error messages to users
+
+### Performance Considerations
+
+1. **Caching**: Consider caching game state to reduce API calls
+2. **Debouncing**: Implement debouncing for rapid command inputs
+3. **Optimistic Updates**: Update UI optimistically before API responses for better UX
