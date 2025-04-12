@@ -989,3 +989,128 @@ Implement proper error handling for API requests:
 1. **Caching**: Consider caching game state to reduce API calls
 2. **Debouncing**: Implement debouncing for rapid command inputs
 3. **Optimistic Updates**: Update UI optimistically before API responses for better UX
+
+### Implementing Suggested Actions
+
+The GraphRAG API provides contextual suggested actions in the game state response. These suggestions help users know what commands are available in their current context. Here's how to implement this feature in your React application:
+
+1. **Extract Suggestions from API Response**: The API returns NPCs, items, and available commands in the game state response:
+
+```javascript
+const generateSuggestions = (gameState) => {
+  // Default suggestions that are always available
+  const suggestions = [
+    'look around',
+    'inventory',
+    'help'
+  ];
+  
+  // Add NPC-based suggestions
+  if (gameState.npcs_present && Array.isArray(gameState.npcs_present)) {
+    gameState.npcs_present.forEach(npc => {
+      suggestions.push(`talk to ${npc}`);
+      suggestions.push(`examine ${npc}`);
+    });
+  }
+  
+  // Add item-based suggestions
+  if (gameState.items_present && Array.isArray(gameState.items_present)) {
+    gameState.items_present.forEach(item => {
+      suggestions.push(`take ${item}`);
+      suggestions.push(`examine ${item}`);
+    });
+  }
+  
+  // Add available commands if provided by the API
+  if (gameState.metadata && gameState.metadata.available_commands) {
+    suggestions.push(...gameState.metadata.available_commands);
+  }
+  
+  // Remove duplicates and limit number of suggestions
+  return [...new Set(suggestions)].slice(0, 8);
+};
+```
+
+2. **Create a Suggestions Component**:
+
+```jsx
+// src/components/CommandSuggestions.js
+import React from 'react';
+import './CommandSuggestions.css';
+
+const CommandSuggestions = ({ suggestions, onSelectSuggestion }) => {
+  if (!suggestions || suggestions.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="command-suggestions">
+      <h3>Suggested Actions</h3>
+      <div className="suggestions-container">
+        {suggestions.map((suggestion, index) => (
+          <button 
+            key={index} 
+            className="suggestion-button"
+            onClick={() => onSelectSuggestion(suggestion)}
+          >
+            {suggestion}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default CommandSuggestions;
+```
+
+3. **Integrate with Game Interface**:
+
+```jsx
+// In your GameInterface component
+import CommandSuggestions from './CommandSuggestions';
+
+function GameInterface() {
+  const { gameState, sendCommand } = useGame();
+  const [commandInput, setCommandInput] = useState('');
+  const [suggestions, setSuggestions] = useState([]);
+  
+  // Update suggestions when game state changes
+  useEffect(() => {
+    if (gameState) {
+      setSuggestions(generateSuggestions(gameState));
+    }
+  }, [gameState]);
+  
+  const handleSuggestionClick = (suggestion) => {
+    setCommandInput(suggestion);
+    // Optional: automatically send the command
+    sendCommand(suggestion);
+  };
+  
+  return (
+    <div className="game-interface">
+      {/* Game output display */}
+      
+      {/* Command suggestions */}
+      <CommandSuggestions 
+        suggestions={suggestions}
+        onSelectSuggestion={handleSuggestionClick}
+      />
+      
+      {/* Command input */}
+      <div className="command-input">
+        <input
+          type="text"
+          value={commandInput}
+          onChange={(e) => setCommandInput(e.target.value)}
+          placeholder="Enter command..."
+        />
+        <button onClick={() => sendCommand(commandInput)}>Send</button>
+      </div>
+    </div>
+  );
+}
+```
+
+This implementation provides a user-friendly interface with contextually relevant command suggestions, making the game more accessible to players who might not know all available commands.
