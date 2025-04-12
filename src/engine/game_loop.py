@@ -27,13 +27,17 @@ class GameLoop:
             from .command_processor import CommandProcessor
             from .output_manager import OutputManager
         except ModuleNotFoundError:
-            # Fall back to Heroku import paths
+            # Fall back to absolute import paths
+            import sys
+            import os
+            # Add the project root to the path
+            sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
             from src.llm.llm_manager import LLMManager
             from src.gamestate.game_state import GameState
             from src.graphrag.graph_rag_engine import GraphRAGEngine
             from src.combat.combat_system import CombatSystem
-            from .command_processor import CommandProcessor
-            from .output_manager import OutputManager
+            from src.engine.command_processor import CommandProcessor
+            from src.engine.output_manager import OutputManager
 
         # Set defaults for config if not provided
         self.config = config or {}
