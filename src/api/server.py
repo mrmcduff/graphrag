@@ -41,6 +41,10 @@ def create_app(config: Dict[str, Any] = None) -> Flask:
         "http://127.0.0.1:5000",
         "http://localhost:52155",
         "http://127.0.0.1:52155"
+            'http://localhost:5173',
+    'http://localhost:5174',
+    'https://localhost:5173',
+    'https://localhost:5174',
         # Add your new web application origin here
         "http://localhost:3000",  # Common React/Next.js dev server
         # 'https://your-production-app.com',  # Uncomment and replace with your production URL

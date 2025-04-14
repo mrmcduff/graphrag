@@ -43,6 +43,10 @@ cors_origins = [
     'http://localhost:5000',
     'http://127.0.0.1:5000',
     'http://localhost:3000',
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'https://localhost:5173',
+    'https://localhost:5174',
     # Add your new origins here
     'https://your-new-web-app.com',
     'http://localhost:8080',
