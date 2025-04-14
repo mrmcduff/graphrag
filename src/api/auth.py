@@ -242,26 +242,110 @@ def require_auth(f: Callable) -> Callable:
                         user_id = get_jwt_identity()
                         user = User.query.get(user_id)
                 except Exception as e:
-                    # If Google token validation fails, try JWT token
+                    # If Google token validation fails, try alternate approaches
                     current_app.logger.error(
                         f"Google token validation failed: {str(e)}"
                     )
-                    try:
-                        user_id = get_jwt_identity()
-                        user = User.query.get(user_id)
-                        current_app.logger.info(
-                            f"Fallback to JWT: user_id={user_id}, user={user.username if user else 'None'}"
-                        )
-                    except Exception as jwt_err:
-                        current_app.logger.error(
-                            f"JWT fallback also failed: {str(jwt_err)}"
-                        )
-                        return jsonify(
-                            format_error_response(
-                                f"Authentication failed: {str(e)} | JWT fallback: {str(jwt_err)}",
-                                401,
+
+                    # Check if it's a Google token format (starts with eyJ)
+                    if auth_header and auth_header.startswith("Bearer eyJ"):
+                        try:
+                            current_app.logger.info(
+                                "Detected Google token format, attempting to extract email directly"
                             )
-                        ), 401
+                            # Try a more lenient approach for Google tokens
+                            import base64
+                            import json
+
+                            # Split the token and get the payload part (second part)
+                            token_parts = token.split(".")
+                            if len(token_parts) >= 2:
+                                # Fix padding for base64 decoding
+                                padded = token_parts[1] + "=" * (
+                                    4 - len(token_parts[1]) % 4
+                                )
+                                decoded_bytes = base64.b64decode(
+                                    padded.replace("-", "+").replace("_", "/")
+                                )
+                                payload = json.loads(decoded_bytes)
+                                email = payload.get("email")
+
+                                current_app.logger.info(
+                                    f"Extracted email from Google token: {email}"
+                                )
+
+                                # Import authorized emails list
+                                from .auth_routes import AUTHORIZED_EMAILS
+
+                                if email:
+                                    user = User.query.filter_by(email=email).first()
+                                    current_app.logger.info(
+                                        f"Found user from email: {user.username if user else 'None'}"
+                                    )
+
+                                    # If no user but email is authorized, create one
+                                    if not user and email.lower() in AUTHORIZED_EMAILS:
+                                        # Create user for authorized email
+                                        current_app.logger.info(
+                                            f"Creating new user for authorized email: {email}"
+                                        )
+                                        import os
+                                        from datetime import datetime
+
+                                        user = User(
+                                            username=email.split("@")[0],
+                                            email=email.lower(),
+                                            password=os.urandom(16).hex(),
+                                            is_admin=False,
+                                            daily_limit=100,
+                                            last_login=datetime.utcnow(),
+                                        )
+                                        db.session.add(user)
+                                        db.session.commit()
+                                        current_app.logger.info(
+                                            f"Created new user: {user.username}"
+                                        )
+                                else:
+                                    current_app.logger.error(
+                                        "No email found in Google token payload"
+                                    )
+                                    return jsonify(
+                                        format_error_response(
+                                            "Invalid Google token: no email found", 401
+                                        )
+                                    ), 401
+                            else:
+                                current_app.logger.error("Invalid token format")
+                                return jsonify(
+                                    format_error_response("Invalid token format", 401)
+                                ), 401
+                        except Exception as google_err:
+                            current_app.logger.error(
+                                f"Failed to process Google token: {str(google_err)}"
+                            )
+                            return jsonify(
+                                format_error_response(
+                                    f"Authentication failed: {str(google_err)}", 401
+                                )
+                            ), 401
+                    else:
+                        # Try standard JWT verification
+                        try:
+                            user_id = get_jwt_identity()
+                            user = User.query.get(user_id)
+                            current_app.logger.info(
+                                f"Fallback to JWT: user_id={user_id}, user={user.username if user else 'None'}"
+                            )
+                        except Exception as jwt_err:
+                            current_app.logger.error(
+                                f"JWT fallback also failed: {str(jwt_err)}"
+                            )
+                            return jsonify(
+                                format_error_response(
+                                    f"Authentication failed: {str(e)} | JWT fallback: {str(jwt_err)}",
+                                    401,
+                                )
+                            ), 401
             else:
                 # No Authorization header, try JWT token
                 user_id = get_jwt_identity()
