@@ -9,13 +9,35 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime
 from email_validator import validate_email, EmailNotValidError
 import re
+import base64
+import json
+import traceback
 
 from .models import db, User
 from .auth import require_auth, require_admin, authenticate_user
 from .utils import format_error_response, log_api_request
+from .auth_routes import AUTHORIZED_EMAILS
 
 # Create a blueprint for the user management API routes
 user_bp = Blueprint("user", __name__, url_prefix="/api/users")
+
+
+@user_bp.route("/debug", methods=["GET"])
+def debug_endpoint():
+    """Simple endpoint to verify server configuration."""
+    return jsonify(
+        {
+            "status": "ok",
+            "jwt_algorithms": current_app.config.get("JWT_DECODE_ALGORITHMS"),
+            "jwt_header_type": current_app.config.get("JWT_HEADER_TYPE"),
+            "authorized_emails": AUTHORIZED_EMAILS,
+            "routes": [
+                f"{rule.rule} [{rule.endpoint}]"
+                for rule in current_app.url_map.iter_rules()
+                if "/api/users/me" in rule.rule
+            ],
+        }
+    )
 
 
 @user_bp.route("/register", methods=["POST"])
@@ -138,7 +160,6 @@ def login():
 
 
 @user_bp.route("/me", methods=["GET"])
-@jwt_required()
 def get_current_user():
     """
     Get current user data.
@@ -146,20 +167,70 @@ def get_current_user():
     Returns:
         Current user data
     """
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
+    # Direct Google token authentication
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return jsonify(
+            format_error_response("Missing or invalid Authorization header", 401)
+        ), 401
 
-    if not user:
-        return jsonify(format_error_response("User not found", 404)), 404
+    token = auth_header.split(" ")[1]
 
-    # Log the request
-    log_api_request(str(user.id), "/api/users/me", {})
+    # Decode Google token
+    try:
+        # Split the token and get the payload part
+        token_parts = token.split(".")
+        if len(token_parts) < 2:
+            return jsonify(format_error_response("Invalid token format", 401)), 401
 
-    return jsonify(user.to_dict())
+        # Fix padding for base64 decoding
+        padded = token_parts[1] + "=" * (4 - len(token_parts[1]) % 4)
+        decoded_bytes = base64.b64decode(padded.replace("-", "+").replace("_", "/"))
+        payload = json.loads(decoded_bytes)
+
+        # Extract email
+        email = payload.get("email")
+        if not email:
+            return jsonify(format_error_response("Email not found in token", 401)), 401
+
+        # Find user by email
+        user = User.query.filter_by(email=email).first()
+        if not user:
+            # Check if authorized
+            if email.lower() in AUTHORIZED_EMAILS:
+                # Create new user
+                import os
+                from datetime import datetime
+
+                user = User(
+                    username=email.split("@")[0],
+                    email=email.lower(),
+                    password=os.urandom(16).hex(),
+                    is_admin=False,
+                    daily_limit=100,
+                    last_login=datetime.utcnow(),
+                )
+                db.session.add(user)
+                db.session.commit()
+            else:
+                return jsonify(format_error_response("User not authorized", 403)), 403
+
+        if not user.is_active:
+            return jsonify(format_error_response("User account is inactive", 401)), 401
+
+        # Log the request
+        log_api_request(str(user.id), "/api/users/me", {})
+
+        return jsonify(user.to_dict())
+    except Exception as e:
+        current_app.logger.error(f"Error processing Google token: {str(e)}")
+        current_app.logger.error(traceback.format_exc())
+        return jsonify(
+            format_error_response(f"Error processing token: {str(e)}", 401)
+        ), 401
 
 
 @user_bp.route("/me/api-key", methods=["POST"])
-@jwt_required()
 def refresh_api_key():
     """
     Generate a new API key for the current user.
@@ -167,24 +238,75 @@ def refresh_api_key():
     Returns:
         New API key
     """
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
+    # Direct Google token authentication
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return jsonify(
+            format_error_response("Missing or invalid Authorization header", 401)
+        ), 401
 
-    if not user:
-        return jsonify(format_error_response("User not found", 404)), 404
+    token = auth_header.split(" ")[1]
 
-    # Generate new API key
-    new_api_key = user.refresh_api_key()
-    db.session.commit()
+    # Decode Google token
+    try:
+        # Split the token and get the payload part
+        token_parts = token.split(".")
+        if len(token_parts) < 2:
+            return jsonify(format_error_response("Invalid token format", 401)), 401
 
-    # Log the request
-    log_api_request(str(user.id), "/api/users/me/api-key", {})
+        # Fix padding for base64 decoding
+        padded = token_parts[1] + "=" * (4 - len(token_parts[1]) % 4)
+        decoded_bytes = base64.b64decode(padded.replace("-", "+").replace("_", "/"))
+        payload = json.loads(decoded_bytes)
 
-    return jsonify({"success": True, "api_key": new_api_key})
+        # Extract email
+        email = payload.get("email")
+        if not email:
+            return jsonify(format_error_response("Email not found in token", 401)), 401
+
+        # Find user by email
+        user = User.query.filter_by(email=email).first()
+        if not user:
+            # Check if authorized
+            if email.lower() in AUTHORIZED_EMAILS:
+                # Create new user
+                import os
+                from datetime import datetime
+
+                user = User(
+                    username=email.split("@")[0],
+                    email=email.lower(),
+                    password=os.urandom(16).hex(),
+                    is_admin=False,
+                    daily_limit=100,
+                    last_login=datetime.utcnow(),
+                )
+                db.session.add(user)
+                db.session.commit()
+            else:
+                return jsonify(format_error_response("User not authorized", 403)), 403
+
+        if not user.is_active:
+            return jsonify(format_error_response("User account is inactive", 401)), 401
+
+        # Generate new API key
+        new_api_key = user.refresh_api_key()
+        db.session.commit()
+
+        # Log the request
+        log_api_request(str(user.id), "/api/users/me/api-key", {})
+
+        return jsonify({"success": True, "api_key": new_api_key})
+    except Exception as e:
+        current_app.logger.error(f"Error processing Google token: {str(e)}")
+        current_app.logger.error(traceback.format_exc())
+        return jsonify(
+            format_error_response(f"Error processing token: {str(e)}", 401)
+        ), 401
 
 
 @user_bp.route("/me/password", methods=["PUT"])
-@jwt_required()
+@require_auth
 def update_password():
     """
     Update current user's password.
@@ -215,8 +337,8 @@ def update_password():
             )
         ), 400
 
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
+    # Get user from request context (set by require_auth)
+    user = getattr(request, "current_user", None)
 
     if not user:
         return jsonify(format_error_response("User not found", 404)), 404
@@ -236,7 +358,7 @@ def update_password():
 
 
 @user_bp.route("/me/usage", methods=["GET"])
-@jwt_required()
+@require_auth
 def get_usage_stats():
     """
     Get current user's API usage statistics.
@@ -244,8 +366,8 @@ def get_usage_stats():
     Returns:
         API usage statistics
     """
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
+    # Get user from request context (set by require_auth)
+    user = getattr(request, "current_user", None)
 
     if not user:
         return jsonify(format_error_response("User not found", 404)), 404

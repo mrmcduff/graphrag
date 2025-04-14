@@ -93,6 +93,15 @@ def create_app(config: Dict[str, Any] = None) -> Flask:
     app.config["JWT_SECRET_KEY"] = os.environ.get("JWT_SECRET_KEY", "dev-secret-key")
     app.config["JWT_ACCESS_TOKEN_EXPIRES"] = datetime.timedelta(days=1)
 
+    # CRITICAL: Fix for Google RS256 tokens
+    app.config["JWT_ALGORITHM"] = "HS256"  # Default algorithm for creating tokens
+    app.config["JWT_DECODE_ALGORITHMS"] = [
+        "HS256",
+        "RS256",
+    ]  # Accept both HS256 and RS256
+    # This overrides Flask-JWT-Extended's allowed algorithms check
+    app.config["JWT_HEADER_TYPE"] = "Bearer"
+
     # Initialize extensions
     db.init_app(app)
     jwt.init_app(app)

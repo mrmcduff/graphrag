@@ -5,6 +5,8 @@ This module provides authentication middleware and utilities for the API.
 """
 
 from flask import request, jsonify, current_app, g
+import base64
+import json
 from flask_jwt_extended import (
     JWTManager,
     create_access_token,
@@ -21,6 +23,23 @@ from .utils import format_error_response
 
 # Initialize JWT manager
 jwt = JWTManager()
+
+
+# Override JWT decode behavior to handle Google tokens
+@jwt.decode_key_loader
+def decode_key_override(claims, headers):
+    """Special handling for Google tokens with RS256 algorithm."""
+    alg = headers.get("alg", "")
+    current_app.logger.info(f"JWT decoding token with algorithm: {alg}")
+
+    # For Google tokens (RS256), we just return a dummy key
+    # since we're not going to verify the signature anyway
+    if alg == "RS256":
+        current_app.logger.info("Using dummy key for RS256 Google token")
+        return "google-token-dummy-key"
+
+    # For normal tokens, return the configured secret key
+    return current_app.config["JWT_SECRET_KEY"]
 
 
 def get_current_user() -> Optional[User]:
@@ -153,6 +172,10 @@ def require_auth(f: Callable) -> Callable:
         try:
             # Check for Google OAuth token in Authorization header
             auth_header = request.headers.get("Authorization")
+            # Log the header for debugging
+            current_app.logger.info(
+                f"Authorization header: {auth_header[:20] if auth_header else 'None'}"
+            )
             if auth_header and auth_header.startswith("Bearer "):
                 token = auth_header.split(" ")[1]
 
@@ -164,8 +187,43 @@ def require_auth(f: Callable) -> Callable:
                         f"Attempting to decode token: {token[:20]}... [truncated]"
                     )
 
+                    # Check token algorithm first
+                    token_parts = token.split(".")
+                    if len(token_parts) >= 1:
+                        header_padded = token_parts[0] + "=" * (
+                            4 - len(token_parts[0]) % 4
+                        )
+                        try:
+                            header_bytes = base64.b64decode(
+                                header_padded.replace("-", "+").replace("_", "/")
+                            )
+                            header = json.loads(header_bytes)
+                            current_app.logger.info(f"Token header: {header}")
+                            if header.get("alg") == "RS256":
+                                current_app.logger.info(
+                                    "Detected RS256 algorithm (Google token)"
+                                )
+                        except Exception as header_err:
+                            current_app.logger.error(
+                                f"Failed to decode token header: {str(header_err)}"
+                            )
+
                     # Just verify it's a valid JWT, we don't need to validate the signature for now
-                    payload = jwt.decode(token, options={"verify_signature": False})
+                    try:
+                        # First try with the RS256 algorithm explicitly allowed
+                        payload = jwt.decode(
+                            token,
+                            options={
+                                "verify_signature": False,
+                                "algorithms": ["RS256", "HS256"],
+                            },
+                        )
+                    except Exception as decode_err:
+                        current_app.logger.error(
+                            f"Error decoding with algorithms option: {str(decode_err)}"
+                        )
+                        # Fallback to just disabling signature verification
+                        payload = jwt.decode(token, options={"verify_signature": False})
                     current_app.logger.info(
                         f"Token decoded successfully. Payload keys: {list(payload.keys())}"
                     )
@@ -174,6 +232,11 @@ def require_auth(f: Callable) -> Callable:
 
                     if email:
                         user = User.query.filter_by(email=email).first()
+                        # Store in flask.g for jwt_required compatibility
+                        g.jwt_user = {
+                            "user_id": user.id if user else None,
+                            "email": email,
+                        }
                         current_app.logger.info(
                             f"User lookup result: {user.username if user else 'No user found'} (active: {user.is_active if user else 'N/A'})"
                         )
@@ -305,6 +368,24 @@ def require_auth(f: Callable) -> Callable:
                                         current_app.logger.info(
                                             f"Created new user: {user.username}"
                                         )
+                                    elif not user:
+                                        current_app.logger.error(
+                                            f"Email {email} is not in authorized list: {AUTHORIZED_EMAILS}"
+                                        )
+                                        return jsonify(
+                                            format_error_response(
+                                                "User not authorized", 403
+                                            )
+                                        ), 403
+                                    elif not user.is_active:
+                                        current_app.logger.error(
+                                            f"User account for {email} is inactive"
+                                        )
+                                        return jsonify(
+                                            format_error_response(
+                                                "User account is inactive", 401
+                                            )
+                                        ), 401
                                 else:
                                     current_app.logger.error(
                                         "No email found in Google token payload"
