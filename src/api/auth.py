@@ -160,37 +160,80 @@ def require_auth(f: Callable) -> Callable:
                 try:
                     import jwt
 
+                    current_app.logger.info(
+                        f"Attempting to decode token: {token[:20]}... [truncated]"
+                    )
+
                     # Just verify it's a valid JWT, we don't need to validate the signature for now
                     payload = jwt.decode(token, options={"verify_signature": False})
+                    current_app.logger.info(
+                        f"Token decoded successfully. Payload keys: {list(payload.keys())}"
+                    )
                     email = payload.get("email")
+                    current_app.logger.info(f"Extracted email: {email}")
 
                     if email:
                         user = User.query.filter_by(email=email).first()
+                        current_app.logger.info(
+                            f"User lookup result: {user.username if user else 'No user found'} (active: {user.is_active if user else 'N/A'})"
+                        )
                         if user and user.is_active:
                             # We found a valid user with this email
+                            current_app.logger.info(
+                                f"Found active user: {user.username}"
+                            )
                             pass
                         else:
                             # Check if this is an authorized email that just needs a user account
                             from .auth_routes import AUTHORIZED_EMAILS
 
+                            current_app.logger.info(
+                                f"AUTHORIZED_EMAILS list length: {len(AUTHORIZED_EMAILS)}"
+                            )
+                            current_app.logger.info(
+                                f"User email lowercase: {email.lower()}"
+                            )
+                            current_app.logger.info(
+                                f"First authorized email: {AUTHORIZED_EMAILS[0] if AUTHORIZED_EMAILS else 'No authorized emails'}"
+                            )
+
                             if email.lower() in AUTHORIZED_EMAILS:
+                                current_app.logger.info(
+                                    f"Email {email} is authorized, creating new user"
+                                )
                                 # Create a new user for this authorized email
                                 import os
                                 from datetime import datetime
 
-                                user = User(
-                                    username=email.split("@")[0],
-                                    email=email.lower(),
-                                    password=os.urandom(
-                                        16
-                                    ).hex(),  # Random password since OAuth is used
-                                    is_admin=False,
-                                    daily_limit=100,
-                                    last_login=datetime.utcnow(),
-                                )
-                                db.session.add(user)
-                                db.session.commit()
+                                try:
+                                    user = User(
+                                        username=email.split("@")[0],
+                                        email=email.lower(),
+                                        password=os.urandom(
+                                            16
+                                        ).hex(),  # Random password since OAuth is used
+                                        is_admin=False,
+                                        daily_limit=100,
+                                        last_login=datetime.utcnow(),
+                                    )
+                                    db.session.add(user)
+                                    db.session.commit()
+                                    current_app.logger.info(
+                                        f"New user created: {user.username}"
+                                    )
+                                except Exception as e:
+                                    current_app.logger.error(
+                                        f"Error creating user: {str(e)}"
+                                    )
+                                    return jsonify(
+                                        format_error_response(
+                                            f"Error creating user: {str(e)}", 500
+                                        )
+                                    ), 500
                             else:
+                                current_app.logger.warning(
+                                    f"Email {email} is not authorized"
+                                )
                                 return jsonify(
                                     format_error_response("User not authorized", 403)
                                 ), 403
@@ -200,14 +243,34 @@ def require_auth(f: Callable) -> Callable:
                         user = User.query.get(user_id)
                 except Exception as e:
                     # If Google token validation fails, try JWT token
-                    user_id = get_jwt_identity()
-                    user = User.query.get(user_id)
+                    current_app.logger.error(
+                        f"Google token validation failed: {str(e)}"
+                    )
+                    try:
+                        user_id = get_jwt_identity()
+                        user = User.query.get(user_id)
+                        current_app.logger.info(
+                            f"Fallback to JWT: user_id={user_id}, user={user.username if user else 'None'}"
+                        )
+                    except Exception as jwt_err:
+                        current_app.logger.error(
+                            f"JWT fallback also failed: {str(jwt_err)}"
+                        )
+                        return jsonify(
+                            format_error_response(
+                                f"Authentication failed: {str(e)} | JWT fallback: {str(jwt_err)}",
+                                401,
+                            )
+                        ), 401
             else:
                 # No Authorization header, try JWT token
                 user_id = get_jwt_identity()
                 user = User.query.get(user_id)
 
             if not user or not user.is_active:
+                current_app.logger.error(
+                    f"Authentication failed at final check: user={user.username if user else 'None'}, active={user.is_active if user else 'N/A'}"
+                )
                 return jsonify(
                     format_error_response("User account is inactive", 401)
                 ), 401
