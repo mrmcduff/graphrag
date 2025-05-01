@@ -106,7 +106,7 @@ class LLMManager:
         ]
 
     def generate_text(
-        self, prompt: str, max_tokens: int = 500, temperature: float = 0.7
+        self, prompt: str, max_tokens: int = 500, temperature: float = 0.7, quiet: bool = False
     ) -> str:
         """
         Generate text using the active provider with fallback.
@@ -115,12 +115,14 @@ class LLMManager:
             prompt: Prompt for text generation
             max_tokens: Maximum tokens to generate
             temperature: Sampling temperature
+            quiet: If True, don't print response time info
 
         Returns:
             Generated text
         """
         if not self.active_provider:
-            print("No active provider set, using fallback provider")
+            if not quiet:
+                print("No active provider set, using fallback provider")
             return self.fallback_provider.generate_text(prompt, max_tokens, temperature)
 
         try:
@@ -130,9 +132,10 @@ class LLMManager:
             )
             end_time = time.time()
 
-            print(
-                f"Response generated using {self.active_provider.name} in {end_time - start_time:.2f} seconds"
-            )
+            if not quiet:
+                print(
+                    f"Response generated using {self.active_provider.name} in {end_time - start_time:.2f} seconds"
+                )
             return response
         except Exception as e:
             print(f"Error using active provider: {e}")

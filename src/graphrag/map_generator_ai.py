@@ -29,7 +29,7 @@ class MapGeneratorAI:
     """
 
     def __init__(
-        self, game_data_dir: str, graph: nx.Graph, llm_manager, output_dir: str = None
+        self, game_data_dir: str, graph: nx.Graph, llm_manager, output_dir: str = None, verbose: bool = False
     ):
         """
         Initialize the map generator.
@@ -39,11 +39,13 @@ class MapGeneratorAI:
             graph: Knowledge graph of the game world
             llm_manager: LLM manager for text generation
             output_dir: Directory to save generated map data (defaults to game_data_dir)
+            verbose: Whether to print detailed progress messages
         """
         self.game_data_dir = game_data_dir
         self.graph = graph
         self.llm_manager = llm_manager
         self.output_dir = output_dir or game_data_dir
+        self.verbose = verbose
 
         # Create map manager to store generated areas
         self.map_manager = MapManager(self.output_dir)
@@ -58,7 +60,9 @@ class MapGeneratorAI:
         # Ensure output directory exists
         self.maps_dir = os.path.join(self.output_dir, "maps")
         os.makedirs(self.maps_dir, exist_ok=True)
-        print(f"Map data will be stored in: {self.maps_dir}")
+        
+        if verbose:
+            print(f"Map data will be stored in: {self.maps_dir}")
 
     def _load_entities(self) -> pd.DataFrame:
         """Load entities from CSV file."""
@@ -135,8 +139,8 @@ class MapGeneratorAI:
         prompt = self._create_initial_area_prompt(location_name, location_info)
 
         try:
-            # Generate the area description using the LLM
-            ai_response = self.llm_manager.generate_text(prompt)
+            # Generate the area description using the LLM (quiet mode if not verbose)
+            ai_response = self.llm_manager.generate_text(prompt, quiet=not verbose)
 
             # Parse the AI response to create a MapArea
             main_area = self._parse_area_from_ai_response(ai_response, location_name)
@@ -192,9 +196,9 @@ class MapGeneratorAI:
             print(
                 f"Generating connected areas for {area.name} in {area.location} (depth {depth})"
             )
-        else:
-            # Simple progress indicator
-            print(f"🗺️ Creating map network... {depth * 25}%")
+        elif area_id.endswith("entrance") or depth == 2:  # Only print for top-level areas
+            # Simple progress indicator with ascending percentage
+            print(f"🗺️ Creating map network... {(3-depth) * 33}%")
 
         # Use standard directions to ensure consistency
         standard_directions = ["north", "south", "east", "west", "up", "down"]
@@ -292,7 +296,7 @@ class MapGeneratorAI:
             # Generate the area description using the LLM
             if verbose:
                 print(f"⚙️ Generating new area {direction} of {from_area.name}...")
-            ai_response = self.llm_manager.generate_text(prompt)
+            ai_response = self.llm_manager.generate_text(prompt, quiet=not verbose)
 
             # Parse the AI response to create a MapArea
             new_area = self._parse_area_from_ai_response(
@@ -744,20 +748,25 @@ Return ONLY the JSON without any additional explanation.
             print(f"Error saving map areas: {e}")
             return False
 
-    def load_maps(self) -> bool:
+    def load_maps(self, verbose: bool = False) -> bool:
         """
         Load generated map areas from a file.
-
+        
+        Args:
+            verbose: Whether to print detailed progress messages
+            
         Returns:
             True if successful, False otherwise
         """
         try:
             # Look for map data in the maps directory
             map_file = os.path.join(self.maps_dir, "map_data.json")
-            print(f"Looking for map data at {map_file}")
+            if verbose:
+                print(f"Looking for map data at {map_file}")
 
             if not os.path.exists(map_file):
-                print(f"No map data found at {map_file}")
+                if verbose:
+                    print(f"No map data found at {map_file}")
                 return False
 
             success = self.map_manager.load_map(map_file)
@@ -767,7 +776,8 @@ Return ONLY the JSON without any additional explanation.
                 self.generated_locations = set()
                 for area in self.map_manager.areas.values():
                     self.generated_locations.add(area.location.lower())
-                print(f"Successfully loaded {len(self.map_manager.areas)} map areas")
+                if verbose:
+                    print(f"Successfully loaded {len(self.map_manager.areas)} map areas")
 
             return success
         except Exception as e:

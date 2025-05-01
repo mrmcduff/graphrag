@@ -300,6 +300,8 @@ class GameLoop:
                 ):
                     print("Setting verbose map debugging")
                     self.graph_rag_engine.map_integrator.verbose = True
+                    # Also update the map generator's verbose flag
+                    self.graph_rag_engine.map_integrator.map_generator.verbose = True
 
                 # Update command processor with new graph_rag_engine
                 self.command_processor.graph_rag_engine = self.graph_rag_engine

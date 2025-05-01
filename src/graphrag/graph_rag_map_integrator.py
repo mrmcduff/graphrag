@@ -40,6 +40,12 @@ class GraphRAGMapIntegrator:
         self.graph_rag_engine = graph_rag_engine
         self.game_state = game_state
         self.llm_manager = llm_manager
+        
+        # Set default values first
+        self.verbose = False
+        self.generation_depth = 2
+        self.current_area_id = None
+        self.area_cache = {}
 
         # Create the map generator
         self.map_generator = MapGeneratorAI(
@@ -47,29 +53,21 @@ class GraphRAGMapIntegrator:
             graph=self.game_state.graph,
             llm_manager=self.llm_manager,
             output_dir=self.game_state.game_data_dir,
+            verbose=self.verbose
         )
-
-        # Set the generation depth (how many layers of connected areas to generate)
-        self.generation_depth = 2
 
         # Get the map manager from the generator
         self.map_manager = self.map_generator.map_manager
-
-        # Cache for current area info
-        self.current_area_id = None
-        self.area_cache = {}
-
-        # Verbose output flag
-        self.verbose = False
-
+        
         # Try to load existing map data
         self._load_or_initialize_maps()
 
     def _load_or_initialize_maps(self) -> None:
         """Load existing map data or initialize if none exists."""
         # Try to load existing map data
-        if not self.map_generator.load_maps():
-            print("No existing map data found. Maps will be generated on demand.")
+        if not self.map_generator.load_maps(self.verbose):
+            if self.verbose:
+                print("No existing map data found. Maps will be generated on demand.")
 
     def get_or_generate_area(self, location_name: str) -> Optional[MapArea]:
         """
@@ -200,14 +198,8 @@ class GraphRAGMapIntegrator:
                 f"DEBUG: Trying to generate area for {self.game_state.player_location}"
             )
 
-        # Force a verbose flag for initial area generation
-        old_verbose = self.verbose
-        self.verbose = True
-
+        # Use current verbose setting for area generation
         area = self.get_or_generate_area(self.game_state.player_location)
-
-        # Restore verbose setting
-        self.verbose = old_verbose
 
         if area:
             if self.verbose:
