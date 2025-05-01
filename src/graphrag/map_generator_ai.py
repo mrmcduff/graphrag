@@ -84,7 +84,7 @@ class MapGeneratorAI:
         )
 
     def generate_initial_area(
-        self, location_name: str, generation_depth: int = 2
+        self, location_name: str, generation_depth: int = 2, verbose: bool = False
     ) -> Optional[str]:
         """
         Generate the initial MapArea for a location and its connected areas.
@@ -95,6 +95,7 @@ class MapGeneratorAI:
                               0 = just the starting area
                               1 = starting area + directly connected areas
                               2 = starting area + direct connections + one more layer
+            verbose: Whether to print detailed progress messages
 
         Returns:
             The location_id of the generated area if successful, None otherwise
@@ -119,6 +120,14 @@ class MapGeneratorAI:
         # Mark this location as generated
         self.generated_locations.add(location_name.lower())
 
+        # Show simple progress indicator
+        if not verbose:
+            print(f"🌍 Generating map for {location_name}...")
+        else:
+            print(
+                f"Starting map generation for {location_name} with depth {generation_depth}"
+            )
+
         # Get information about the location from the knowledge graph
         location_info = self._get_location_info(location_name)
 
@@ -142,11 +151,14 @@ class MapGeneratorAI:
                 # Generate connected areas recursively up to the specified depth
                 if generation_depth > 0:
                     self._generate_connected_areas(
-                        main_area.location_id, generation_depth
+                        main_area.location_id, generation_depth, verbose
                     )
 
                 # Save the generated areas
-                self._save_maps()
+                self._save_maps(verbose)
+
+                if not verbose:
+                    print("✅ Map generation complete!")
 
                 return main_area.location_id
         except Exception as e:
@@ -154,13 +166,16 @@ class MapGeneratorAI:
 
         return None
 
-    def _generate_connected_areas(self, area_id: str, depth: int) -> None:
+    def _generate_connected_areas(
+        self, area_id: str, depth: int, verbose: bool = False
+    ) -> None:
         """
         Recursively generate connected areas up to the specified depth.
 
         Args:
             area_id: ID of the area to generate connections for
             depth: Remaining depth to generate (decrements with each recursion)
+            verbose: Whether to print detailed progress messages
         """
         if depth <= 0:
             return
@@ -173,9 +188,13 @@ class MapGeneratorAI:
             )
             return
 
-        print(
-            f"Generating connected areas for {area.name} in {area.location} (depth {depth})"
-        )
+        if verbose:
+            print(
+                f"Generating connected areas for {area.name} in {area.location} (depth {depth})"
+            )
+        else:
+            # Simple progress indicator
+            print(f"🗺️ Creating map network... {depth * 25}%")
 
         # Use standard directions to ensure consistency
         standard_directions = ["north", "south", "east", "west", "up", "down"]
@@ -183,7 +202,8 @@ class MapGeneratorAI:
         # Make a copy of exits to avoid modification during iteration
         exit_directions = list(area.exits.keys())
         if not exit_directions:
-            print(f"⚠️ No exits defined for {area.name}, using standard directions")
+            if verbose:
+                print(f"⚠️ No exits defined for {area.name}, using standard directions")
             exit_directions = standard_directions
 
         # Generate areas for each exit direction
@@ -194,9 +214,10 @@ class MapGeneratorAI:
                 target_id = area.exits[direction]
                 target_area = self.map_manager.get_area(target_id)
                 if target_area:
-                    print(
-                        f"  ✓ Exit {direction} already points to {target_area.name} ({target_id})"
-                    )
+                    if verbose:
+                        print(
+                            f"  ✓ Exit {direction} already points to {target_area.name} ({target_id})"
+                        )
                     has_valid_exit = True
 
                     # Ensure the reverse connection is also set up
@@ -206,31 +227,34 @@ class MapGeneratorAI:
                             reverse_direction not in target_area.exits
                             or not target_area.exits[reverse_direction]
                         ):
-                            print(
-                                f"  ⚠️ Fixing missing reverse connection from {target_area.name} back to {area.name}"
-                            )
+                            if verbose:
+                                print(
+                                    f"  ⚠️ Fixing missing reverse connection from {target_area.name} back to {area.name}"
+                                )
                             target_area.add_exit(reverse_direction, area_id)
 
                     # If we have a valid exit and we're still at depth > 1, recursively generate for the target
                     if depth > 1:
-                        self._generate_connected_areas(target_id, depth - 1)
+                        self._generate_connected_areas(target_id, depth - 1, verbose)
 
             # If no valid exit exists in this direction, generate a new area
             if not has_valid_exit:
-                print(f"  Generating new area to the {direction} of {area.name}...")
-                new_area_id = self.generate_connected_area(area_id, direction)
+                if verbose:
+                    print(f"  Generating new area to the {direction} of {area.name}...")
+                new_area_id = self.generate_connected_area(area_id, direction, verbose)
 
                 if new_area_id and depth > 1:
                     # Recursively generate connections from the new area with one less depth
-                    self._generate_connected_areas(new_area_id, depth - 1)
+                    self._generate_connected_areas(new_area_id, depth - 1, verbose)
 
-        print(f"✅ Finished generating connected areas for {area.name}")
+        if verbose:
+            print(f"✅ Finished generating connected areas for {area.name}")
 
         # Always save after generating a set of areas
-        self._save_maps()
+        self._save_maps(verbose)
 
     def generate_connected_area(
-        self, from_area_id: str, direction: str
+        self, from_area_id: str, direction: str, verbose: bool = False
     ) -> Optional[str]:
         """
         Generate a new area connected to an existing one.
@@ -238,6 +262,7 @@ class MapGeneratorAI:
         Args:
             from_area_id: ID of the existing area
             direction: Direction from the existing area to the new one
+            verbose: Whether to print detailed progress messages
 
         Returns:
             The location_id of the generated area if successful, None otherwise
@@ -245,16 +270,18 @@ class MapGeneratorAI:
         # Get the existing area
         from_area = self.map_manager.get_area(from_area_id)
         if not from_area:
-            print(f"Error: Cannot find source area with ID {from_area_id}")
+            if verbose:
+                print(f"Error: Cannot find source area with ID {from_area_id}")
             return None
 
         # Check if there's already an exit in this direction
         if direction in from_area.exits and from_area.exits[direction]:
             # Return the existing exit's target if it exists
             target_id = from_area.exits[direction]
-            print(
-                f"⚙️ Using existing exit from {from_area.name} {direction} to {target_id}"
-            )
+            if verbose:
+                print(
+                    f"⚙️ Using existing exit from {from_area.name} {direction} to {target_id}"
+                )
             return target_id
 
         # Generate a prompt for the LLM to create the connected area
@@ -263,7 +290,8 @@ class MapGeneratorAI:
 
         try:
             # Generate the area description using the LLM
-            print(f"⚙️ Generating new area {direction} of {from_area.name}...")
+            if verbose:
+                print(f"⚙️ Generating new area {direction} of {from_area.name}...")
             ai_response = self.llm_manager.generate_text(prompt)
 
             # Parse the AI response to create a MapArea
@@ -280,13 +308,14 @@ class MapGeneratorAI:
 
                 # Make sure the new area's exits include the reverse direction back to the origin
                 if reverse_direction != "unknown":
-                    print(
-                        f"⚙️ Setting bidirectional connection between {from_area.name} and {new_area.name}"
-                    )
-                    print(f"⚙️ From {from_area.name} {direction} → {new_area.name}")
-                    print(
-                        f"⚙️ From {new_area.name} {reverse_direction} → {from_area.name}"
-                    )
+                    if verbose:
+                        print(
+                            f"⚙️ Setting bidirectional connection between {from_area.name} and {new_area.name}"
+                        )
+                        print(f"⚙️ From {from_area.name} {direction} → {new_area.name}")
+                        print(
+                            f"⚙️ From {new_area.name} {reverse_direction} → {from_area.name}"
+                        )
 
                     # Manually set up the exits in both areas
                     from_area.add_exit(direction, new_area.location_id)
@@ -298,13 +327,14 @@ class MapGeneratorAI:
                     )
 
                 # Save the generated areas
-                self._save_maps()
+                self._save_maps(verbose)
 
                 return new_area.location_id
         except Exception as e:
-            print(
-                f"Error generating connected area from {from_area_id} in direction {direction}: {e}"
-            )
+            if verbose:
+                print(
+                    f"Error generating connected area from {from_area_id} in direction {direction}: {e}"
+                )
 
         return None
 
@@ -692,9 +722,12 @@ Return ONLY the JSON without any additional explanation.
 
         return direction_pairs.get(direction.lower(), "unknown")
 
-    def _save_maps(self) -> bool:
+    def _save_maps(self, verbose: bool = False) -> bool:
         """
         Save all generated map areas to a file.
+
+        Args:
+            verbose: Whether to print detailed progress messages
 
         Returns:
             True if successful, False otherwise
@@ -702,7 +735,8 @@ Return ONLY the JSON without any additional explanation.
         try:
             # Create maps path
             map_file = os.path.join(self.maps_dir, "map_data.json")
-            print(f"Saving map data to {map_file}")
+            if verbose:
+                print(f"Saving map data to {map_file}")
 
             # Save the map data
             return self.map_manager.save_map(map_file)

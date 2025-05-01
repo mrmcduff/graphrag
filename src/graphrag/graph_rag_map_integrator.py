@@ -92,9 +92,8 @@ class GraphRAGMapIntegrator:
             return existing_areas[0]
 
         # Generate an initial area for this location along with connected areas
-        print(f"Generating map area cluster for {location_name}...")
         area_id = self.map_generator.generate_initial_area(
-            location_name, generation_depth=self.generation_depth
+            location_name, generation_depth=self.generation_depth, verbose=self.verbose
         )
 
         if area_id:
@@ -123,9 +122,12 @@ class GraphRAGMapIntegrator:
         current_area = self.map_manager.get_area(self.current_area_id)
 
         # Debug information
-        print(f"DEBUG: Current area: {current_area.name} ({current_area.location_id})")
-        print(f"DEBUG: Attempting to move {direction}")
-        print(f"DEBUG: Available exits: {current_area.exits}")
+        if self.verbose:
+            print(
+                f"DEBUG: Current area: {current_area.name} ({current_area.location_id})"
+            )
+            print(f"DEBUG: Attempting to move {direction}")
+            print(f"DEBUG: Available exits: {current_area.exits}")
 
         # Check if there's an exit in this direction
         if direction in current_area.exits and current_area.exits[direction]:
@@ -134,19 +136,24 @@ class GraphRAGMapIntegrator:
             target_area = self.map_manager.get_area(target_id)
 
             if target_area:
-                print(f"DEBUG: Found existing exit to {target_area.name} ({target_id})")
+                if self.verbose:
+                    print(
+                        f"DEBUG: Found existing exit to {target_area.name} ({target_id})"
+                    )
                 self.map_manager.set_current_area(target_id)
                 self.current_area_id = target_id
                 target_area.mark_visited()
                 return True, target_area
             else:
-                print(f"DEBUG: Exit leads to unknown area ID: {target_id}")
+                if self.verbose:
+                    print(f"DEBUG: Exit leads to unknown area ID: {target_id}")
 
         # Either no exit in this direction or target area not found
         # Generate a new area or fix the connection
-        print(f"Generating new area in direction {direction}...")
+        if self.verbose:
+            print(f"Generating new area in direction {direction}...")
         new_area_id = self.map_generator.generate_connected_area(
-            self.current_area_id, direction
+            self.current_area_id, direction, self.verbose
         )
 
         if new_area_id:
@@ -157,9 +164,10 @@ class GraphRAGMapIntegrator:
             # Ensure bidirectional connections are set up correctly
             reverse_direction = self.map_generator._get_reverse_direction(direction)
             if reverse_direction != "unknown":
-                print(
-                    f"DEBUG: Setting up bidirectional connection: {direction} <-> {reverse_direction}"
-                )
+                if self.verbose:
+                    print(
+                        f"DEBUG: Setting up bidirectional connection: {direction} <-> {reverse_direction}"
+                    )
                 self.map_manager.create_bidirectional_exit(
                     current_area.location_id, new_area_id, direction, reverse_direction
                 )
@@ -207,7 +215,8 @@ class GraphRAGMapIntegrator:
                     f"DEBUG: Generated area: {area.name} with exits: {list(area.exits.keys())}"
                 )
         else:
-            print("⚠️ WARNING: Failed to generate map area")
+            if self.verbose:
+                print("⚠️ WARNING: Failed to generate map area")
 
         return area
 
