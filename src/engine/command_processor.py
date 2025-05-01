@@ -58,7 +58,7 @@ class CommandProcessor:
                 r"^(attack|fight|stats|block|dodge|flee)\s*(.*)$", re.IGNORECASE
             ),
             CommandType.SYSTEM: re.compile(
-                r"^(save|load|help|map|settings|llm)\s*(.*)$", re.IGNORECASE
+                r"^(save|load|help|map|settings|llm|options)\s*(.*)$", re.IGNORECASE
             ),
         }
 
@@ -172,6 +172,50 @@ class CommandProcessor:
             )
             self.llm_manager.set_active_provider(LLMType.RULE_BASED)
 
+    def _process_map_movement(self, direction: str) -> Dict[str, Any]:
+        """
+        Process movement using the enhanced map system.
+
+        Args:
+            direction: The direction to move in
+
+        Returns:
+            Dictionary with the results of the movement
+        """
+        if not hasattr(self.graph_rag_engine, "map_integrator"):
+            return {
+                "success": False,
+                "message": f"Cannot move {direction} - map system not available.",
+                "action_type": CommandType.MOVEMENT.value,
+            }
+
+        print(f"Processing map movement: {direction}")
+        # Get the current area and attempt to move
+        success, new_area = self.graph_rag_engine.map_integrator.move_player(direction)
+
+        if success and new_area:
+            # Generate a response about the new area
+            response = self.graph_rag_engine.generate_response(
+                f"You moved {direction} to {new_area.name}", self.game_state
+            )
+
+            # Update the game state's location to match the new area's location
+            self.game_state.player_location = new_area.location
+
+            return {
+                "success": True,
+                "message": response,
+                "action_type": CommandType.MOVEMENT.value,
+                "new_location": new_area.name,
+                "direction": direction,
+            }
+        else:
+            return {
+                "success": False,
+                "message": f"You cannot go {direction} from here.",
+                "action_type": CommandType.MOVEMENT.value,
+            }
+
     def process_command(self, command: str) -> Dict[str, Any]:
         """
         Process a player command.
@@ -187,13 +231,17 @@ class CommandProcessor:
 
         debug_print(f"DEBUG: Processing command: '{command}'")
 
-        # Special handling for map commands
-        if command.lower().strip() == "map":
+        # Special handling for direct commands
+        command_lower = command.lower().strip()
+        if command_lower == "map":
             debug_print("DEBUG: Detected map command directly")
             return self._process_system_command("map", "")
-        elif command.lower().strip() == "local map":
+        elif command_lower == "local map":
             debug_print("DEBUG: Detected local map command directly")
             return self._process_system_command("map", "local")
+        elif command_lower == "options":
+            debug_print("DEBUG: Detected options command directly")
+            return self._process_system_command("options", "")
 
         # Default result
         result = {
@@ -210,7 +258,23 @@ class CommandProcessor:
             debug_print("DEBUG: In combat mode, processing as combat command")
             return self._process_combat_command(command)
 
-        # First, try to resolve the natural language intent
+        # SPECIAL HANDLING FOR DIRECTIONS FROM ENHANCED MAPS
+        if hasattr(self.graph_rag_engine, "map_integrator"):
+            current_area = self.graph_rag_engine.map_integrator.get_current_area()
+            if current_area and any(
+                cmd in command.lower() for cmd in ["go", "move", "walk"]
+            ):
+                # Extract direction from command
+                parts = command.lower().split()
+                if len(parts) > 1 and parts[0] in ["go", "move", "walk"]:
+                    direction = parts[1]
+                    # Check if it's a valid exit direction
+                    if direction in current_area.exits:
+                        print(f"✅ Detected direct map movement: {direction}")
+                        # Skip intent resolution for direct map movements
+                        return self._process_map_movement(direction)
+
+        # For all other commands, try to resolve natural language intent
         original_command = command
         resolved_command = self.intent_resolver.resolve_intent(command, self.game_state)
 
@@ -355,7 +419,68 @@ class CommandProcessor:
             }
 
         elif action in ["talk", "speak"] and target:
-            # Talk to an NPC
+            # First, check for named NPCs from the game state
+            game_state_npcs = []
+            try:
+                # Try to extract NPCs that might be nearby in the game state
+                context = self.game_state.get_current_context()
+                if "npcs_present" in context:
+                    game_state_npcs = list(context["npcs_present"].keys())
+                print(f"DEBUG: Game state NPCs: {game_state_npcs}")
+            except Exception as e:
+                print(f"Error getting game state NPCs: {e}")
+
+            # Check if the target matches one of the game state NPCs
+            target_lower = target.lower()
+            for npc in game_state_npcs:
+                npc_lower = npc.lower()
+                # Check for exact or partial name match
+                if (
+                    target_lower == npc_lower
+                    or target_lower in npc_lower
+                    or npc_lower in target_lower
+                ):
+                    print(f"DEBUG: Matched named character from game state: {npc}")
+                    query = f"talk to {npc}"
+                    response = self.graph_rag_engine.generate_response(
+                        query, self.game_state
+                    )
+                    return {
+                        "success": True,
+                        "message": response,
+                        "action_type": CommandType.INTERACTION.value,
+                        "target": npc,
+                    }
+
+            # Check if we have a map area with NPCs
+            map_npc_found = False
+            if hasattr(self.graph_rag_engine, "map_integrator"):
+                current_area = self.graph_rag_engine.map_integrator.get_current_area()
+                if current_area and current_area.npcs:
+                    print(f"DEBUG: Current area has NPCs: {current_area.npcs}")
+
+                    # Try to match target with NPCs in the area
+                    for npc in current_area.npcs:
+                        npc_lower = npc.lower()
+                        # Check if the NPC name contains the target or vice versa
+                        if target_lower in npc_lower or any(
+                            word in npc_lower for word in target_lower.split()
+                        ):
+                            print(f"DEBUG: Found matching NPC in map area: {npc}")
+                            map_npc_found = True
+                            query = f"talk to {npc} in {current_area.name}"
+                            response = self.graph_rag_engine.generate_response(
+                                query, self.game_state
+                            )
+                            return {
+                                "success": True,
+                                "message": response,
+                                "action_type": CommandType.INTERACTION.value,
+                                "target": npc,
+                                "original_target": target,
+                            }
+
+            # Standard NPC handling via game state as fallback
             success = self.game_state.update_state(action, target)
             if success:
                 query = f"talk to {target}"
@@ -368,31 +493,79 @@ class CommandProcessor:
                     "action_type": CommandType.INTERACTION.value,
                     "target": target,
                 }
-            else:
-                # Check if the target might contain prepositions that weren't properly removed
-                words = target.split()
-                if len(words) > 1:
-                    # Try with just the last word, which is likely the actual name
-                    potential_name = words[-1]
-                    success = self.game_state.update_state(action, potential_name)
-                    if success:
-                        query = f"talk to {potential_name}"
-                        response = self.graph_rag_engine.generate_response(
-                            query, self.game_state
-                        )
-                        return {
-                            "success": True,
-                            "message": response,
-                            "action_type": CommandType.INTERACTION.value,
-                            "target": potential_name,
-                            "original_target": target,
-                        }
 
+            # Try with just the last word, which is likely the actual name
+            words = target.split()
+            if len(words) > 1:
+                potential_name = words[-1]
+                success = self.game_state.update_state(action, potential_name)
+                if success:
+                    query = f"talk to {potential_name}"
+                    response = self.graph_rag_engine.generate_response(
+                        query, self.game_state
+                    )
+                    return {
+                        "success": True,
+                        "message": response,
+                        "action_type": CommandType.INTERACTION.value,
+                        "target": potential_name,
+                        "original_target": target,
+                    }
+
+            # Check if the target appears in any NPC names (partial matches)
+            partial_match = None
+            for npc in game_state_npcs:
+                npc_parts = npc.lower().split()
+                for part in npc_parts:
+                    if part in target_lower or target_lower in part:
+                        partial_match = npc
+                        break
+                if partial_match:
+                    break
+
+            # If we found a partial match, use it
+            if partial_match:
+                print(
+                    f"DEBUG: Found partial match with game state NPC: {partial_match}"
+                )
+                query = f"talk to {partial_match}"
+                response = self.graph_rag_engine.generate_response(
+                    query, self.game_state
+                )
                 return {
-                    "success": False,
-                    "message": f"There's no one named {target} here.",
+                    "success": True,
+                    "message": response,
                     "action_type": CommandType.INTERACTION.value,
+                    "target": partial_match,
+                    "original_target": target,
                 }
+
+            # Check one last time with generic terms
+            if hasattr(self.graph_rag_engine, "map_integrator"):
+                current_area = self.graph_rag_engine.map_integrator.get_current_area()
+                if current_area and current_area.npcs:
+                    generic_terms = ["guide", "hermit", "merchant", "traveler", "guard"]
+                    for term in generic_terms:
+                        if term in target_lower:
+                            for npc in current_area.npcs:
+                                if term in npc.lower():
+                                    query = f"talk to {npc} in {current_area.name}"
+                                    response = self.graph_rag_engine.generate_response(
+                                        query, self.game_state
+                                    )
+                                    return {
+                                        "success": True,
+                                        "message": response,
+                                        "action_type": CommandType.INTERACTION.value,
+                                        "target": npc,
+                                        "original_target": target,
+                                    }
+
+            return {
+                "success": False,
+                "message": f"There's no one named {target} here.",
+                "action_type": CommandType.INTERACTION.value,
+            }
 
         elif action in ["take", "get"] and target:
             # Take an item
@@ -752,7 +925,7 @@ class CommandProcessor:
                     "action_type": CommandType.SYSTEM.value,
                 }
 
-        elif action == "help":
+        elif action == "help" or action == "options":
             # Display help
             help_text = """
 Available Commands:
@@ -762,12 +935,113 @@ Look: look, examine [object/person]
 Interaction: talk [character], take [item], use [item]
 Inventory: inventory, equip [item]
 Combat: attack [enemy], stats, block, dodge, flee
-System: save [filename], load [filename], help, quit
+System: save [filename], load [filename], help, options, quit
 
 Special Commands:
 ----------------
+options - Show available directions, NPCs, and actions in current area
 quit - Exit the game
             """
+
+            # If command is "options", add additional context-specific information
+            if action == "options":
+                # Get current context information
+                context = self.game_state.get_current_context()
+                current_location = context.get("current_location", {})
+                npcs_present = context.get("npcs_present", {})
+
+                # Check if we have an enhanced GraphRAG engine with map support
+                map_info = ""
+                print("\n⭐⭐⭐ DEBUGGING MAP OPTIONS ⭐⭐⭐")
+                print("Checking for map_integrator...")
+
+                # Explicitly check if enhanced engine is being used
+                engine_class = self.graph_rag_engine.__class__.__name__
+                print(f"GraphRAG Engine Class: {engine_class}")
+
+                if hasattr(self.graph_rag_engine, "map_integrator"):
+                    print("✅ Found map_integrator in graph_rag_engine")
+                    current_area = (
+                        self.graph_rag_engine.map_integrator.get_current_area()
+                    )
+
+                    if current_area:
+                        print(
+                            f"✅ Found current area: {current_area.name} in {current_area.location}"
+                        )
+                        print(f"✅ Area exits: {list(current_area.exits.keys())}")
+
+                        # Set map_info content with very visible formatting
+                        map_info = (
+                            "\n\n============ AVAILABLE MAP DIRECTIONS ============\n"
+                        )
+
+                        # Add area information
+                        if current_area.sub_location:
+                            map_info += f"Current Area: {current_area.name}\n"
+                            map_info += f"Sub-Location: {current_area.sub_location}\n\n"
+                        else:
+                            map_info += f"Current Area: {current_area.name}\n\n"
+
+                        # Add directions with clear formatting
+                        if current_area.exits:
+                            map_info += "You can go in these directions:\n"
+                            for direction, target_id in current_area.exits.items():
+                                map_info += f"  > {direction.upper()}\n"
+                            map_info += "\n"
+
+                        # Add items
+                        if current_area.items:
+                            map_info += "Items you can see here:\n"
+                            for item in current_area.items:
+                                map_info += f"  * {item}\n"
+                            map_info += "\n"
+
+                        # Make sure this is very visible
+                        map_info += "============================================\n"
+
+                        print(f"✅ Generated map_info:\n{map_info}")
+                    else:
+                        print("❌ Failed to get current area from map_integrator")
+                else:
+                    print("❌ No map_integrator found in graph_rag_engine")
+
+                # Standard options for all versions
+                options_text = (
+                    f"\nCurrent Location: {self.game_state.player_location}\n"
+                )
+
+                # Add available exits
+                available_exits = current_location.get("connected_locations", [])
+                if available_exits:
+                    options_text += "\nConnected Locations:\n"
+                    for location in available_exits:
+                        options_text += f"  {location}\n"
+
+                # Add NPCs
+                if npcs_present:
+                    options_text += "\nCharacters Present:\n"
+                    for npc in npcs_present.keys():
+                        options_text += f"  {npc}\n"
+
+                # Add enhanced map info if available - VERY IMPORTANT!
+                if map_info:
+                    print("📋 Adding map_info to options_text")
+                    options_text += map_info
+                else:
+                    print("⚠️ No map_info to add to options")
+
+                # Add inventory
+                if self.game_state.inventory:
+                    options_text += "\nInventory:\n"
+                    for item in self.game_state.inventory:
+                        options_text += f"  {item}\n"
+
+                # Add options_text to help_text
+                print(f"📝 Final options_text length: {len(options_text)}")
+                print(f"📝 First 100 chars of options_text: {options_text[:100]}")
+                print(f"📝 Adding options_text to help_text")
+                help_text += options_text
 
             return {
                 "success": True,

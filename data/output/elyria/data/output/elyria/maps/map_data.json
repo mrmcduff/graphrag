@@ -1,0 +1,654 @@
+{
+  "areas": {
+    "ironroot_range_entrance": {
+      "location_id": "ironroot_range_entrance",
+      "name": "Ironroot Range Entrance",
+      "location": "the Ironroot Range",
+      "sub_location": "Foothills",
+      "parent_area_id": null,
+      "is_region_entrance": true,
+      "coordinates": [
+        0,
+        0,
+        0
+      ],
+      "description": "A rugged mountain path winds its way through the towering peaks of the Ironroot Range, leading to the entrance of this imposing and ancient mountain kingdom. The air is crisp and thin, carrying the scent of pine and the distant rumble of unseen waterfalls. Jagged cliffs of dark, weathered stone rise on either side, their surfaces scarred by centuries of wind and weather. The path ahead is shrouded in shadow, the way forward a mystery waiting to be unraveled.",
+      "attributes": [
+        "remote",
+        "mountainous",
+        "elevated"
+      ],
+      "exits": {
+        "north": "ironroot_range_north",
+        "south": "ironroot_range_foothills",
+        "east": "ironroot_range_foothills",
+        "west": "ironroot_range_foothills_west",
+        "up": "ironroot_range_summit",
+        "down": "ironroot_range_descent"
+      },
+      "items": [
+        "weathered signpost",
+        "discarded mining tools",
+        "small campfire"
+      ],
+      "npcs": [
+        "grizzled mountain guide",
+        "curious mountain goat"
+      ],
+      "visited": false,
+      "danger_level": 4,
+      "requires_item": null
+    },
+    "ironroot_range_north": {
+      "location_id": "ironroot_range_north",
+      "name": "Ironroot Range Northern Pass",
+      "location": "the Ironroot Range",
+      "sub_location": "Foothills",
+      "parent_area_id": null,
+      "is_region_entrance": false,
+      "coordinates": [
+        0,
+        1,
+        0
+      ],
+      "description": "The path winds its way deeper into the Ironroot Range, the towering peaks now looming even higher above. The air is crisp and thin, the sounds of the distant waterfalls echoing through the rugged landscape. Ahead, the way is shrouded in shadow, the trail disappearing into a narrow pass between the jagged cliffs. Weathered boulders and fallen trees litter the ground, testament to the power of the elements in this harsh, remote place.",
+      "attributes": [
+        "remote",
+        "mountainous",
+        "elevated",
+        "rugged"
+      ],
+      "exits": {
+        "south": "ironroot_range_entrance",
+        "north": "ironroot_range_north_pass",
+        "east": "ironroot_range_east",
+        "west": "ironroot_range_west"
+      },
+      "items": [
+        "ancient map",
+        "coil of sturdy rope",
+        "weathered hiking staff"
+      ],
+      "npcs": [
+        "grizzled mountain guide",
+        "wandering hermit"
+      ],
+      "visited": false,
+      "danger_level": 6,
+      "requires_item": null
+    },
+    "ironroot_range_north_pass": {
+      "location_id": "ironroot_range_north_pass",
+      "name": "Ironroot Range Northern Pass",
+      "location": "the Ironroot Range",
+      "sub_location": "Foothills",
+      "parent_area_id": null,
+      "is_region_entrance": false,
+      "coordinates": [
+        0,
+        2,
+        0
+      ],
+      "description": "The path narrows as it winds its way through the steep, rocky terrain of the Ironroot Range's northern pass. Towering cliffs of jagged granite rise on either side, their peaks lost in the swirling mists above. The air is thin and crisp, the only sounds the distant echo of rushing water and the occasional cry of a mountain bird. Treacherous switchbacks lead deeper into the heart of the range, where the way is shrouded in shadow and the risk of rockslides and winter storms looms ever-present.",
+      "attributes": [
+        "mountainous",
+        "rugged",
+        "remote",
+        "elevated",
+        "treacherous"
+      ],
+      "exits": {
+        "south": "ironroot_range_north",
+        "north": null,
+        "east": null,
+        "west": null
+      },
+      "items": [
+        "weathered compass",
+        "flint and steel",
+        "mountain herb bundle",
+        "sturdy rope"
+      ],
+      "npcs": [
+        "Kiran, mountain guide",
+        "Alya, wandering herbalist"
+      ],
+      "visited": false,
+      "danger_level": 7,
+      "requires_item": null
+    },
+    "ironroot_range_east": {
+      "location_id": "ironroot_range_east",
+      "name": "Ironroot Range Eastern Slopes",
+      "location": "the Ironroot Range",
+      "sub_location": "Foothills",
+      "parent_area_id": null,
+      "is_region_entrance": false,
+      "coordinates": [
+        1,
+        0,
+        1
+      ],
+      "description": "As you ascend the winding mountain path, the landscape shifts, the rugged peaks of the Ironroot Range giving way to a series of rolling, forested slopes. Towering pines and ancient oaks line the trail, their branches casting long shadows across the rocky ground. The air is crisp and cool, carrying the scent of pine and the faint tang of snow. Ahead, the path continues to climb, leading deeper into the heart of the mountain range.",
+      "attributes": [
+        "remote",
+        "forested",
+        "elevated",
+        "rugged"
+      ],
+      "exits": {
+        "west": "ironroot_range_summit",
+        "north": null,
+        "east": null,
+        "south": null
+      },
+      "items": [
+        "ancient map",
+        "sturdy hiking staff",
+        "pouch of mountain herbs"
+      ],
+      "npcs": [
+        "Talia, a weathered mountain guide",
+        "Kiran, a wandering hermit"
+      ],
+      "visited": false,
+      "danger_level": 4,
+      "requires_item": null
+    },
+    "ironroot_range_west": {
+      "location_id": "ironroot_range_west",
+      "name": "Ironroot Range Western Approach",
+      "location": "the Ironroot Range",
+      "sub_location": "Foothills",
+      "parent_area_id": null,
+      "is_region_entrance": false,
+      "coordinates": [
+        -1,
+        1,
+        0
+      ],
+      "description": "The path winds its way through a narrow defile, the towering cliffs of the Ironroot Range looming overhead. The air is crisp and thin, the sound of rushing water echoing through the pass. Weathered boulders and fallen trees litter the ground, casting long shadows across the trail. Ahead, the way opens up slightly, revealing a vista of rugged, snow-capped peaks in the distance.",
+      "attributes": [
+        "remote",
+        "mountainous",
+        "elevated",
+        "rugged"
+      ],
+      "exits": {
+        "east": "ironroot_range_north",
+        "north": null,
+        "south": null,
+        "west": null
+      },
+      "items": [
+        "ancient dagger",
+        "weathered map",
+        "mountain wildflowers"
+      ],
+      "npcs": [
+        "grizzled mountain guide",
+        "wandering hermit"
+      ],
+      "visited": false,
+      "danger_level": 5,
+      "requires_item": null
+    },
+    "ironroot_range_foothills": {
+      "location_id": "ironroot_range_foothills",
+      "name": "Ironroot Range Foothills",
+      "location": "the Ironroot Range",
+      "sub_location": "Foothills",
+      "parent_area_id": null,
+      "is_region_entrance": false,
+      "coordinates": [
+        -1,
+        0,
+        -1
+      ],
+      "description": "The path winds its way through the rugged foothills of the Ironroot Range, the towering peaks now giving way to a more gentle, rolling landscape. Thick stands of ancient evergreens line the trail, their branches dripping with moisture from the ever-present mist. Underfoot, the ground is carpeted with a soft cushion of moss and fallen needles, muffling the sound of your footsteps. Ahead, the trail splits, one path leading deeper into the forest, the other climbing steadily upwards towards the mountains.",
+      "attributes": [
+        "remote",
+        "forested",
+        "elevated"
+      ],
+      "exits": {
+        "east": "ironroot_range_descent",
+        "north": null,
+        "south": null,
+        "west": null
+      },
+      "items": [
+        "ancient sword",
+        "leather-bound journal",
+        "glowing mushroom"
+      ],
+      "npcs": [
+        "wandering hermit",
+        "lost explorer"
+      ],
+      "visited": false,
+      "danger_level": 4,
+      "requires_item": null
+    },
+    "ironroot_range_slopes": {
+      "location_id": "ironroot_range_slopes",
+      "name": "Ironroot Range Slopes",
+      "location": "the Ironroot Range",
+      "sub_location": "Foothills",
+      "parent_area_id": null,
+      "is_region_entrance": false,
+      "coordinates": [
+        0,
+        -2,
+        0
+      ],
+      "description": "As you continue south, the path becomes steeper and more treacherous, winding through a series of rocky slopes and narrow ravines. Jagged boulders jut out from the earth, and the sound of rushing water echoes from a nearby creek. Twisted, gnarled trees cling to the hillsides, their branches casting long shadows across the path. The air is cool and crisp, carrying the scent of wildflowers and the tang of pine. Ahead, the foothills rise up, leading deeper into the heart of the Ironroot Range.",
+      "attributes": [
+        "mountainous",
+        "rugged",
+        "remote",
+        "elevated",
+        "steep"
+      ],
+      "exits": {
+        "north": "ironroot_range_foothills",
+        "east": null,
+        "south": null,
+        "west": null
+      },
+      "items": [
+        "weathered walking stick",
+        "small leather pouch",
+        "glittering quartz crystals"
+      ],
+      "npcs": [
+        "old shepherd",
+        "wandering ranger"
+      ],
+      "visited": false,
+      "danger_level": 5,
+      "requires_item": null
+    },
+    "ironroot_range_eastern_foothills": {
+      "location_id": "ironroot_range_eastern_foothills",
+      "name": "Eastern Ironroot Foothills",
+      "location": "the Ironroot Range",
+      "sub_location": "Foothills",
+      "parent_area_id": null,
+      "is_region_entrance": false,
+      "coordinates": [
+        2,
+        0,
+        0
+      ],
+      "description": "As you ascend the winding mountain path, the landscape opens up into a vast expanse of rugged, rolling foothills. Towering above you, the jagged peaks of the Ironroot Range pierce the sky, their snow-capped summits glittering in the sunlight. Weathered outcroppings of dark, ancient stone dot the grassy slopes, and the air is filled with the soothing sound of cascading streams. Ahead, the path continues to climb, leading deeper into the heart of this untamed, majestic landscape.",
+      "attributes": [
+        "remote",
+        "mountainous",
+        "elevated"
+      ],
+      "exits": {
+        "west": "ironroot_range_foothills",
+        "north": null,
+        "east": null,
+        "south": null
+      },
+      "items": [
+        "ancient stone tablet",
+        "wild mountain berries",
+        "weathered hiking staff"
+      ],
+      "npcs": [
+        "grizzled mountain guide",
+        "curious mountain goat"
+      ],
+      "visited": false,
+      "danger_level": 4,
+      "requires_item": null
+    },
+    "ironroot_range_western_foothills": {
+      "location_id": "ironroot_range_western_foothills",
+      "name": "Ironroot Range Western Foothills",
+      "location": "the Ironroot Range",
+      "sub_location": "Foothills",
+      "parent_area_id": null,
+      "is_region_entrance": false,
+      "coordinates": [
+        -1,
+        -1,
+        0
+      ],
+      "description": "The path winds through a more rugged and isolated section of the Ironroot Range foothills. Steep, rocky slopes rise up on either side, their surfaces scarred by deep crevices and loose scree. Gnarled, ancient trees cling precariously to the hillsides, their twisted branches casting long shadows across the trail. The air is cooler and more humid here, the sound of a nearby stream adding a soothing backdrop to the otherwise eerie silence. Ahead, the path narrows, disappearing between towering boulders that block much of the sky from view. A sense of unease settles over you as you continue onward, unsure of what challenges may lie in wait.",
+      "attributes": [
+        "remote",
+        "mountainous",
+        "isolated",
+        "rugged"
+      ],
+      "exits": {
+        "east": "ironroot_range_foothills",
+        "north": null,
+        "south": null,
+        "west": null
+      },
+      "items": [
+        "weathered hiking staff",
+        "handful of river stones",
+        "tarnished iron key"
+      ],
+      "npcs": [
+        "grizzled mountain guide",
+        "wary forest hermit"
+      ],
+      "visited": false,
+      "danger_level": 6,
+      "requires_item": null
+    },
+    "ironroot_range_foothills_north": {
+      "location_id": "ironroot_range_foothills_north",
+      "name": "Ironroot Range Foothills - Northern Pass",
+      "location": "the Ironroot Range",
+      "sub_location": "Foothills",
+      "parent_area_id": null,
+      "is_region_entrance": false,
+      "coordinates": [
+        -1,
+        1,
+        0
+      ],
+      "description": "The mountain path winds its way northward, the towering peaks of the Ironroot Range now looming directly overhead. The trail narrows, forcing you to pick your way carefully between jagged boulders and fallen trees. The air is cooler and more crisp up here, the scent of pine mingling with the distant roar of a raging river. Overhead, birds of prey soar on the updrafts, their piercing cries echoing off the surrounding stone. Ahead, the path disappears into a shadowy ravine, the way forward shrouded in mystery.",
+      "attributes": [
+        "remote",
+        "mountainous",
+        "elevated",
+        "treacherous"
+      ],
+      "exits": {
+        "south": "ironroot_range_foothills_west",
+        "north": null,
+        "east": null,
+        "west": null
+      },
+      "items": [
+        "weathered hiking staff",
+        "leather-bound journal",
+        "small pouch of healing herbs"
+      ],
+      "npcs": [
+        "grizzled mountain guide",
+        "elusive snow leopard"
+      ],
+      "visited": false,
+      "danger_level": 6,
+      "requires_item": null
+    },
+    "ironroot_range_southern_foothills": {
+      "location_id": "ironroot_range_southern_foothills",
+      "name": "Ironroot Range Southern Foothills",
+      "location": "the Ironroot Range",
+      "sub_location": "Foothills",
+      "parent_area_id": null,
+      "is_region_entrance": false,
+      "coordinates": [
+        1,
+        -1,
+        0
+      ],
+      "description": "As you descend the winding mountain path, the landscape opens up into a sprawling expanse of rugged, rolling foothills. The air is crisp and clean, carrying the earthy scent of moss and wildflowers. Scattered among the grassy slopes are towering outcroppings of weathered granite, their jagged silhouettes casting long shadows across the ground. Narrow streams glisten in the sunlight, their gentle currents flowing down from unseen sources in the mountains above. The path continues southward, winding through a sea of undulating hills that gradually give way to a dense, ancient forest in the distance.",
+      "attributes": [
+        "remote",
+        "mountainous",
+        "elevated"
+      ],
+      "exits": {
+        "north": "ironroot_range_foothills",
+        "south": null,
+        "east": null,
+        "west": null
+      },
+      "items": [
+        "weathered map",
+        "leather-bound journal",
+        "rusty hunting knife"
+      ],
+      "npcs": [
+        "Grizzled mountain guide",
+        "Foraging herbalist"
+      ],
+      "visited": false,
+      "danger_level": 4,
+      "requires_item": null
+    },
+    "ironroot_range_foothills_west": {
+      "location_id": "ironroot_range_foothills_west",
+      "name": "Ironroot Range Foothills, Western Approach",
+      "location": "the Ironroot Range",
+      "sub_location": "Foothills",
+      "parent_area_id": null,
+      "is_region_entrance": false,
+      "coordinates": [
+        -1,
+        0,
+        1
+      ],
+      "description": "The winding mountain path descends gradually, leading you into a vast, boulder-strewn expanse of the Ironroot Range foothills. Towering cliffs rise up on either side, casting long shadows across the rugged terrain. Scattered pine trees cling to the rocky slopes, their branches swaying in the cool, thin breeze. Underfoot, the trail becomes more treacherous, forcing you to pick your steps carefully to avoid loose scree and hidden crevasses. In the distance, the snow-capped peaks of the Ironroot Range loom, a constant reminder of the daunting heights that lie ahead.",
+      "attributes": [
+        "remote",
+        "mountainous",
+        "exposed",
+        "rugged"
+      ],
+      "exits": {
+        "east": "ironroot_range_summit",
+        "north": null,
+        "south": null,
+        "west": null
+      },
+      "items": [
+        "weathered hiking staff",
+        "pouch of mountain herbs",
+        "ancient rune stone"
+      ],
+      "npcs": [
+        "Karnok, grizzled mountain guide",
+        "Tharivol, elven ranger"
+      ],
+      "visited": false,
+      "danger_level": 5,
+      "requires_item": null
+    },
+    "ironroot_range_foothills_south": {
+      "location_id": "ironroot_range_foothills_south",
+      "name": "Ironroot Range Foothills - Southern Pass",
+      "location": "the Ironroot Range",
+      "sub_location": "Foothills",
+      "parent_area_id": null,
+      "is_region_entrance": false,
+      "coordinates": [
+        -1,
+        -1,
+        0
+      ],
+      "description": "As the path descends into the southern pass, the landscape becomes increasingly rugged and inhospitable. Jagged cliffs rise up on either side, their weathered faces streaked with veins of iron ore. The trail narrows to a precarious ledge, forcing you to pick your way carefully over loose scree and treacherous switchbacks. The air is thick with the scent of sulfur, and the distant roar of a raging river echoes off the surrounding stone. Above, dark clouds gather, casting the pass into shadow and hinting at the possibility of a sudden storm. Ahead, the path disappears into a dark tunnel, its maw gaping like the entrance to some ancient, forgotten realm.",
+      "attributes": [
+        "mountainous",
+        "inhospitable",
+        "remote",
+        "elevated",
+        "treacherous"
+      ],
+      "exits": {
+        "north": "ironroot_range_foothills_west",
+        "east": null,
+        "south": null,
+        "west": null
+      },
+      "items": [
+        "rusty iron pickaxe",
+        "weathered map fragment",
+        "small pouch of sulfur"
+      ],
+      "npcs": [
+        "grizzled mountain guide",
+        "wary cave troll"
+      ],
+      "visited": false,
+      "danger_level": 7,
+      "requires_item": null
+    },
+    "ironroot_range_summit": {
+      "location_id": "ironroot_range_summit",
+      "name": "Ironroot Range Summit",
+      "location": "the Ironroot Range",
+      "sub_location": "Foothills",
+      "parent_area_id": null,
+      "is_region_entrance": false,
+      "coordinates": [
+        0,
+        0,
+        1
+      ],
+      "description": "As you climb the winding mountain path, the world below shrinks away, replaced by a panoramic vista of rugged, snow-capped peaks. The air is crisp and thin, each breath a reminder of the dizzying altitude. Underfoot, the trail narrows, flanked by treacherous cliffs that plunge into mist-shrouded ravines. Ahead, the path leads to the summit of the Ironroot Range, where the ancient fortress of the mountain kingdom awaits, its towers and battlements silhouetted against the endless sky.",
+      "attributes": [
+        "remote",
+        "mountainous",
+        "exposed",
+        "elevated"
+      ],
+      "exits": {
+        "down": "ironroot_range_entrance",
+        "north": "ironroot_range_northern_slopes",
+        "east": "ironroot_range_east",
+        "south": "ironroot_range_foothills",
+        "west": "ironroot_range_foothills_west"
+      },
+      "items": [
+        "weathered signpost",
+        "frozen mountain spring",
+        "abandoned climbing gear"
+      ],
+      "npcs": [
+        "Grizzled Mountain Guide"
+      ],
+      "visited": false,
+      "danger_level": 7,
+      "requires_item": null
+    },
+    "ironroot_range_northern_slopes": {
+      "location_id": "ironroot_range_northern_slopes",
+      "name": "Northern Slopes of the Ironroot Range",
+      "location": "the Ironroot Range",
+      "sub_location": "Foothills",
+      "parent_area_id": null,
+      "is_region_entrance": false,
+      "coordinates": [
+        0,
+        1,
+        1
+      ],
+      "description": "As you ascend the winding trail, the air grows crisper and the vistas more expansive. The path winds through a landscape of jagged, snow-dusted peaks, their gray granite flanks rising sharply on either side. Underfoot, the ground is littered with loose scree and the occasional hardy alpine plant clinging to life. The silence is profound, broken only by the distant call of a solitary bird and the crunch of your boots on the trail. Ahead, the way continues to climb, leading ever higher into the heart of the Ironroot Range.",
+      "attributes": [
+        "remote",
+        "mountainous",
+        "exposed",
+        "elevated"
+      ],
+      "exits": {
+        "south": "ironroot_range_summit",
+        "east": null,
+        "west": null,
+        "north": null
+      },
+      "items": [
+        "weathered hiking staff",
+        "small pouch of dried berries",
+        "tarnished compass"
+      ],
+      "npcs": [
+        "grizzled mountain guide",
+        "solitary hermit"
+      ],
+      "visited": false,
+      "danger_level": 5,
+      "requires_item": null
+    },
+    "ironroot_range_descent": {
+      "location_id": "ironroot_range_descent",
+      "name": "Ironroot Range Descent",
+      "location": "the Ironroot Range",
+      "sub_location": "Foothills",
+      "parent_area_id": null,
+      "is_region_entrance": false,
+      "coordinates": [
+        0,
+        0,
+        -1
+      ],
+      "description": "The rugged mountain path winds its way down the steep slopes of the Ironroot Range, the towering peaks looming overhead like ancient guardians. The air grows thicker and more humid, carrying the mist of unseen waterfalls and the earthy scent of moss-covered boulders. Narrow switchbacks and treacherous steps carved into the rock make the descent a treacherous one, requiring careful footing and a steady nerve. Ahead, the path disappears into a dense, shadowy forest, its tangled branches and gnarled roots promising both adventure and peril.",
+      "attributes": [
+        "remote",
+        "mountainous",
+        "forested",
+        "elevated"
+      ],
+      "exits": {
+        "up": "ironroot_range_entrance",
+        "north": "ironroot_range_descent_north",
+        "south": "ironroot_range_foothills",
+        "east": "ironroot_range_foothills",
+        "west": "ironroot_range_foothills"
+      },
+      "items": [
+        "worn hiking boots",
+        "rusted iron pickaxe",
+        "glowing moss"
+      ],
+      "npcs": [
+        "weathered mountain guide",
+        "curious forest sprite",
+        "Ancient Guard"
+      ],
+      "visited": false,
+      "danger_level": 6,
+      "requires_item": null
+    },
+    "ironroot_range_descent_north": {
+      "location_id": "ironroot_range_descent_north",
+      "name": "Ironroot Range Foothills",
+      "location": "the Ironroot Range",
+      "sub_location": "Foothills",
+      "parent_area_id": null,
+      "is_region_entrance": false,
+      "coordinates": [
+        0,
+        1,
+        -1
+      ],
+      "description": "The winding mountain path gives way to a dense, verdant forest, the towering trees blocking out much of the sky. The air is thick with the scent of damp earth and decaying leaves, and the sounds of unseen creatures rustling in the undergrowth. Faint sunbeams filter through the canopy, casting a warm, golden glow on the mossy boulders and twisted roots that litter the forest floor. The path continues northward, disappearing into the shadowy depths of the ancient trees.",
+      "attributes": [
+        "mountainous",
+        "forested",
+        "humid"
+      ],
+      "exits": {
+        "south": "ironroot_range_descent",
+        "north": null,
+        "east": null,
+        "west": null
+      },
+      "items": [
+        "ancient scroll",
+        "polished river stone",
+        "weathered hunting knife"
+      ],
+      "npcs": [
+        "grizzled ranger",
+        "curious forest sprite"
+      ],
+      "visited": false,
+      "danger_level": 5,
+      "requires_item": null
+    }
+  },
+  "current_area_id": null
+}

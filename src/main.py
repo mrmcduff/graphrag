@@ -125,6 +125,18 @@ def parse_arguments():
         "--debug", action="store_true", help="Enable debug mode with verbose logging"
     )
 
+    parser.add_argument(
+        "--enhanced_maps",
+        action="store_true",
+        help="Enable enhanced map generation with dynamic MapArea objects",
+    )
+
+    parser.add_argument(
+        "--verbose_maps",
+        action="store_true",
+        help="Enable verbose debug output for map generation",
+    )
+
     return parser.parse_args()
 
 
@@ -185,6 +197,8 @@ def create_config(args) -> Dict[str, Any]:
             "quick_mode": args.quick,
         },
         "save_file": args.load_save,
+        "enhanced_maps": args.enhanced_maps,
+        "verbose_maps": args.verbose_maps,
     }
 
 

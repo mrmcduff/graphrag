@@ -63,8 +63,22 @@ class GameLoop:
         print(f"Loading game data from {game_data_dir}...")
         self.game_state = GameState(game_data_dir)
 
-        print("Initializing GraphRAG Engine...")
+        # Store enhanced maps config for later (after LLM setup)
+        self.use_enhanced_maps = self.config.get("enhanced_maps", False)
+        self.verbose_maps = self.config.get("verbose_maps", False)
+
+        if self.verbose_maps:
+            print("\n=== VERBOSE MAP DEBUGGING ENABLED ===\n")
+
+        # Always initialize with standard GraphRAG Engine first
+        print("Initializing Standard GraphRAG Engine...")
         self.graph_rag_engine = GraphRAGEngine(game_data_dir, self.llm_manager)
+
+        # Enhanced maps will be initialized AFTER user selects LLM provider
+        if self.use_enhanced_maps:
+            print(
+                "\n=== ENHANCED MAP GENERATION WILL BE ENABLED AFTER LLM SELECTION ===\n"
+            )
 
         print("Initializing Combat System...")
         self.combat_system = CombatSystem(
@@ -245,6 +259,76 @@ class GameLoop:
 
         # Set up the chosen provider
         self.command_processor.setup_llm_provider(choice)
+
+        # Now that we have an LLM provider, initialize enhanced maps if requested
+        if self.use_enhanced_maps:
+            print("\n=== INITIALIZING ENHANCED MAP GENERATION ===\n")
+
+            # Import the enhanced version
+            try:
+                # Try multiple import paths to handle different environments
+                try:
+                    from src.graphrag.graph_rag_engine_enhanced import (
+                        GraphRAGEngineEnhanced,
+                    )
+                except ImportError:
+                    try:
+                        from graphrag.graph_rag_engine_enhanced import (
+                            GraphRAGEngineEnhanced,
+                        )
+                    except ImportError:
+                        import sys
+
+                        sys.path.insert(
+                            0,
+                            os.path.abspath(
+                                os.path.join(os.path.dirname(__file__), "../..")
+                            ),
+                        )
+                        from src.graphrag.graph_rag_engine_enhanced import (
+                            GraphRAGEngineEnhanced,
+                        )
+
+                # Create the enhanced engine (LLM is now available)
+                self.graph_rag_engine = GraphRAGEngineEnhanced(
+                    self.game_data_dir, self.llm_manager, self.game_state
+                )
+
+                # Set verbose flag if needed
+                if self.verbose_maps and hasattr(
+                    self.graph_rag_engine, "map_integrator"
+                ):
+                    print("Setting verbose map debugging")
+                    self.graph_rag_engine.map_integrator.verbose = True
+
+                # Update command processor with new graph_rag_engine
+                self.command_processor.graph_rag_engine = self.graph_rag_engine
+
+                # Verify it's working
+                if hasattr(self.graph_rag_engine, "map_integrator"):
+                    print("✅ Enhanced GraphRAG Engine initialized successfully")
+                    # Generate the initial area now
+                    print("✅ Getting initial area...")
+                    initial_area = (
+                        self.graph_rag_engine.map_integrator.get_current_area()
+                    )
+                    if initial_area:
+                        print(
+                            f"✅ Initial area ready: {initial_area.name} with exits: {list(initial_area.exits.keys())}"
+                        )
+                    else:
+                        print("❌ Failed to get initial area")
+                else:
+                    print(
+                        "❌ Enhanced GraphRAG Engine initialization failed - no map_integrator attribute"
+                    )
+            except ImportError as e:
+                print(
+                    f"Warning: Enhanced GraphRAG Engine not found, keeping standard version. Error: {e}"
+                )
+            except Exception as e:
+                print(f"Error initializing Enhanced GraphRAG Engine: {e}")
+                print("Keeping standard version")
 
     def start(self) -> None:
         """Start the game loop."""

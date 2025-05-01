@@ -48,6 +48,7 @@ class IntentResolver:
                 "save game",
                 "load game",
                 "help",
+                "options",
                 "map",
                 "local map",
                 "llm info",
